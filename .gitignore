@@ -11,3 +11,7 @@ server/out.log
 server/err.log
 server/.test_token
 agent/logs/
+# Claude Code internal files — only state.json is tracked
+.claude/*
+!.claude/state.json
+!.claude/CLAUDE.md
