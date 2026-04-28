@@ -7,6 +7,11 @@ from auth import agent_auth_required, login_required, admin_required, log_operat
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/api")
 
+_ALLOWED_TASK_TYPES: frozenset[str] = frozenset(
+    {"cleanup", "update", "diagnose", "custom", "collect"}
+)
+_MAX_COMMAND_LEN = 512
+
 
 @tasks_bp.route("/tasks/pending", methods=["GET"])
 @agent_auth_required
@@ -42,6 +47,20 @@ def create_task():
     task_type = data.get("task_type", "").strip()
     if not task_type:
         return jsonify({"error": "task_type は必須です"}), 400
+    if task_type not in _ALLOWED_TASK_TYPES:
+        allowed = sorted(_ALLOWED_TASK_TYPES)
+        return jsonify(
+            {"error": f"task_type は {allowed} のいずれかで指定してください"}
+        ), 400
+
+    command = data.get("command")
+    if command is not None:
+        if not isinstance(command, str):
+            return jsonify({"error": "command は文字列で指定してください"}), 400
+        if len(command) > _MAX_COMMAND_LEN:
+            return jsonify(
+                {"error": f"command は {_MAX_COMMAND_LEN} 文字以内にしてください"}
+            ), 400
 
     pc_id = None
     pc_name = data.get("pc_name", "").strip()
@@ -54,7 +73,7 @@ def create_task():
     task = Task(
         pc_id=pc_id,
         task_type=task_type,
-        command=data.get("command"),
+        command=command,
         parameters=json.dumps(data.get("parameters", {}), ensure_ascii=False),
         status="pending",
         priority=data.get("priority", 0),
