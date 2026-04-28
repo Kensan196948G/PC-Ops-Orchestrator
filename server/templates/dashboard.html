@@ -58,6 +58,26 @@
 </div>
 
 <div class="card">
+    <h3 class="card-title">アクティブアラート <span id="dashboard-alert-count" style="font-size:0.85rem;color:var(--text-secondary);font-weight:normal;"></span></h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>重大度</th>
+                <th>種類</th>
+                <th>メッセージ</th>
+                <th>発生日時</th>
+            </tr>
+        </thead>
+        <tbody id="dashboard-alerts-body">
+            <tr><td colspan="4" class="text-center">読み込み中...</td></tr>
+        </tbody>
+    </table>
+    <div style="margin-top:0.75rem;text-align:right;">
+        <a href="/alerts" class="btn btn-secondary" style="font-size:0.8rem;">全アラートを見る</a>
+    </div>
+</div>
+
+<div class="card">
     <h3 class="card-title">最近の操作ログ</h3>
     <table class="table" id="recent-ops-table">
         <thead>

@@ -1,6 +1,25 @@
 let healthChart = null;
 let osChart = null;
 
+function escHtml(str) {
+    if (str === null || str === undefined) return '-';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function severityBadge(sev) {
+    const map = {
+        critical: '<span class="status-badge severity-critical">危険</span>',
+        high: '<span class="status-badge severity-high">高</span>',
+        medium: '<span class="status-badge severity-medium">中</span>',
+        low: '<span class="status-badge severity-low">低</span>',
+    };
+    return map[sev] || sev;
+}
+
 async function refreshDashboard() {
     try {
         const stats = await apiFetch('/dashboard/stats');
@@ -98,6 +117,34 @@ async function refreshDashboard() {
         }
     } catch (e) {
         console.error('Recent ops error:', e);
+    }
+
+    try {
+        const alertsData = await apiFetch('/alerts?per_page=5');
+        const count = alertsData.unresolved_count || 0;
+        const countEl = document.getElementById('dashboard-alert-count');
+        if (countEl) {
+            countEl.textContent = count > 0 ? `(未解決 ${count} 件)` : '(なし)';
+            countEl.style.color = count > 0 ? 'var(--danger)' : 'var(--text-secondary)';
+        }
+        const alertsTbody = document.getElementById('dashboard-alerts-body');
+        if (alertsTbody) {
+            if (alertsData.alerts && alertsData.alerts.length > 0) {
+                alertsTbody.innerHTML = alertsData.alerts.map(a => {
+                    const time = a.created_at ? new Date(a.created_at).toLocaleString('ja-JP') : '-';
+                    return `<tr>
+                        <td>${severityBadge(a.severity)}</td>
+                        <td>${escHtml(a.alert_type)}</td>
+                        <td>${escHtml(a.message)}</td>
+                        <td>${escHtml(time)}</td>
+                    </tr>`;
+                }).join('');
+            } else {
+                alertsTbody.innerHTML = '<tr><td colspan="4" class="text-center">アクティブアラートはありません</td></tr>';
+            }
+        }
+    } catch (e) {
+        console.error('Alerts fetch error:', e);
     }
 
     document.getElementById('last-update').textContent =

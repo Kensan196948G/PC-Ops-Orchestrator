@@ -125,4 +125,7 @@ document.getElementById('new-task-type').addEventListener('change', function() {
     cmdInput.style.display = this.value === 'custom' ? 'inline-block' : 'none';
 });
 
-document.addEventListener('DOMContentLoaded', () => loadTasks(1));
+document.addEventListener('DOMContentLoaded', () => {
+    loadTasks(1);
+    setInterval(() => loadTasks(currentTaskPage), 30000);
+});

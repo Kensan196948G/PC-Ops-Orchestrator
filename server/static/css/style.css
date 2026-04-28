@@ -506,6 +506,23 @@ select.form-input {
 .toast-error { background: var(--danger); }
 .toast-warning { background: var(--warning); }
 
+.nav-badge {
+    margin-left: auto;
+    background: var(--danger);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.severity-critical { background: rgba(255,71,87,0.15); color: var(--danger); }
+.severity-high { background: rgba(255,165,2,0.15); color: var(--warning); }
+.severity-medium { background: rgba(255,212,59,0.15); color: #ffd43b; }
+.severity-low { background: rgba(139,143,163,0.15); color: var(--text-secondary); }
+
 @media (max-width: 768px) {
     .sidebar {
         width: 60px;
