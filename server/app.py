@@ -53,6 +53,10 @@ def create_app(config_name=None):
     def alerts_page():
         return render_template("alerts.html")
 
+    @app.route("/users")
+    def users_page():
+        return render_template("users.html")
+
     @app.route("/login")
     def login_page():
         return render_template("login.html")
