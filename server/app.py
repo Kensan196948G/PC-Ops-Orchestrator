@@ -27,6 +27,7 @@ def create_app(config_name=None):
     from routes.alerts import alerts_bp
     from routes.audit import audit_bp
     from routes.scheduled_tasks import scheduled_tasks_bp
+    from routes.groups import groups_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(collect_bp)
@@ -36,6 +37,7 @@ def create_app(config_name=None):
     app.register_blueprint(alerts_bp)
     app.register_blueprint(audit_bp)
     app.register_blueprint(scheduled_tasks_bp)
+    app.register_blueprint(groups_bp)
 
     @app.route("/")
     def index():
@@ -68,6 +70,10 @@ def create_app(config_name=None):
     @app.route("/scheduled-tasks")
     def scheduled_tasks_page():
         return render_template("scheduled_tasks.html")
+
+    @app.route("/groups")
+    def groups_page():
+        return render_template("groups.html")
 
     @app.route("/login")
     def login_page():

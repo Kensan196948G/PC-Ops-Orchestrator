@@ -293,6 +293,7 @@ def test_webui_pages(token):
         ("/alerts", "Alert Management"),
         ("/users", "User Management"),
         ("/scheduled-tasks", "Scheduled Tasks"),
+        ("/groups", "PC Groups"),
     ]
     for path, name in pages:
         headers = {"Authorization": f"Bearer {token}"}
@@ -476,6 +477,86 @@ def test_delete_scheduled_task(token):
     print(f"  [PASS] Deleted task not found: id={_st_id}")
 
 
+_group_id = None
+
+
+def test_create_group(token):
+    global _group_id
+    body = {"name": "TestGroup-Alpha", "description": "pytest group"}
+    r = request("POST", "/api/groups", token=token, data=body)
+    assert r.status_code == 201, f"Create group failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    g = data["group"]
+    assert g["name"] == "TestGroup-Alpha"
+    _group_id = g["id"]
+    print(f"  [PASS] Create group: id={_group_id}")
+
+
+def test_list_groups(token):
+    r = request("GET", "/api/groups", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert "groups" in data
+    ids = [g["id"] for g in data["groups"]]
+    assert _group_id in ids
+    print(f"  [PASS] List groups: total={data['total']}")
+
+
+def test_get_group(token):
+    r = request("GET", f"/api/groups/{_group_id}", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert data["group"]["id"] == _group_id
+    print(f"  [PASS] Get group: id={_group_id}")
+
+
+def test_update_group(token):
+    body = {"name": "TestGroup-Alpha-Updated", "description": "updated"}
+    r = request("PUT", f"/api/groups/{_group_id}", token=token, data=body)
+    assert r.status_code == 200, f"Update group failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert data["group"]["name"] == "TestGroup-Alpha-Updated"
+    print(f"  [PASS] Update group: id={_group_id}")
+
+
+def test_add_pc_to_group(token):
+    body = {"pc_name": "PC-TEST-001"}
+    r = request("POST", f"/api/groups/{_group_id}/pcs", token=token, data=body)
+    assert r.status_code == 200, f"Add PC failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    pcs = data["group"]["pcs"]
+    assert any(p["pc_name"] == "PC-TEST-001" for p in pcs)
+    print(f"  [PASS] Add PC to group: group={_group_id}")
+
+
+def test_create_group_task(token):
+    body = {"task_type": "collect"}
+    r = request("POST", f"/api/groups/{_group_id}/tasks", token=token, data=body)
+    assert r.status_code == 201, f"Group task failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert len(data["tasks"]) >= 1
+    print(f"  [PASS] Group task: {len(data['tasks'])} task(s) created")
+
+
+def test_remove_pc_from_group(token):
+    r = request("GET", f"/api/groups/{_group_id}", token=token)
+    pcs = json.loads(r.data)["group"]["pcs"]
+    pc_id = next(p["id"] for p in pcs if p["pc_name"] == "PC-TEST-001")
+    r2 = request("DELETE", f"/api/groups/{_group_id}/pcs/{pc_id}", token=token)
+    assert r2.status_code == 200, f"Remove PC failed: {r2.status_code} {r2.data}"
+    print(f"  [PASS] Remove PC from group: pc_id={pc_id}")
+
+
+def test_delete_group(token):
+    r = request("DELETE", f"/api/groups/{_group_id}", token=token)
+    assert r.status_code == 200, f"Delete group failed: {r.status_code} {r.data}"
+    print(f"  [PASS] Delete group: id={_group_id}")
+
+    r2 = request("GET", f"/api/groups/{_group_id}", token=token)
+    assert r2.status_code == 404
+    print(f"  [PASS] Deleted group not found: id={_group_id}")
+
+
 def run_all():
     print("=== PC-Ops Orchestrator API Tests ===\n")
     setup_module()
@@ -520,6 +601,14 @@ def run_all():
     test_run_scheduled_task_now(token)
     test_scheduled_task_invalid_payload(token)
     test_delete_scheduled_task(token)
+    test_create_group(token)
+    test_list_groups(token)
+    test_get_group(token)
+    test_update_group(token)
+    test_add_pc_to_group(token)
+    test_create_group_task(token)
+    test_remove_pc_from_group(token)
+    test_delete_group(token)
 
     print("\n=== All tests PASSED ===")
 

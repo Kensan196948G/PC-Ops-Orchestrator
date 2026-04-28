@@ -1,6 +1,51 @@
 from datetime import datetime, timezone
 from extensions import db
 
+pc_group_membership = db.Table(
+    "pc_group_memberships",
+    db.Column("group_id", db.Integer, db.ForeignKey("pc_groups.id"), primary_key=True),
+    db.Column("pc_id", db.Integer, db.ForeignKey("pcs.id"), primary_key=True),
+)
+
+
+class PCGroup(db.Model):
+    __tablename__ = "pc_groups"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    description = db.Column(db.Text)
+    created_by = db.Column(db.String(255), default="system")
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    pcs = db.relationship(
+        "PC", secondary=pc_group_membership, backref="groups", lazy="dynamic"
+    )
+
+    def to_dict(self, include_pcs=False):
+        d = {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "pc_count": self.pcs.count(),
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+        if include_pcs:
+            d["pcs"] = [
+                {"id": pc.id, "pc_name": pc.pc_name, "status": pc.status}
+                for pc in self.pcs
+            ]
+        return d
+
+    def __repr__(self):
+        return f"<PCGroup {self.name}>"
+
 
 class PC(db.Model):
     __tablename__ = "pcs"
