@@ -1,4 +1,5 @@
 """Initial setup: create admin user and seed data."""
+
 import sys
 import os
 
@@ -16,18 +17,18 @@ def seed():
         db.create_all()
 
         if User.query.first():
-            print('Already seeded.')
+            print("Already seeded.")
             return
 
         admin = User(
-            username='admin',
-            password_hash=hash_password('admin'),
-            role='admin',
+            username="admin",
+            password_hash=hash_password("admin"),
+            role="admin",
         )
         db.session.add(admin)
         db.session.commit()
-        print('Created admin user (admin/admin)')
+        print("Created admin user (admin/admin)")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     seed()
