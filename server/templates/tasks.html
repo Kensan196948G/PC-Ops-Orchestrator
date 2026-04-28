@@ -63,9 +63,15 @@
     <div class="pagination" id="task-pagination"></div>
 </div>
 
-<div class="card">
-    <h3 class="card-title">タスク詳細</h3>
-    <pre id="task-detail" class="task-detail">タスクを選択してください</pre>
+<!-- Task Detail Modal -->
+<div id="task-detail-modal" class="modal-overlay" onclick="closeTaskModal(event)">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 class="modal-title">タスク詳細</h3>
+            <button class="modal-close" onclick="closeTaskModalDirect()" aria-label="閉じる">×</button>
+        </div>
+        <div class="modal-body" id="task-detail-body"></div>
+    </div>
 </div>
 {% endblock %}
 
