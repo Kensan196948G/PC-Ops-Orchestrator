@@ -189,12 +189,61 @@ def test_alerts_acknowledge_and_resolve(token):
     print(f"  [PASS] Alert resolve: id={alert_id}")
 
 
+def test_user_management(token):
+    r = request("GET", "/api/auth/users", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert "users" in data
+    assert data["total"] >= 1
+    print(f"  [PASS] User list: {data['total']} users")
+
+    r2 = request(
+        "POST",
+        "/api/auth/users",
+        token=token,
+        data={"username": "testop", "password": "testpass1", "role": "operator"},
+    )
+    assert r2.status_code == 201, f"User create failed: {r2.status_code} {r2.data}"
+    created = json.loads(r2.data)
+    assert created["user"]["role"] == "operator"
+    user_id = created["user"]["id"]
+    print(f"  [PASS] User create: id={user_id}")
+
+    r3 = request(
+        "PATCH",
+        f"/api/auth/users/{user_id}",
+        token=token,
+        data={"role": "admin", "is_active": False},
+    )
+    assert r3.status_code == 200
+    updated = json.loads(r3.data)
+    assert updated["user"]["role"] == "admin"
+    assert updated["user"]["is_active"] is False
+    print(f"  [PASS] User update: role={updated['user']['role']}")
+
+    r4 = request("DELETE", f"/api/auth/users/{user_id}", token=token)
+    assert r4.status_code == 200
+    print(f"  [PASS] User delete: id={user_id}")
+
+
+def test_user_management_forbidden(token):
+    r = request(
+        "POST",
+        "/api/auth/users",
+        token=token,
+        data={"username": "x" * 200, "password": "short"},
+    )
+    assert r.status_code in (400, 409)
+    print(f"  [PASS] User create invalid rejected: {r.status_code}")
+
+
 def test_webui_pages(token):
     pages = [
         ("/", "Dashboard"),
         ("/pcs", "PC List"),
         ("/tasks", "Task Management"),
         ("/alerts", "Alert Management"),
+        ("/users", "User Management"),
     ]
     for path, name in pages:
         headers = {"Authorization": f"Bearer {token}"}
@@ -286,6 +335,8 @@ def run_all():
     test_alerts_sync(token)
     test_alerts_list(token)
     test_alerts_acknowledge_and_resolve(token)
+    test_user_management(token)
+    test_user_management_forbidden(token)
     test_webui_pages(token)
 
     print("\n=== All tests PASSED ===")
