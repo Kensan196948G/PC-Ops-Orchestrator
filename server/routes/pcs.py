@@ -1,4 +1,6 @@
-from flask import Blueprint, request, jsonify
+import csv
+import io
+from flask import Blueprint, request, jsonify, make_response
 from extensions import db
 from models import PC, SystemSnapshot, Software, Task, WindowsUpdate
 from auth import login_required, admin_required, log_operation
@@ -41,6 +43,67 @@ def list_pcs():
             "pages": pagination.pages,
         }
     )
+
+
+@pcs_bp.route("/export.csv", methods=["GET"])
+@login_required
+def export_pcs_csv():
+    status_filter = request.args.get("status")
+    search = request.args.get("search", "").strip()
+    os_filter = request.args.get("os", "").strip()
+
+    query = PC.query
+    if status_filter:
+        query = query.filter(PC.status == status_filter)
+    if search:
+        query = query.filter(
+            db.or_(
+                PC.pc_name.ilike(f"%{search}%"),
+                PC.ip_address.ilike(f"%{search}%"),
+            )
+        )
+    if os_filter:
+        query = query.filter(PC.os_version.ilike(f"%{os_filter}%"))
+
+    pcs = query.order_by(PC.last_seen.desc().nullslast()).limit(5000).all()
+
+    buf = io.StringIO()
+    buf.write("﻿")  # BOM for Excel
+    writer = csv.writer(buf)
+    writer.writerow(
+        [
+            "ID",
+            "PC名",
+            "ドメイン",
+            "OS",
+            "IPアドレス",
+            "MACアドレス",
+            "状態",
+            "ヘルススコア",
+            "最終更新",
+            "Agentバージョン",
+        ]
+    )
+    for pc in pcs:
+        writer.writerow(
+            [
+                pc.id,
+                pc.pc_name or "",
+                pc.domain or "",
+                pc.os_version or "",
+                pc.ip_address or "",
+                pc.mac_address or "",
+                pc.status or "",
+                pc.health_score if pc.health_score is not None else "",
+                pc.last_seen.isoformat() if pc.last_seen else "",
+                pc.agent_version or "",
+            ]
+        )
+
+    response = make_response(buf.getvalue())
+    response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Content-Disposition"] = "attachment; filename=pcs.csv"
+    return response
 
 
 @pcs_bp.route("/<int:pc_id>", methods=["GET"])

@@ -212,6 +212,27 @@ document.getElementById('new-task-type').addEventListener('change', function() {
     cmdInput.style.display = this.value === 'custom' ? 'inline-block' : 'none';
 });
 
+async function exportTasksCSV() {
+    const status = document.getElementById('task-status-filter')?.value || '';
+    const taskType = document.getElementById('task-type-filter')?.value || '';
+    const params = new URLSearchParams();
+    if (status) params.set('status', status);
+    if (taskType) params.set('task_type', taskType);
+    try {
+        const res = await apiFetchRaw('/tasks/export.csv?' + params.toString());
+        if (!res.ok) { showError('エクスポートに失敗しました'); return; }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'tasks.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        showError('エクスポートに失敗しました');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadTasks(1);
     setInterval(() => loadTasks(currentTaskPage), 30000);

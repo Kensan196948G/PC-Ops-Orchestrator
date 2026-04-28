@@ -1,5 +1,7 @@
+import csv
+import io
 from datetime import datetime, timezone, timedelta
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 from extensions import db
 from models import PC, Alert
 from auth import login_required
@@ -48,6 +50,60 @@ def list_alerts():
             "unresolved_count": Alert.query.filter_by(resolved=False).count(),
         }
     )
+
+
+@alerts_bp.route("/export.csv", methods=["GET"])
+@login_required
+def export_alerts_csv():
+    severity = request.args.get("severity")
+    resolved = request.args.get("resolved", "false").lower() == "true"
+
+    query = Alert.query.filter_by(resolved=resolved)
+    if severity:
+        query = query.filter(Alert.severity == severity)
+
+    severity_order = db.case(
+        (Alert.severity == "critical", 0),
+        (Alert.severity == "high", 1),
+        (Alert.severity == "medium", 2),
+        else_=3,
+    )
+    alerts = query.order_by(severity_order, Alert.created_at.desc()).limit(5000).all()
+
+    buf = io.StringIO()
+    buf.write("﻿")  # BOM for Excel
+    writer = csv.writer(buf)
+    writer.writerow(
+        [
+            "ID",
+            "PC名",
+            "種別",
+            "重大度",
+            "メッセージ",
+            "解決済み",
+            "作成日時",
+            "解決日時",
+        ]
+    )
+    for a in alerts:
+        pc_name = a.pc.pc_name if a.pc else ""
+        writer.writerow(
+            [
+                a.id,
+                pc_name,
+                a.alert_type or "",
+                a.severity or "",
+                a.message or "",
+                "はい" if a.resolved else "いいえ",
+                a.created_at.isoformat() if a.created_at else "",
+                a.resolved_at.isoformat() if a.resolved_at else "",
+            ]
+        )
+
+    response = make_response(buf.getvalue())
+    response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Content-Disposition"] = "attachment; filename=alerts.csv"
+    return response
 
 
 @alerts_bp.route("/<int:alert_id>", methods=["GET"])

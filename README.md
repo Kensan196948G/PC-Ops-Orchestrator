@@ -156,10 +156,11 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | 画面 | 機能 |
 |---|---|
 | 📊 Dashboard | 全PC状態サマリー、健全性分布グラフ、OS内訳、アクティブアラート、操作ログ |
-| 🖥️ PC一覧 | 検索・フィルタリング、状態表示、スコア確認（30秒自動更新） |
-| 🔍 PC詳細 | 基本情報・ハードウェア情報・リソース履歴グラフ・タスク実行 |
-| 📋 タスク管理 | タスク作成（クリーンアップ/更新/診断/カスタム）、状態監視（30秒自動更新） |
-| ⚠️ アラート管理 | アラート確認・解決・同期、重大度フィルタ（30秒自動更新） |
+| 🖥️ PC一覧 | 検索・フィルタリング、状態表示、スコア確認、**CSVエクスポート**（30秒自動更新） |
+| 🔍 PC詳細 | 基本情報・ハードウェア情報・リソース履歴グラフ・タスク実行・**Windows Update一覧**・**インストール済みソフトウェア一覧** |
+| 📋 タスク管理 | タスク作成（クリーンアップ/更新/診断/カスタム）、状態監視、**CSVエクスポート**（30秒自動更新） |
+| ⚠️ アラート管理 | アラート確認・解決・同期、重大度フィルタ、**CSVエクスポート**（30秒自動更新） |
+| 📝 操作ログ | WebUIおよびAgent操作の監査ログ、ユーザー/操作種別フィルタ |
 
 ---
 
@@ -182,9 +183,15 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | GET | `/api/dashboard/health-distribution` | JWT | WebUI → 健全性分布 |
 | GET | `/api/dashboard/os-breakdown` | JWT | WebUI → OS別集計 |
 | GET | `/api/alerts` | JWT | WebUI → アラート一覧（フィルタ・ページング） |
+| GET | `/api/alerts/export.csv` | JWT | アラート一覧 CSV エクスポート |
 | POST | `/api/alerts/sync` | JWT | アラート同期（新規生成＋自動解決） |
 | POST | `/api/alerts/<id>/acknowledge` | JWT | アラート確認済みマーク |
 | POST | `/api/alerts/<id>/resolve` | JWT | アラート解決済みマーク |
+| GET | `/api/pcs/export.csv` | JWT | PC一覧 CSV エクスポート |
+| GET | `/api/pcs/<id>/software` | JWT | PC詳細 → インストール済みソフトウェア一覧 |
+| GET | `/api/pcs/<id>/updates` | JWT | PC詳細 → Windows Update 一覧 |
+| GET | `/api/tasks/export.csv` | JWT | タスク一覧 CSV エクスポート |
+| GET | `/api/logs` | JWT | 操作ログ（監査ログ）一覧 |
 
 ---
 

@@ -137,6 +137,29 @@ function searchPCs() {
     searchTimer = setTimeout(() => loadPCs(1), 300);
 }
 
+async function exportPCsCSV() {
+    const search = document.getElementById('search-input')?.value.trim() || '';
+    const status = document.getElementById('status-filter')?.value || '';
+    const os = document.getElementById('os-filter')?.value.trim() || '';
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (status) params.set('status', status);
+    if (os) params.set('os', os);
+    try {
+        const res = await apiFetchRaw('/pcs/export.csv?' + params.toString());
+        if (!res.ok) { showError('エクスポートに失敗しました'); return; }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pcs.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        showError('エクスポートに失敗しました');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadPCs(1);
     setInterval(() => loadPCs(currentPage), 30000);

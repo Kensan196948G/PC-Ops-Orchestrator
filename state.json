@@ -5,7 +5,7 @@
     "release_deadline": "2026-10-28"
   },
   "phase": {
-    "current": "build",
+    "current": "verify",
     "week": 1
   },
   "kpi": {
@@ -16,26 +16,35 @@
   },
   "execution": {
     "max_duration_minutes": 300,
-    "loop_count": 2,
-    "max_loops": 3,
+    "loop_count": 3,
+    "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2
   },
   "status": {
-    "current_phase": "improvement",
-    "stable": true
+    "current_phase": "verify",
+    "stable": false,
+    "pending_prs": [38, 44],
+    "merged_prs": [36, 40, 43]
   },
   "priority": {
     "score": 0
   },
+  "open_issues": {
+    "42": "CSV エクスポート機能 - PR #44 で実装、CI 待ち",
+    "37": "PC詳細ページ ソフトウェア一覧 - PR #38 で実装、CI 待ちマージ待ち"
+  },
   "learning": {
     "failure_patterns": [
       "PyJWT 2.x requires 'sub' claim to be string, not int",
-      "New SQLAlchemy objects need flush() before accessing auto-generated id"
+      "New SQLAlchemy objects need flush() before accessing auto-generated id",
+      "ruff check must target Python files only - passing JS files causes invalid-syntax error"
     ],
     "success_patterns": [
       "Flask Application Factory + Blueprint pattern works well for modular API",
-      "JWT + API Key dual auth pattern successfully separates Agent and WebUI access"
+      "JWT + API Key dual auth pattern successfully separates Agent and WebUI access",
+      "apiFetchRaw() + Blob + URL.createObjectURL() pattern for authenticated CSV download",
+      "BOM (\\ufeff) prefix in CSV ensures Excel correctly renders Japanese characters"
     ]
   }
 }
