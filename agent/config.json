@@ -1,0 +1,11 @@
+{
+    "server_url": "https://localhost:5000",
+    "api_key": "default-agent-key",
+    "pc_name": "",
+    "collection_interval_minutes": 5,
+    "log_level": "INFO",
+    "proxy": "",
+    "ssl_verify": true,
+    "retry_count": 3,
+    "retry_delay_seconds": 10
+}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">Dashboard</h2>
+    <p class="page-description" id="last-update">---</p>
+    <button class="btn btn-secondary" onclick="refreshDashboard()">&#x21bb; 更新</button>
+</div>
+
+<div class="stats-grid" id="stats-grid">
+    <div class="stat-card stat-total" onclick="location.href='/pcs'">
+        <div class="stat-value" id="stat-total">-</div>
+        <div class="stat-label">総PC数</div>
+    </div>
+    <div class="stat-card stat-healthy">
+        <div class="stat-value" id="stat-healthy">-</div>
+        <div class="stat-label">正常</div>
+    </div>
+    <div class="stat-card stat-warning">
+        <div class="stat-value" id="stat-warning">-</div>
+        <div class="stat-label">要注意</div>
+    </div>
+    <div class="stat-card stat-critical">
+        <div class="stat-value" id="stat-critical">-</div>
+        <div class="stat-label">要注意</div>
+    </div>
+    <div class="stat-card stat-online">
+        <div class="stat-value" id="stat-online">-</div>
+        <div class="stat-label">オンライン</div>
+    </div>
+    <div class="stat-card stat-task">
+        <div class="stat-value" id="stat-pending-tasks">-</div>
+        <div class="stat-label">未処理タスク</div>
+    </div>
+    <div class="stat-card stat-disk">
+        <div class="stat-value" id="stat-low-disk">-</div>
+        <div class="stat-label">ディスク容量不足</div>
+    </div>
+    <div class="stat-card stat-memory">
+        <div class="stat-value" id="stat-high-mem">-</div>
+        <div class="stat-label">メモリ高使用率</div>
+    </div>
+</div>
+
+<div class="charts-grid">
+    <div class="card">
+        <h3 class="card-title">健全性分布</h3>
+        <div class="chart-container">
+            <canvas id="healthChart"></canvas>
+        </div>
+    </div>
+    <div class="card">
+        <h3 class="card-title">OS バージョン内訳</h3>
+        <div class="chart-container">
+            <canvas id="osChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3 class="card-title">最近の操作ログ</h3>
+    <table class="table" id="recent-ops-table">
+        <thead>
+            <tr>
+                <th>日時</th>
+                <th>操作</th>
+                <th>対象</th>
+                <th>実行者</th>
+            </tr>
+        </thead>
+        <tbody id="recent-ops-body">
+            <tr><td colspan="4" class="text-center">読み込み中...</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

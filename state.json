@@ -1,0 +1,41 @@
+{
+  "project": {
+    "name": "PC-Ops-Orchestrator",
+    "start_date": "2026-04-28",
+    "release_deadline": "2026-10-28"
+  },
+  "phase": {
+    "current": "build",
+    "week": 1
+  },
+  "kpi": {
+    "ci_success_rate": 1.0,
+    "test_pass_rate": 1.0,
+    "review_blocker_count": 0,
+    "security_issue_count": 0
+  },
+  "execution": {
+    "max_duration_minutes": 300,
+    "loop_count": 2,
+    "max_loops": 3,
+    "ci_retry_limit": 5,
+    "same_error_limit": 2
+  },
+  "status": {
+    "current_phase": "improvement",
+    "stable": true
+  },
+  "priority": {
+    "score": 0
+  },
+  "learning": {
+    "failure_patterns": [
+      "PyJWT 2.x requires 'sub' claim to be string, not int",
+      "New SQLAlchemy objects need flush() before accessing auto-generated id"
+    ],
+    "success_patterns": [
+      "Flask Application Factory + Blueprint pattern works well for modular API",
+      "JWT + API Key dual auth pattern successfully separates Agent and WebUI access"
+    ]
+  }
+}

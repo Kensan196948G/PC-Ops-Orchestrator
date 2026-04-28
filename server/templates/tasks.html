@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}タスク管理{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">タスク管理</h2>
+    <button class="btn btn-primary" onclick="showCreateForm()">+ 新規タスク</button>
+</div>
+
+<div class="card" id="create-task-card" style="display:none;">
+    <h3 class="card-title">新規タスク作成</h3>
+    <div class="task-form">
+        <select id="new-task-type" class="form-input">
+            <option value="cleanup">クリーンアップ</option>
+            <option value="update">更新実行</option>
+            <option value="diagnose">診断実行</option>
+            <option value="custom">カスタム</option>
+        </select>
+        <input type="text" id="new-task-pc" class="form-input" placeholder="PC名 (空欄=全PC対象)">
+        <input type="text" id="new-task-command" class="form-input" placeholder="PowerShell コマンド (カスタム時)" style="display:none;">
+        <div class="task-form-actions">
+            <button class="btn btn-primary" onclick="createTask()">作成</button>
+            <button class="btn btn-secondary" onclick="hideCreateForm()">キャンセル</button>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="page-actions">
+        <select id="task-status-filter" class="form-input" onchange="loadTasks()">
+            <option value="">すべての状態</option>
+            <option value="pending">未処理</option>
+            <option value="running">実行中</option>
+            <option value="completed">完了</option>
+            <option value="failed">失敗</option>
+            <option value="cancelled">キャンセル</option>
+        </select>
+        <select id="task-type-filter" class="form-input" onchange="loadTasks()">
+            <option value="">すべての種類</option>
+            <option value="cleanup">クリーンアップ</option>
+            <option value="update">更新実行</option>
+            <option value="diagnose">診断実行</option>
+            <option value="custom">カスタム</option>
+        </select>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>種類</th>
+                <th>PC</th>
+                <th>状態</th>
+                <th>優先度</th>
+                <th>作成者</th>
+                <th>作成日時</th>
+                <th>完了日時</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="tasks-body">
+            <tr><td colspan="9" class="text-center">読み込み中...</td></tr>
+        </tbody>
+    </table>
+    <div class="pagination" id="task-pagination"></div>
+</div>
+
+<div class="card">
+    <h3 class="card-title">タスク詳細</h3>
+    <pre id="task-detail" class="task-detail">タスクを選択してください</pre>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/tasks.js"></script>
+{% endblock %}

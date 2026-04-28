@@ -3,3 +3,11 @@ reports/*
 .env
 *.log
 *.tmp
+*.db
+__pycache__/
+*.pyc
+server/flask_out.log
+server/out.log
+server/err.log
+server/.test_token
+agent/logs/
