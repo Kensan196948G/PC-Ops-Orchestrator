@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}アラート管理{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">アラート管理</h2>
+    <div class="page-actions">
+        <select id="severity-filter" class="form-input" onchange="loadAlerts(1)">
+            <option value="">すべての重大度</option>
+            <option value="critical">危険</option>
+            <option value="high">高</option>
+            <option value="medium">中</option>
+            <option value="low">低</option>
+        </select>
+        <select id="resolved-filter" class="form-input" onchange="loadAlerts(1)">
+            <option value="false">未解決</option>
+            <option value="true">解決済み</option>
+        </select>
+        <button class="btn btn-secondary" onclick="syncAlerts()">&#8635; 同期</button>
+    </div>
+</div>
+
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>重大度</th>
+                <th>種類</th>
+                <th>メッセージ</th>
+                <th>発生日時</th>
+                <th>状態</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="alerts-body">
+            <tr><td colspan="7" class="text-center">読み込み中...</td></tr>
+        </tbody>
+    </table>
+    <div class="pagination" id="alerts-pagination"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/alerts.js"></script>
+{% endblock %}

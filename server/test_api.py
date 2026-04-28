@@ -181,6 +181,7 @@ def test_webui_pages(token):
         ("/", "Dashboard"),
         ("/pcs", "PC List"),
         ("/tasks", "Task Management"),
+        ("/alerts", "Alert Management"),
     ]
     for path, name in pages:
         headers = {"Authorization": f"Bearer {token}"}

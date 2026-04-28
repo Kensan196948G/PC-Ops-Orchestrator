@@ -85,4 +85,7 @@ function searchPCs() {
     searchTimer = setTimeout(() => loadPCs(1), 300);
 }
 
-document.addEventListener('DOMContentLoaded', () => loadPCs(1));
+document.addEventListener('DOMContentLoaded', () => {
+    loadPCs(1);
+    setInterval(() => loadPCs(currentPage), 30000);
+});

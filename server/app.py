@@ -49,6 +49,11 @@ def create_app(config_name=None):
     def task_list():
         return render_template("tasks.html")
 
+    @app.route("/alerts")
+    @login_required
+    def alerts_page():
+        return render_template("alerts.html")
+
     @app.route("/login")
     def login_page():
         return render_template("login.html")
