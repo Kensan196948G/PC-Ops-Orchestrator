@@ -4,11 +4,14 @@ on:
   push:
     branches:
       - master
+      - main
       - release/**
       - feature/**
+      - fix/**
   pull_request:
     branches:
       - master
+      - main
       - release/**
 
 jobs:
@@ -387,6 +390,40 @@ jobs:
             logs/hooks/queue/done/*.json
           retention-days: 14
 
+  test-flask-api:
+    name: Test (Flask API - Python 3.12)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: server/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r server/requirements.txt pytest
+
+      - name: Run Flask API tests
+        working-directory: server
+        env:
+          FLASK_ENV: testing
+        run: |
+          python -m pytest test_api.py -v --tb=short
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flask-api-test-results
+          path: server/test_api.py
+          retention-days: 14
+
   agent-teams-load:
     name: Agent Teams Load (${{ matrix.ps }})
     runs-on: windows-latest
@@ -446,6 +483,7 @@ jobs:
       - pester-aggregated
       - agent-teams-e2e
       - agent-teams-load
+      - test-flask-api
     if: failure()
     permissions:
       contents: write

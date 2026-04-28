@@ -59,7 +59,7 @@ def login_required(f):
         if not payload:
             return jsonify({'error': 'トークンが無効または期限切れです'}), 401
 
-        user = User.query.get(int(payload['sub']))
+        user = db.session.get(User, int(payload['sub']))
         if not user or not user.is_active:
             return jsonify({'error': 'ユーザーが見つからないか無効です'}), 401
 

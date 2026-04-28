@@ -41,7 +41,6 @@ def test_login():
     data = json.loads(r.data)
     assert 'token' in data
     print(f'  [PASS] Login: token={data["token"][:20]}...')
-    return data['token']
 
 
 def test_dashboard_stats(token):
@@ -102,7 +101,6 @@ def test_create_task(token):
     data = json.loads(r.data)
     assert data['task']['status'] == 'pending'
     print(f'  [PASS] Create task: id={data["task"]["id"]}, type={data["task"]["task_type"]}')
-    return data['task']['id']
 
 
 def test_task_list(token):
@@ -153,12 +151,16 @@ def run_all():
     setup_module()
     print('[Setup] Database initialized')
 
-    token = test_login()
+    r = request('POST', '/api/auth/login', data={'username': 'admin', 'password': 'admin'})
+    assert r.status_code == 200
+    token = json.loads(r.data)['token']
+    print(f'  [PASS] Login: token={token[:20]}...')
+
     test_dashboard_stats(token)
     test_agent_collect()
     test_pc_list(token)
     test_pc_detail(token)
-    task_id = test_create_task(token)
+    test_create_task(token)
     test_task_list(token)
     test_agent_submit_result()
     test_health_distribution(token)
