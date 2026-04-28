@@ -37,6 +37,10 @@
                     <span class="nav-icon">&#9786;</span>
                     ユーザー管理
                 </a>
+                <a href="/audit" class="nav-item" data-page="audit" id="nav-audit" style="display:none;">
+                    <span class="nav-icon">&#9998;</span>
+                    操作ログ
+                </a>
                 <div class="nav-divider"></div>
                 <a href="#" class="nav-item" id="logout-btn">
                     <span class="nav-icon">&#9660;</span>
@@ -148,6 +152,8 @@
                 if (info) info.textContent = user.username || '---';
                 const navUsers = document.getElementById('nav-users');
                 if (navUsers && user.role === 'admin') navUsers.style.display = '';
+                const navAudit = document.getElementById('nav-audit');
+                if (navAudit && user.role === 'admin') navAudit.style.display = '';
             } catch (e) {}
 
             if (TOKEN) {

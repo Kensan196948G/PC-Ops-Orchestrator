@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}操作ログ{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">操作ログ（監査ログ）</h2>
+    <div class="page-actions">
+        <input type="text" id="user-filter" class="form-input" placeholder="実行者で絞り込み"
+               oninput="debounceLoad()" style="width:160px;">
+        <input type="text" id="action-filter" class="form-input" placeholder="操作内容で絞り込み"
+               oninput="debounceLoad()" style="width:180px;">
+        <button class="btn btn-secondary" onclick="loadLogs(1)">&#8635; 更新</button>
+    </div>
+</div>
+
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>操作内容</th>
+                <th>対象</th>
+                <th>詳細</th>
+                <th>実行者</th>
+                <th>IPアドレス</th>
+                <th>日時</th>
+            </tr>
+        </thead>
+        <tbody id="audit-body">
+            <tr><td colspan="7" class="text-center">読み込み中...</td></tr>
+        </tbody>
+    </table>
+    <div class="pagination" id="audit-pagination"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/audit.js"></script>
+{% endblock %}
