@@ -25,6 +25,7 @@ def create_app(config_name=None):
     from routes.pcs import pcs_bp
     from routes.dashboard import dashboard_bp
     from routes.alerts import alerts_bp
+    from routes.audit import audit_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(collect_bp)
@@ -32,6 +33,7 @@ def create_app(config_name=None):
     app.register_blueprint(pcs_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(alerts_bp)
+    app.register_blueprint(audit_bp)
 
     @app.route("/")
     def index():
@@ -56,6 +58,10 @@ def create_app(config_name=None):
     @app.route("/users")
     def users_page():
         return render_template("users.html")
+
+    @app.route("/audit")
+    def audit_page():
+        return render_template("audit.html")
 
     @app.route("/login")
     def login_page():
