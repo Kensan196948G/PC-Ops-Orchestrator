@@ -1,0 +1,73 @@
+version: "3.9"
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pc-ops-orchestrator:latest
+    container_name: pc-ops-server
+    restart: unless-stopped
+    environment:
+      FLASK_CONFIG: production
+      SECRET_KEY: ${SECRET_KEY:-change-this-secret-key}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-jwt-secret}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pcops}:${POSTGRES_PASSWORD:-pcops}@db:5432/${POSTGRES_DB:-pcops}
+      AGENT_API_KEYS: ${AGENT_API_KEYS:-default-agent-key}
+    ports:
+      - "${SERVER_PORT:-5000}:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - server_instance:/app/instance
+    networks:
+      - pcops-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  db:
+    image: postgres:16-alpine
+    container_name: pc-ops-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pcops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pcops}
+      POSTGRES_DB: ${POSTGRES_DB:-pcops}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pcops-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pcops}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:alpine
+    container_name: pc-ops-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      server:
+        condition: service_healthy
+    networks:
+      - pcops-net
+
+volumes:
+  postgres_data:
+  server_instance:
+
+networks:
+  pcops-net:
+    driver: bridge
