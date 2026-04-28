@@ -60,6 +60,9 @@ def collect():
             pass
 
     db.session.add(snapshot)
+    db.session.flush()
+
+    _trim_snapshots(pc.id, keep=720)
 
     _determine_pc_status(pc)
     db.session.commit()
@@ -156,6 +159,24 @@ def collect_detail():
     db.session.commit()
 
     return jsonify({"message": "詳細情報を受信しました", "pc_id": pc.id})
+
+
+def _trim_snapshots(pc_id, keep=720):
+    """Delete oldest snapshots beyond the keep limit for a given PC."""
+    total = SystemSnapshot.query.filter_by(pc_id=pc_id).count()
+    if total > keep:
+        cutoff_id = (
+            SystemSnapshot.query.filter_by(pc_id=pc_id)
+            .order_by(SystemSnapshot.collected_at.asc())
+            .offset(total - keep)
+            .with_entities(SystemSnapshot.id)
+            .first()
+        )
+        if cutoff_id:
+            SystemSnapshot.query.filter(
+                SystemSnapshot.pc_id == pc_id,
+                SystemSnapshot.id < cutoff_id[0],
+            ).delete()
 
 
 def _calculate_health_score(pc):

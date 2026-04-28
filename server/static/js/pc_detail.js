@@ -52,21 +52,23 @@ async function loadPCDetail() {
 
 function renderHistoryChart(snapshots) {
     const labels = snapshots.map(s => s.collected_at ? new Date(s.collected_at).toLocaleString('ja-JP') : '');
-    const diskFree = snapshots.map(s => s.disk_free_gb ?? null);
+    const cpuData = snapshots.map(s => s.cpu_usage ?? null);
     const memAvail = snapshots.map(s => s.memory_available_gb ?? null);
+    const diskFree = snapshots.map(s => s.disk_free_gb ?? null);
 
     if (historyChart) historyChart.destroy();
 
     const datasets = [];
-    if (diskFree.some(v => v !== null)) {
+    if (cpuData.some(v => v !== null)) {
         datasets.push({
-            label: 'ディスク空き (GB)',
-            data: diskFree,
-            borderColor: '#2ed573',
-            backgroundColor: 'rgba(46,213,115,0.1)',
+            label: 'CPU使用率 (%)',
+            data: cpuData,
+            borderColor: '#ff6b6b',
+            backgroundColor: 'rgba(255,107,107,0.08)',
             fill: true,
             tension: 0.3,
             pointRadius: 2,
+            yAxisID: 'yPercent',
         });
     }
     if (memAvail.some(v => v !== null)) {
@@ -74,11 +76,23 @@ function renderHistoryChart(snapshots) {
             label: 'メモリ空き (GB)',
             data: memAvail,
             borderColor: '#4f8cff',
-            backgroundColor: 'rgba(79,140,255,0.1)',
+            backgroundColor: 'rgba(79,140,255,0.08)',
             fill: true,
             tension: 0.3,
             pointRadius: 2,
-            yAxisID: 'y1',
+            yAxisID: 'yGB',
+        });
+    }
+    if (diskFree.some(v => v !== null)) {
+        datasets.push({
+            label: 'ディスク空き (GB)',
+            data: diskFree,
+            borderColor: '#2ed573',
+            backgroundColor: 'rgba(46,213,115,0.08)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 2,
+            yAxisID: 'yGB',
         });
     }
 
@@ -102,14 +116,17 @@ function renderHistoryChart(snapshots) {
                     ticks: { color: '#8b8fa3', maxTicksLimit: 10, font: { size: 10 } },
                     grid: { color: '#2d3248' }
                 },
-                y: {
+                yPercent: {
                     beginAtZero: true,
-                    ticks: { color: '#8b8fa3', font: { size: 10 } },
+                    max: 100,
+                    title: { display: true, text: '%', color: '#8b8fa3', font: { size: 10 } },
+                    ticks: { color: '#ff6b6b', font: { size: 10 } },
                     grid: { color: '#2d3248' }
                 },
-                y1: {
+                yGB: {
                     position: 'right',
                     beginAtZero: true,
+                    title: { display: true, text: 'GB', color: '#8b8fa3', font: { size: 10 } },
                     ticks: { color: '#8b8fa3', font: { size: 10 } },
                     grid: { display: false }
                 }
