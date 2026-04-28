@@ -295,6 +295,7 @@ def test_webui_pages(token):
         ("/scheduled-tasks", "Scheduled Tasks"),
         ("/groups", "PC Groups"),
         ("/alert-rules", "Alert Rules"),
+        ("/api/docs/", "API Docs (Swagger UI)"),
     ]
     for path, name in pages:
         headers = {"Authorization": f"Bearer {token}"}

@@ -41,6 +41,16 @@ def create_app(config_name=None):
     app.register_blueprint(groups_bp)
     app.register_blueprint(alert_rules_bp)
 
+    if app.config.get("SWAGGER_ENABLED", config_name != "production"):
+        from flask_swagger_ui import get_swaggerui_blueprint
+
+        swaggerui_bp = get_swaggerui_blueprint(
+            "/api/docs",
+            "/static/openapi.yaml",
+            config={"app_name": "PC-Ops Orchestrator API"},
+        )
+        app.register_blueprint(swaggerui_bp)
+
     @app.route("/")
     def index():
         return render_template("dashboard.html")
