@@ -52,8 +52,8 @@ def get_pc(pc_id):
 
     snapshots = (
         SystemSnapshot.query.filter_by(pc_id=pc_id)
-        .order_by(SystemSnapshot.collected_at.desc())
-        .limit(24)
+        .order_by(SystemSnapshot.collected_at.asc())
+        .limit(48)
         .all()
     )
 

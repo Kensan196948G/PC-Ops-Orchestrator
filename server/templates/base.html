@@ -33,6 +33,10 @@
                     アラート
                     <span id="alerts-badge" class="nav-badge" style="display:none;">0</span>
                 </a>
+                <a href="/users" class="nav-item" data-page="users" id="nav-users" style="display:none;">
+                    <span class="nav-icon">&#9786;</span>
+                    ユーザー管理
+                </a>
                 <div class="nav-divider"></div>
                 <a href="#" class="nav-item" id="logout-btn">
                     <span class="nav-icon">&#9660;</span>
@@ -142,6 +146,8 @@
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 const info = document.getElementById('user-info');
                 if (info) info.textContent = user.username || '---';
+                const navUsers = document.getElementById('nav-users');
+                if (navUsers && user.role === 'admin') navUsers.style.display = '';
             } catch (e) {}
 
             if (TOKEN) {
