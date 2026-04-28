@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify
 from extensions import db
 from models import PC, Alert
 from auth import login_required
+from notify import notify_alert
 
 alerts_bp = Blueprint("alerts", __name__, url_prefix="/api/alerts")
 
@@ -113,7 +114,10 @@ def sync_alerts():
         for candidate in candidates:
             active_keys.add(candidate["source_key"])
             if candidate["source_key"] not in existing_keys:
-                db.session.add(Alert(**candidate))
+                new_alert = Alert(**candidate)
+                db.session.add(new_alert)
+                db.session.flush()  # populate id before notify
+                notify_alert(new_alert)
                 created += 1
 
     stale = Alert.query.filter(
