@@ -217,6 +217,47 @@ def test_os_breakdown(token):
     print(f"  [PASS] OS breakdown: {json.dumps(data)}")
 
 
+def test_create_task_invalid_type(token):
+    r = request(
+        "POST",
+        "/api/tasks",
+        token=token,
+        data={"task_type": "evil_type", "priority": 1},
+    )
+    assert r.status_code == 400, f"Expected 400, got {r.status_code}"
+    data = json.loads(r.data)
+    assert "error" in data
+    print(f"  [PASS] Create task with invalid type rejected: {data['error'][:60]}")
+
+
+def test_create_task_command_too_long(token):
+    r = request(
+        "POST",
+        "/api/tasks",
+        token=token,
+        data={"task_type": "custom", "command": "x" * 513},
+    )
+    assert r.status_code == 400, f"Expected 400, got {r.status_code}"
+    data = json.loads(r.data)
+    assert "error" in data
+    print(f"  [PASS] Create task with long command rejected: {data['error'][:60]}")
+
+
+def test_create_task_command_not_string(token):
+    r = request(
+        "POST",
+        "/api/tasks",
+        token=token,
+        data={"task_type": "custom", "command": 12345},
+    )
+    assert r.status_code == 400, f"Expected 400, got {r.status_code}"
+    data = json.loads(r.data)
+    assert "error" in data
+    print(
+        f"  [PASS] Create task with non-string command rejected: {data['error'][:60]}"
+    )
+
+
 def run_all():
     print("=== PC-Ops Orchestrator API Tests ===\n")
     setup_module()
@@ -239,6 +280,9 @@ def run_all():
     test_agent_submit_result()
     test_health_distribution(token)
     test_os_breakdown(token)
+    test_create_task_invalid_type(token)
+    test_create_task_command_too_long(token)
+    test_create_task_command_not_string(token)
     test_alerts_sync(token)
     test_alerts_list(token)
     test_alerts_acknowledge_and_resolve(token)
