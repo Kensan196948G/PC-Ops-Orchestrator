@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from extensions import db
-from models import PC, SystemSnapshot, Software, Task
+from models import PC, SystemSnapshot, Software, Task, WindowsUpdate
 from auth import login_required, admin_required, log_operation
 
 pcs_bp = Blueprint("pcs", __name__, url_prefix="/api/pcs")
@@ -85,6 +85,26 @@ def get_pc_software(pc_id):
             "pc_name": pc.pc_name,
             "software": [s.to_dict() for s in software],
             "total": len(software),
+        }
+    )
+
+
+@pcs_bp.route("/<int:pc_id>/updates", methods=["GET"])
+@login_required
+def get_pc_updates(pc_id):
+    pc = db.session.get(PC, pc_id)
+    if not pc:
+        return jsonify({"error": f"PC {pc_id} が見つかりません"}), 404
+    updates = (
+        WindowsUpdate.query.filter_by(pc_id=pc_id)
+        .order_by(WindowsUpdate.installed_at.desc().nullslast())
+        .all()
+    )
+    return jsonify(
+        {
+            "pc_name": pc.pc_name,
+            "updates": [u.to_dict() for u in updates],
+            "total": len(updates),
         }
     )
 
