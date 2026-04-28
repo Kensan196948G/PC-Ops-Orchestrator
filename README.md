@@ -196,6 +196,26 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | WebUI → API | JWT（ログイン後取得） | admin / admin |
 | 管理者 | JWT（admin role） | seed.py で作成 |
 
+### CORS 設定
+
+`CORS_ORIGINS` 環境変数でフロントエンドのオリジンを許可（デフォルト: `http://localhost`）。
+
+```bash
+export CORS_ORIGINS="https://admin.example.com,https://staging.example.com"
+```
+
+### タスク作成バリデーション
+
+`POST /api/tasks` の `task_type` は以下の値のみ受け付けます。
+
+| 値 | 内容 |
+|---|---|
+| `cleanup` | 一時ファイル削除 |
+| `update` | Windows Update / ドライバー更新 |
+| `diagnose` | SFC / DISM 診断 |
+| `collect` | 情報再収集 |
+| `custom` | カスタムコマンド（`command` フィールド必須、512文字以内） |
+
 ---
 
 ## 🚀 スタンドアロン：PC Optimizer 使い方（3ステップ）
@@ -352,7 +372,7 @@ sequenceDiagram
 │   ├── templates/                Jinja2テンプレート（dashboard/pc_list/tasks/alerts）
 │   ├── static/                   CSS + JS（alerts.js など）
 │   ├── requirements.txt          Python依存関係
-│   └── test_api.py               統合テスト（15項目）
+│   └── test_api.py               統合テスト（18項目）
 │
 ├── 📡 agent/                     ← Agent（PowerShell）
 │   ├── PCOpsAgent.ps1            情報収集＋タスク実行
@@ -373,7 +393,7 @@ sequenceDiagram
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| API 統合テスト（Python） | 15項目 | ✅ PASS |
+| API 統合テスト（Python） | 18項目 | ✅ PASS |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
 | Agent Teams E2E テスト | 複数 | ✅ PASS |
