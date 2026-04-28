@@ -15,7 +15,7 @@
   "project": {
     "registered_at": "2026-04-28",
     "release_deadline": "2026-10-28",
-    "phase": "Development",
+    "phase": "Improve",
     "month": 1
   },
   "execution": {
@@ -27,7 +27,7 @@
     "self_evolution": true
   },
   "completed_issues": [2, 3, 4, 5, 7, 8, 9, 10, 11, 12],
-  "merged_prs": [1, 6, 15, 17, 20],
+  "merged_prs": [1, 6, 15, 17, 20, 21],
   "open_prs": [],
   "open_issues": [],
   "features_implemented": [
@@ -39,11 +39,16 @@
     "アラート API (/api/alerts + sync/acknowledge/resolve)",
     "Docker Compose 対応 (nginx + Flask + PostgreSQL)",
     "ruff lint CI ジョブ",
-    "Flask API pytest CI ジョブ (15テスト)",
+    "Flask API pytest CI ジョブ (18テスト)",
     "/health エンドポイント",
     "セキュリティ修正: デフォルトシークレット検証・hmac.compare_digest・XSS(pc_list.js)修正",
-    "品質修正: N+1クエリ解消・per_page上限・status バリデーション"
+    "品質修正: N+1クエリ解消・per_page上限・status バリデーション",
+    "task_type allowlist バリデーション (frozenset O(1))",
+    "command 長さ・型バリデーション (512文字制限)",
+    "flask-cors CORS サポート (CORS_ORIGINS 環境変数)",
+    "ProxyFix middleware (nginx リバースプロキシ対応)",
+    "README: CORS設定・task_typeバリデーション仕様追記"
   ],
-  "last_updated": "2026-04-28T10:30:00Z",
-  "session_notes": "PR #20 merged: flask-cors CORS + ProxyFix middleware. All Issues closed. Open: none. Next: Improve phase - README update, test coverage for new features (allowlist validation, CORS)."
+  "last_updated": "2026-04-28T11:30:00Z",
+  "session_notes": "PR #21 merged: 18 tests (3 new validation tests) + README update. All KPIs met. Phase=Improve. Next session: Month2 features - e.g., pagination improvement, user management, alert notification (email/Slack), PC search/filter enhancements."
 }
