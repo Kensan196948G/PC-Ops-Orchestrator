@@ -20,12 +20,14 @@ def create_app(config_name=None):
     from routes.tasks import tasks_bp
     from routes.pcs import pcs_bp
     from routes.dashboard import dashboard_bp
+    from routes.alerts import alerts_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(collect_bp)
     app.register_blueprint(tasks_bp)
     app.register_blueprint(pcs_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(alerts_bp)
 
     @app.route("/")
     @login_required

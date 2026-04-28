@@ -250,6 +250,48 @@ class OperationLog(db.Model):
         }
 
 
+class Alert(db.Model):
+    __tablename__ = "alerts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    pc_id = db.Column(db.Integer, db.ForeignKey("pcs.id"), nullable=True, index=True)
+    alert_type = db.Column(db.String(64), nullable=False, index=True)
+    severity = db.Column(db.String(16), nullable=False, index=True)
+    message = db.Column(db.Text, nullable=False)
+    source_key = db.Column(db.String(128), nullable=False, index=True)
+
+    acknowledged = db.Column(db.Boolean, default=False, index=True)
+    acknowledged_by = db.Column(db.String(255))
+    acknowledged_at = db.Column(db.DateTime)
+
+    resolved = db.Column(db.Boolean, default=False, index=True)
+    resolved_at = db.Column(db.DateTime)
+
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        db.UniqueConstraint("source_key", "resolved", name="uq_alert_source_active"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "pc_id": self.pc_id,
+            "alert_type": self.alert_type,
+            "severity": self.severity,
+            "message": self.message,
+            "source_key": self.source_key,
+            "acknowledged": self.acknowledged,
+            "acknowledged_by": self.acknowledged_by,
+            "acknowledged_at": self.acknowledged_at.isoformat()
+            if self.acknowledged_at
+            else None,
+            "resolved": self.resolved,
+            "resolved_at": self.resolved_at.isoformat() if self.resolved_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class User(db.Model):
     __tablename__ = "users"
 

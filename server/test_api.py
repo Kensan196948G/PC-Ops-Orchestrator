@@ -126,6 +126,56 @@ def test_agent_submit_result():
     print(f"  [PASS] Submit result: {data['message']}")
 
 
+def test_alerts_sync(token):
+    r = request("POST", "/api/alerts/sync", token=token)
+    assert r.status_code == 200, f"Alerts sync failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert "created" in data
+    assert "resolved" in data
+    print(
+        f"  [PASS] Alerts sync: created={data['created']}, resolved={data['resolved']}"
+    )
+
+
+def test_alerts_list(token):
+    r = request("GET", "/api/alerts", token=token)
+    assert r.status_code == 200, f"Alerts list failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert "alerts" in data
+    assert "total" in data
+    assert "unresolved_count" in data
+    print(
+        f"  [PASS] Alerts list: total={data['total']}, unresolved={data['unresolved_count']}"
+    )
+
+
+def test_alerts_acknowledge_and_resolve(token):
+    sync = request("POST", "/api/alerts/sync", token=token)
+    assert sync.status_code == 200
+
+    r = request("GET", "/api/alerts", token=token)
+    assert r.status_code == 200
+    alerts = json.loads(r.data)["alerts"]
+
+    if not alerts:
+        print("  [SKIP] No active alerts to acknowledge/resolve")
+        return
+
+    alert_id = alerts[0]["id"]
+
+    ack = request("POST", f"/api/alerts/{alert_id}/acknowledge", token=token)
+    assert ack.status_code == 200, f"Acknowledge failed: {ack.status_code} {ack.data}"
+    ack_data = json.loads(ack.data)
+    assert ack_data["alert"]["acknowledged"] is True
+    print(f"  [PASS] Alert acknowledge: id={alert_id}")
+
+    resolve = request("POST", f"/api/alerts/{alert_id}/resolve", token=token)
+    assert resolve.status_code == 200, (
+        f"Resolve failed: {resolve.status_code} {resolve.data}"
+    )
+    print(f"  [PASS] Alert resolve: id={alert_id}")
+
+
 def test_webui_pages(token):
     pages = [
         ("/", "Dashboard"),
@@ -174,6 +224,9 @@ def run_all():
     test_agent_submit_result()
     test_health_distribution(token)
     test_os_breakdown(token)
+    test_alerts_sync(token)
+    test_alerts_list(token)
+    test_alerts_acknowledge_and_resolve(token)
     test_webui_pages(token)
 
     print("\n=== All tests PASSED ===")
