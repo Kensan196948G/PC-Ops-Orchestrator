@@ -1,7 +1,8 @@
 import os
 from flask import Flask, render_template, jsonify
+from werkzeug.middleware.proxy_fix import ProxyFix
 from config import config
-from extensions import db, migrate, limiter
+from extensions import db, migrate, limiter, cors
 from auth import login_required
 
 
@@ -12,9 +13,12 @@ def create_app(config_name=None):
     app = Flask(__name__, template_folder="templates", static_folder="static")
     app.config.from_object(config[config_name])
 
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
     db.init_app(app)
     migrate.init_app(app, db)
     limiter.init_app(app)
+    cors.init_app(app, origins=app.config.get("CORS_ORIGINS", ["http://localhost"]))
 
     from routes.auth_routes import auth_bp
     from routes.collect import collect_bp

@@ -29,6 +29,10 @@ class Config:
 
     AGENT_API_KEYS = os.environ.get("AGENT_API_KEYS", "default-agent-key").split(",")
 
+    CORS_ORIGINS: list[str] = os.environ.get("CORS_ORIGINS", "http://localhost").split(
+        ","
+    )
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
