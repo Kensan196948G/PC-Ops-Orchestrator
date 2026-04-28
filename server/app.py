@@ -5,7 +5,6 @@ from config import config
 from extensions import db, migrate, limiter, cors
 
 
-
 def create_app(config_name=None):
     if config_name is None:
         config_name = os.environ.get("FLASK_CONFIG", "default")
