@@ -51,13 +51,15 @@ async function loadPCs(page) {
     currentPage = page || currentPage;
     const search = document.getElementById('search-input').value.trim();
     const status = document.getElementById('status-filter').value;
+    const os = document.getElementById('os-filter').value;
     const tbody = document.getElementById('pc-table-body');
-    tbody.replaceChildren(makeMessageRow('読み込み中...', 9, null));
+    tbody.replaceChildren(makeMessageRow('読み込み中...', 10, null));
 
     try {
         const params = new URLSearchParams();
         if (search) params.set('search', search);
         if (status) params.set('status', status);
+        if (os) params.set('os', os);
         params.set('page', currentPage);
         params.set('per_page', '30');
 
@@ -82,6 +84,7 @@ async function loadPCs(page) {
                 nameTd.appendChild(strong);
 
                 tr.appendChild(nameTd);
+                tr.appendChild(td(pc.ip_address || '-'));
                 tr.appendChild(td(pc.os_version || '-'));
                 tr.appendChild(td(truncate(pc.cpu_name, 30) || '-'));
                 tr.appendChild(td(formatGB(pc.memory_total_gb)));
@@ -107,12 +110,12 @@ async function loadPCs(page) {
                 tbody.appendChild(tr);
             });
         } else {
-            tbody.replaceChildren(makeMessageRow('PCが登録されていません', 9, null));
+            tbody.replaceChildren(makeMessageRow('PCが登録されていません', 10, null));
         }
 
         renderPagination(data.total, data.page, data.pages);
     } catch (e) {
-        tbody.replaceChildren(makeMessageRow('読み込みに失敗しました', 9, 'color:var(--danger);'));
+        tbody.replaceChildren(makeMessageRow('読み込みに失敗しました', 10, 'color:var(--danger);'));
     }
 }
 
