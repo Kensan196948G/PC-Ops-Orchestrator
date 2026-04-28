@@ -91,6 +91,54 @@ def test_pc_list(token):
     print(f"  [PASS] PC list: {data['total']} PCs, first={data['pcs'][0]['pc_name']}")
 
 
+def test_pc_search_by_name(token):
+    r = request("GET", "/api/pcs?search=PC-TEST", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert data["total"] >= 1
+    assert all(
+        "PC-TEST" in pc["pc_name"].upper() or (pc.get("ip_address") or "")
+        for pc in data["pcs"]
+    )
+    print(f"  [PASS] PC search by name: {data['total']} results")
+
+
+def test_pc_search_by_ip(token):
+    r = request("GET", "/api/pcs?search=192.168", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert data["total"] >= 1
+    assert all(
+        "192.168" in (pc.get("ip_address") or "") or "192.168" in pc["pc_name"]
+        for pc in data["pcs"]
+    )
+    print(f"  [PASS] PC search by IP: {data['total']} results")
+
+
+def test_pc_search_no_match(token):
+    r = request("GET", "/api/pcs?search=ZZZNOMATCH999", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert data["total"] == 0
+    print(f"  [PASS] PC search no match: total={data['total']}")
+
+
+def test_pc_filter_by_status(token):
+    r = request("GET", "/api/pcs?status=healthy", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert all(pc["status"] == "healthy" for pc in data["pcs"])
+    print(f"  [PASS] PC filter by status=healthy: {data['total']} results")
+
+
+def test_pc_filter_by_os(token):
+    r = request("GET", "/api/pcs?os=Windows", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert all("windows" in (pc.get("os_version") or "").lower() for pc in data["pcs"])
+    print(f"  [PASS] PC filter by os=Windows: {data['total']} results")
+
+
 def test_pc_detail(token):
     r = request("GET", "/api/pcs/1", token=token)
     assert r.status_code == 200
@@ -273,6 +321,11 @@ def run_all():
     test_dashboard_stats(token)
     test_agent_collect()
     test_pc_list(token)
+    test_pc_search_by_name(token)
+    test_pc_search_by_ip(token)
+    test_pc_search_no_match(token)
+    test_pc_filter_by_status(token)
+    test_pc_filter_by_os(token)
     test_pc_detail(token)
     test_create_task(token)
     test_task_list(token)

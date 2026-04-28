@@ -14,12 +14,21 @@ def list_pcs():
     page = request.args.get("page", 1, type=int)
     per_page = min(request.args.get("per_page", 50, type=int), 200)
 
+    os_filter = request.args.get("os", "").strip()
+
     query = PC.query
 
     if status_filter:
         query = query.filter(PC.status == status_filter)
     if search:
-        query = query.filter(PC.pc_name.ilike(f"%{search}%"))
+        query = query.filter(
+            db.or_(
+                PC.pc_name.ilike(f"%{search}%"),
+                PC.ip_address.ilike(f"%{search}%"),
+            )
+        )
+    if os_filter:
+        query = query.filter(PC.os_version.ilike(f"%{os_filter}%"))
 
     query = query.order_by(PC.last_seen.desc().nullslast())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
