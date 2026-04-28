@@ -9,27 +9,27 @@
     "lint_errors_target": 0,
     "lint_errors_current": 0,
     "open_issues_target": 0,
-    "open_issues_current": 0,
+    "open_issues_current": 1,
     "ci_success": true
   },
   "project": {
     "registered_at": "2026-04-28",
     "release_deadline": "2026-10-28",
-    "phase": "Improve",
-    "month": 1
+    "phase": "Verify",
+    "month": 2
   },
   "execution": {
     "max_duration_minutes": 300,
-    "session_started_at": "2026-04-28T09:00:00Z"
+    "session_started_at": "2026-04-28T11:00:00Z"
   },
   "automation": {
     "auto_issue_generation": true,
     "self_evolution": true
   },
-  "completed_issues": [2, 3, 4, 5, 7, 8, 9, 10, 11, 12],
-  "merged_prs": [1, 6, 15, 17, 20, 21],
-  "open_prs": [],
-  "open_issues": [],
+  "completed_issues": [2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 25, 26, 31, 32],
+  "merged_prs": [1, 6, 15, 17, 20, 21, 28, 29],
+  "open_prs": [30, 33, 34],
+  "open_issues": [27],
   "features_implemented": [
     "Flask管理サーバー (app.py, models.py, routes/)",
     "JWT + API Key 認証",
@@ -39,7 +39,7 @@
     "アラート API (/api/alerts + sync/acknowledge/resolve)",
     "Docker Compose 対応 (nginx + Flask + PostgreSQL)",
     "ruff lint CI ジョブ",
-    "Flask API pytest CI ジョブ (18テスト)",
+    "Flask API pytest CI ジョブ (20テスト)",
     "/health エンドポイント",
     "セキュリティ修正: デフォルトシークレット検証・hmac.compare_digest・XSS(pc_list.js)修正",
     "品質修正: N+1クエリ解消・per_page上限・status バリデーション",
@@ -47,8 +47,16 @@
     "command 長さ・型バリデーション (512文字制限)",
     "flask-cors CORS サポート (CORS_ORIGINS 環境変数)",
     "ProxyFix middleware (nginx リバースプロキシ対応)",
-    "README: CORS設定・task_typeバリデーション仕様追記"
+    "アラート通知 notify.py (best-effort, flush前通知)",
+    "PC名・IPアドレス複合検索 + OS フィルタ (ilike + db.or_)",
+    "IPアドレス列をPC一覧テーブルに追加",
+    "ユーザー管理 API (GET/POST/PATCH/DELETE /api/auth/users, admin_required)",
+    "ユーザー管理 WebUI (users.html + users.js + modal スタイル)",
+    "admin 専用ナビリンク (localStorage role チェック)",
+    "PC ヘルス履歴グラフ強化 (CPU使用率追加・デュアルY軸・ASC順修正)",
+    "スナップショットローリング削除 (_trim_snapshots, keep=720件)",
+    "タスク詳細モーダル (DOM API実装・ESCクローズ・XSS対策)"
   ],
-  "last_updated": "2026-04-28T11:30:00Z",
-  "session_notes": "PR #21 merged: 18 tests (3 new validation tests) + README update. All KPIs met. Phase=Improve. Next session: Month2 features - e.g., pagination improvement, user management, alert notification (email/Slack), PC search/filter enhancements."
+  "last_updated": "2026-04-28T12:00:00Z",
+  "session_notes": "PR #33 (pc-history Issue #31) created. PR #34 (task-detail-modal Issue #32) created. PR #30 (user-management Issue #27) open, CI passing. Next: merge PRs after CI green, then plan remaining Month 2 features."
 }
