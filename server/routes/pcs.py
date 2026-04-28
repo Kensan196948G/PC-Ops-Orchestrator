@@ -36,7 +36,9 @@ def list_pcs():
 @pcs_bp.route('/<int:pc_id>', methods=['GET'])
 @login_required
 def get_pc(pc_id):
-    pc = PC.query.get_or_404(pc_id)
+    pc = db.session.get(PC, pc_id)
+    if not pc:
+        return jsonify({'error': f'PC {pc_id} が見つかりません'}), 404
 
     snapshots = SystemSnapshot.query.filter_by(pc_id=pc_id)\
         .order_by(SystemSnapshot.collected_at.desc()).limit(24).all()
@@ -55,7 +57,9 @@ def get_pc(pc_id):
 @pcs_bp.route('/<int:pc_id>/software', methods=['GET'])
 @login_required
 def get_pc_software(pc_id):
-    pc = PC.query.get_or_404(pc_id)
+    pc = db.session.get(PC, pc_id)
+    if not pc:
+        return jsonify({'error': f'PC {pc_id} が見つかりません'}), 404
     software = Software.query.filter_by(pc_id=pc_id)\
         .order_by(Software.name).all()
     return jsonify({
@@ -68,7 +72,9 @@ def get_pc_software(pc_id):
 @pcs_bp.route('/<int:pc_id>/history', methods=['GET'])
 @login_required
 def get_pc_history(pc_id):
-    pc = PC.query.get_or_404(pc_id)
+    pc = db.session.get(PC, pc_id)
+    if not pc:
+        return jsonify({'error': f'PC {pc_id} が見つかりません'}), 404
     days = request.args.get('days', 7, type=int)
 
     from datetime import datetime, timezone, timedelta
@@ -88,7 +94,9 @@ def get_pc_history(pc_id):
 @pcs_bp.route('/<int:pc_id>', methods=['DELETE'])
 @admin_required
 def delete_pc(pc_id):
-    pc = PC.query.get_or_404(pc_id)
+    pc = db.session.get(PC, pc_id)
+    if not pc:
+        return jsonify({'error': f'PC {pc_id} が見つかりません'}), 404
     pc_name = pc.pc_name
     db.session.delete(pc)
     db.session.commit()
