@@ -189,4 +189,67 @@ document.getElementById('task-type-select').addEventListener('change', function(
     cmdInput.style.display = this.value === 'custom' ? 'inline-block' : 'none';
 });
 
-document.addEventListener('DOMContentLoaded', loadPCDetail);
+const _severityBadge = {
+    'Critical':  '<span class="status-badge status-critical">Critical</span>',
+    'Important': '<span class="status-badge status-warning">Important</span>',
+    'Moderate':  '<span class="status-badge status-pending">Moderate</span>',
+    'Low':       '<span class="status-badge status-unknown">Low</span>',
+};
+
+function _upRow(cells, htmlCells) {
+    const tr = document.createElement('tr');
+    cells.forEach((text, i) => {
+        const td = document.createElement('td');
+        if (htmlCells && htmlCells[i] !== undefined) {
+            td.innerHTML = htmlCells[i];
+        } else {
+            td.textContent = text;
+        }
+        tr.appendChild(td);
+    });
+    return tr;
+}
+
+function _upMessageRow(msg, cols) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = cols;
+    td.className = 'text-center';
+    td.textContent = msg;
+    tr.appendChild(td);
+    return tr;
+}
+
+async function loadUpdates() {
+    const tbody = document.getElementById('updates-body');
+    try {
+        const data = await apiFetch('/pcs/' + PC_ID + '/updates');
+        const list = data.updates || [];
+        document.getElementById('updates-title').textContent =
+            'Windows Update 一覧 (' + (data.total || 0) + '件)';
+        if (list.length === 0) {
+            tbody.replaceChildren(_upMessageRow('Windows Update 情報がありません', 5));
+            return;
+        }
+        const fragment = document.createDocumentFragment();
+        list.forEach(u => {
+            const severityHtml = _severityBadge[u.severity] || (u.severity ? u.severity : '-');
+            const installedHtml = u.installed
+                ? '<span class="status-badge status-completed">インストール済</span>'
+                : '<span class="status-badge status-pending">未インストール</span>';
+            fragment.appendChild(_upRow(
+                [u.kb_id || '-', u.title || '-', '', '', u.installed_at ? new Date(u.installed_at).toLocaleString('ja-JP') : '-'],
+                { 2: severityHtml, 3: installedHtml }
+            ));
+        });
+        tbody.replaceChildren(fragment);
+    } catch (e) {
+        tbody.replaceChildren(_upMessageRow('読み込みに失敗しました', 5));
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadPCDetail();
+    loadUpdates();
+    setInterval(() => { loadPCDetail(); loadUpdates(); }, 30000);
+});
