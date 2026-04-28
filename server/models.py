@@ -45,6 +45,9 @@ class PC(db.Model):
     event_logs = db.relationship(
         "EventLog", backref="pc", lazy="dynamic", cascade="all, delete-orphan"
     )
+    scheduled_tasks = db.relationship(
+        "ScheduledTask", backref="pc", lazy="dynamic", cascade="all, delete-orphan"
+    )
 
     def to_dict(self):
         return {
@@ -290,6 +293,67 @@ class Alert(db.Model):
             "resolved_at": self.resolved_at.isoformat() if self.resolved_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class ScheduledTask(db.Model):
+    __tablename__ = "scheduled_tasks"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    task_type = db.Column(db.String(64), nullable=False)
+    command = db.Column(db.Text)
+    parameters = db.Column(db.Text, default="{}")
+    pc_id = db.Column(db.Integer, db.ForeignKey("pcs.id"), nullable=True, index=True)
+    target_type = db.Column(db.String(16), default="all")  # 'all' or 'pc'
+    schedule_type = db.Column(
+        db.String(16), nullable=False
+    )  # 'interval','daily','weekly'
+    interval_minutes = db.Column(db.Integer)
+    daily_time = db.Column(db.String(5))  # "HH:MM"
+    weekly_day = db.Column(db.Integer)  # 0=Monday ... 6=Sunday
+    weekly_time = db.Column(db.String(5))  # "HH:MM"
+    is_enabled = db.Column(db.Boolean, default=True, index=True)
+    last_run_at = db.Column(db.DateTime)
+    next_run_at = db.Column(db.DateTime, index=True)
+    run_count = db.Column(db.Integer, default=0)
+    last_status = db.Column(db.String(32))
+    created_by = db.Column(db.String(255), default="system")
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "task_type": self.task_type,
+            "command": self.command,
+            "parameters": self.parameters,
+            "pc_id": self.pc_id,
+            "pc_name": self.pc.pc_name if self.pc else None,
+            "target_type": self.target_type,
+            "schedule_type": self.schedule_type,
+            "interval_minutes": self.interval_minutes,
+            "daily_time": self.daily_time,
+            "weekly_day": self.weekly_day,
+            "weekly_time": self.weekly_time,
+            "is_enabled": self.is_enabled,
+            "last_run_at": self.last_run_at.isoformat() if self.last_run_at else None,
+            "next_run_at": self.next_run_at.isoformat() if self.next_run_at else None,
+            "run_count": self.run_count,
+            "last_status": self.last_status,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    def __repr__(self):
+        return f"<ScheduledTask {self.id}:{self.name}>"
 
 
 class User(db.Model):
