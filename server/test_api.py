@@ -294,6 +294,7 @@ def test_webui_pages(token):
         ("/users", "User Management"),
         ("/scheduled-tasks", "Scheduled Tasks"),
         ("/groups", "PC Groups"),
+        ("/alert-rules", "Alert Rules"),
     ]
     for path, name in pages:
         headers = {"Authorization": f"Bearer {token}"}
@@ -557,6 +558,115 @@ def test_delete_group(token):
     print(f"  [PASS] Deleted group not found: id={_group_id}")
 
 
+_rule_id = None
+
+
+def test_create_alert_rule(token):
+    global _rule_id
+    body = {
+        "name": "CPU Test Rule",
+        "metric": "cpu",
+        "operator": "gt",
+        "threshold": 90,
+        "severity": "warning",
+        "is_enabled": True,
+    }
+    r = request("POST", "/api/alert-rules", token=token, data=body)
+    assert r.status_code == 201, f"Create alert rule failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert "alert_rule" in data
+    rule = data["alert_rule"]
+    assert rule["name"] == "CPU Test Rule"
+    assert rule["metric"] == "cpu"
+    assert rule["operator"] == "gt"
+    assert rule["threshold"] == 90.0
+    assert rule["severity"] == "warning"
+    assert rule["is_enabled"] is True
+    _rule_id = rule["id"]
+    print(f"  [PASS] Create alert rule: id={_rule_id}")
+
+
+def test_list_alert_rules(token):
+    r = request("GET", "/api/alert-rules", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert "alert_rules" in data
+    assert "total" in data
+    assert data["total"] >= 1
+    ids = [rule["id"] for rule in data["alert_rules"]]
+    assert _rule_id in ids
+    print(f"  [PASS] List alert rules: total={data['total']}")
+
+
+def test_get_alert_rule(token):
+    r = request("GET", f"/api/alert-rules/{_rule_id}", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert data["alert_rule"]["id"] == _rule_id
+    print(f"  [PASS] Get alert rule: id={_rule_id}")
+
+
+def test_update_alert_rule(token):
+    body = {
+        "name": "CPU Test Rule Updated",
+        "metric": "cpu",
+        "operator": "gte",
+        "threshold": 85,
+        "severity": "critical",
+        "is_enabled": True,
+    }
+    r = request("PUT", f"/api/alert-rules/{_rule_id}", token=token, data=body)
+    assert r.status_code == 200, f"Update alert rule failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    rule = data["alert_rule"]
+    assert rule["name"] == "CPU Test Rule Updated"
+    assert rule["operator"] == "gte"
+    assert rule["threshold"] == 85.0
+    assert rule["severity"] == "critical"
+    print(f"  [PASS] Update alert rule: id={_rule_id}")
+
+
+def test_toggle_alert_rule(token):
+    r = request("POST", f"/api/alert-rules/{_rule_id}/toggle", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert data["alert_rule"]["is_enabled"] is False
+    print(f"  [PASS] Toggle alert rule (disabled): id={_rule_id}")
+
+    r2 = request("POST", f"/api/alert-rules/{_rule_id}/toggle", token=token)
+    assert r2.status_code == 200
+    data2 = json.loads(r2.data)
+    assert data2["alert_rule"]["is_enabled"] is True
+    print(f"  [PASS] Toggle alert rule (re-enabled): id={_rule_id}")
+
+
+def test_alert_rule_invalid_metric(token):
+    body = {
+        "name": "Bad Rule",
+        "metric": "invalid_metric",
+        "operator": "gt",
+        "threshold": 80,
+        "severity": "warning",
+    }
+    r = request("POST", "/api/alert-rules", token=token, data=body)
+    assert r.status_code == 400
+    data = json.loads(r.data)
+    assert "error" in data
+    print(f"  [PASS] Alert rule invalid metric rejected: {data['error'][:60]}")
+
+
+def test_delete_alert_rule(token):
+    r = request("DELETE", f"/api/alert-rules/{_rule_id}", token=token)
+    assert r.status_code == 200, f"Delete alert rule failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert "message" in data
+    print(f"  [PASS] Delete alert rule: id={_rule_id}")
+
+    r2 = request("GET", f"/api/alert-rules/{_rule_id}", token=token)
+    assert r2.status_code == 404
+    print(f"  [PASS] Deleted alert rule not found: id={_rule_id}")
+
+
 def run_all():
     print("=== PC-Ops Orchestrator API Tests ===\n")
     setup_module()
@@ -609,6 +719,13 @@ def run_all():
     test_create_group_task(token)
     test_remove_pc_from_group(token)
     test_delete_group(token)
+    test_create_alert_rule(token)
+    test_list_alert_rules(token)
+    test_get_alert_rule(token)
+    test_update_alert_rule(token)
+    test_toggle_alert_rule(token)
+    test_alert_rule_invalid_metric(token)
+    test_delete_alert_rule(token)
 
     print("\n=== All tests PASSED ===")
 

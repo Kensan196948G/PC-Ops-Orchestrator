@@ -1,7 +1,15 @@
 from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
 from extensions import db
-from models import PC, SystemSnapshot, Software, WindowsUpdate, EventLog
+from models import (
+    PC,
+    SystemSnapshot,
+    Software,
+    WindowsUpdate,
+    EventLog,
+    AlertRule,
+    Alert,
+)
 from auth import agent_auth_required
 
 collect_bp = Blueprint("collect", __name__, url_prefix="/api")
@@ -68,6 +76,7 @@ def collect():
     db.session.commit()
 
     tasks = _get_pending_tasks(pc.id)
+    _evaluate_alert_rules(pc, snapshot)
 
     return jsonify(
         {
@@ -212,6 +221,69 @@ def _determine_pc_status(pc):
         pc.status = "warning"
     else:
         pc.status = "critical"
+
+
+def _evaluate_alert_rules(pc: "PC", snapshot: "SystemSnapshot") -> None:
+    """Evaluate enabled AlertRules against current PC metrics and create Alerts."""
+    rules = AlertRule.query.filter_by(is_enabled=True).all()
+    if not rules:
+        return
+
+    cpu_val = snapshot.cpu_usage
+    mem_val = None
+    if (
+        pc.memory_total_gb
+        and pc.memory_available_gb is not None
+        and pc.memory_total_gb > 0
+    ):
+        mem_val = (
+            (pc.memory_total_gb - pc.memory_available_gb) / pc.memory_total_gb * 100
+        )
+    disk_val = None
+    if pc.disk_total_gb and pc.disk_free_gb is not None and pc.disk_total_gb > 0:
+        disk_val = (pc.disk_total_gb - pc.disk_free_gb) / pc.disk_total_gb * 100
+
+    metric_map = {"cpu": cpu_val, "memory": mem_val, "disk": disk_val}
+
+    def _matches(rule: "AlertRule", value: float | None) -> bool:
+        if value is None:
+            return False
+        op = rule.operator
+        t = rule.threshold
+        if op == "gt":
+            return value > t
+        if op == "gte":
+            return value >= t
+        if op == "lt":
+            return value < t
+        if op == "lte":
+            return value <= t
+        return False
+
+    for rule in rules:
+        if rule.metric == "offline":
+            continue  # offline is handled by alerts sync, not here
+
+        value = metric_map.get(rule.metric)
+        if not _matches(rule, value):
+            continue
+
+        source_key = f"rule:{rule.id}:pc:{pc.id}"
+        existing = Alert.query.filter_by(source_key=source_key, resolved=False).first()
+        if existing:
+            continue
+
+        alert = Alert(
+            pc_id=pc.id,
+            alert_type=f"rule_{rule.metric}",
+            severity=rule.severity,
+            message=(
+                f"[{rule.name}] {pc.pc_name}: "
+                f"{rule.metric} {rule.operator} {rule.threshold}% (現在値 {value:.1f}%)"
+            ),
+            source_key=source_key,
+        )
+        db.session.add(alert)
 
 
 def _get_pending_tasks(pc_id):

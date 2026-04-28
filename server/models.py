@@ -298,6 +298,45 @@ class OperationLog(db.Model):
         }
 
 
+class AlertRule(db.Model):
+    __tablename__ = "alert_rules"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    metric = db.Column(db.String(64), nullable=False)  # cpu/memory/disk/offline
+    operator = db.Column(db.String(8), nullable=False, default="gt")  # gt/lt/gte/lte
+    threshold = db.Column(db.Float, nullable=True)
+    severity = db.Column(
+        db.String(16), nullable=False, default="warning"
+    )  # warning/critical
+    notify_email = db.Column(db.Text)
+    notify_slack_webhook = db.Column(db.Text)
+    is_enabled = db.Column(db.Boolean, default=True, index=True)
+    created_by = db.Column(db.String(255), default="system")
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "metric": self.metric,
+            "operator": self.operator,
+            "threshold": self.threshold,
+            "severity": self.severity,
+            "notify_email": self.notify_email,
+            "notify_slack_webhook": self.notify_slack_webhook,
+            "is_enabled": self.is_enabled,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
 class Alert(db.Model):
     __tablename__ = "alerts"
 
