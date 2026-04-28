@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, jsonify
 from config import config
-from extensions import db, migrate
+from extensions import db, migrate, limiter
 from auth import login_required
 
 
@@ -14,6 +14,7 @@ def create_app(config_name=None):
 
     db.init_app(app)
     migrate.init_app(app, db)
+    limiter.init_app(app)
 
     from routes.auth_routes import auth_bp
     from routes.collect import collect_bp

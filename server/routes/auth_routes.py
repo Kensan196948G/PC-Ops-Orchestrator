@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from extensions import db
+from extensions import db, limiter
 from models import User
 from auth import (
     hash_password,
@@ -13,6 +13,7 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 
 @auth_bp.route("/login", methods=["POST"])
+@limiter.limit("5 per minute")
 def login():
     data = request.get_json()
     if not data:
