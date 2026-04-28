@@ -39,9 +39,10 @@ graph TB
 | コンポーネント | 役割 | 技術 |
 |---|---|---|
 | 📡 Agent | PC情報収集・タスク実行（センサーのみ） | PowerShell 5.1+ |
-| 🖥️ API Server | データ受信・タスク管理・認証 | Flask + SQLAlchemy |
-| 🗄️ Database | PC情報・タスク・ログ保存 | SQLite / PostgreSQL |
-| 🖥️ WebUI | ダッシュボード・PC一覧・タスク管理 | HTML + JS + Chart.js |
+| 🖥️ API Server | データ受信・タスク管理・認証・アラート生成 | Flask + SQLAlchemy |
+| 🗄️ Database | PC情報・タスク・ログ・アラート保存 | SQLite / PostgreSQL |
+| 🖥️ WebUI | ダッシュボード・PC一覧・タスク管理・アラート管理 | HTML + JS + Chart.js |
+| 🐳 Docker | コンテナ運用（nginx + Flask + PostgreSQL） | Docker Compose |
 
 ---
 
@@ -93,6 +94,50 @@ waitress-serve --port=443 wsgi:app
 
 ---
 
+## 🐳 Docker デプロイ（推奨）
+
+```mermaid
+graph LR
+    subgraph DOCKER["🐳 Docker Compose"]
+        N["nginx:alpine<br/>リバースプロキシ<br/>:80/:443"]
+        S["pc-ops-orchestrator<br/>Flask + Gunicorn<br/>:5000"]
+        D[("postgres:16<br/>PostgreSQL<br/>データ永続化")]
+    end
+
+    CLIENT["👤 IT管理者<br/>ブラウザ"] -->|"HTTPS:443"| N
+    AGENT["📡 Agent<br/>PowerShell"] -->|"HTTPS:443"| N
+    N --> S
+    S <--> D
+```
+
+```bash
+# 1. 環境変数ファイルを作成（.env）
+cat <<'EOF' > .env
+SECRET_KEY=your-secret-key
+JWT_SECRET_KEY=your-jwt-secret
+POSTGRES_USER=pcops
+POSTGRES_PASSWORD=your-db-password
+POSTGRES_DB=pcops
+EOF
+
+# 2. 起動
+docker compose up -d
+
+# 3. 初期管理者作成
+docker compose exec server python seed.py
+
+# 4. 状態確認
+docker compose ps
+```
+
+| サービス | コンテナ名 | 役割 |
+|---|---|---|
+| server | pc-ops-server | Flask アプリ（Gunicorn） |
+| db | pc-ops-db | PostgreSQL 16 |
+| nginx | pc-ops-nginx | TLS終端・リバースプロキシ |
+
+---
+
 ## 📡 Agent デプロイ手順（対象PC）
 
 ```powershell
@@ -110,10 +155,11 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 
 | 画面 | 機能 |
 |---|---|
-| 📊 Dashboard | 全PC状態サマリー、健全性分布グラフ、OS内訳、操作ログ |
-| 🖥️ PC一覧 | 検索・フィルタリング、状態表示、スコア確認 |
+| 📊 Dashboard | 全PC状態サマリー、健全性分布グラフ、OS内訳、アクティブアラート、操作ログ |
+| 🖥️ PC一覧 | 検索・フィルタリング、状態表示、スコア確認（30秒自動更新） |
 | 🔍 PC詳細 | 基本情報・ハードウェア情報・リソース履歴グラフ・タスク実行 |
-| 📋 タスク管理 | タスク作成（クリーンアップ/更新/診断/カスタム）、状態監視 |
+| 📋 タスク管理 | タスク作成（クリーンアップ/更新/診断/カスタム）、状態監視（30秒自動更新） |
+| ⚠️ アラート管理 | アラート確認・解決・同期、重大度フィルタ（30秒自動更新） |
 
 ---
 
@@ -133,6 +179,12 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | GET | `/api/pcs/<id>` | JWT | WebUI → PC詳細 |
 | GET | `/api/dashboard/stats` | JWT | WebUI → 統計情報 |
 | GET | `/api/dashboard/recent` | JWT | WebUI → 操作ログ |
+| GET | `/api/dashboard/health-distribution` | JWT | WebUI → 健全性分布 |
+| GET | `/api/dashboard/os-breakdown` | JWT | WebUI → OS別集計 |
+| GET | `/api/alerts` | JWT | WebUI → アラート一覧（フィルタ・ページング） |
+| POST | `/api/alerts/sync` | JWT | アラート同期（新規生成＋自動解決） |
+| POST | `/api/alerts/<id>/acknowledge` | JWT | アラート確認済みマーク |
+| POST | `/api/alerts/<id>/resolve` | JWT | アラート解決済みマーク |
 
 ---
 
@@ -296,11 +348,11 @@ sequenceDiagram
 │   ├── config.py                 設定
 │   ├── models.py                 SQLAlchemyモデル（7テーブル）
 │   ├── auth.py                   JWT + API Key認証
-│   ├── routes/                   Blueprintルート
-│   ├── templates/                Jinja2テンプレート
-│   ├── static/                   CSS + JS
+│   ├── routes/                   Blueprintルート（auth/collect/tasks/pcs/dashboard/alerts）
+│   ├── templates/                Jinja2テンプレート（dashboard/pc_list/tasks/alerts）
+│   ├── static/                   CSS + JS（alerts.js など）
 │   ├── requirements.txt          Python依存関係
-│   └── test_api.py               統合テスト（12項目）
+│   └── test_api.py               統合テスト（14項目）
 │
 ├── 📡 agent/                     ← Agent（PowerShell）
 │   ├── PCOpsAgent.ps1            情報収集＋タスク実行
@@ -321,7 +373,7 @@ sequenceDiagram
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| API 統合テスト（Python） | 12項目 | ✅ PASS |
+| API 統合テスト（Python） | 14項目 | ✅ PASS |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
 | Agent Teams E2E テスト | 複数 | ✅ PASS |
