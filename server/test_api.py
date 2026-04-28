@@ -118,6 +118,19 @@ def test_task_list(token):
     print(f"  [PASS] Task list: {data['total']} tasks")
 
 
+def test_delete_task(token):
+    body = {"task_type": "cleanup", "pc_name": "PC-TEST-001", "priority": 1}
+    created = request("POST", "/api/tasks", token=token, data=body)
+    assert created.status_code == 201
+    task_id = json.loads(created.data)["task"]["id"]
+
+    r = request("DELETE", f"/api/tasks/{task_id}", token=token)
+    assert r.status_code == 200, f"Delete task failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert "message" in data
+    print(f"  [PASS] Delete task: id={task_id}")
+
+
 def test_agent_submit_result():
     body = {"task_id": 1, "status": "completed", "result": {"cleaned": True}}
     r = request("POST", "/api/result", token="default-agent-key", data=body)
@@ -222,6 +235,7 @@ def run_all():
     test_pc_detail(token)
     test_create_task(token)
     test_task_list(token)
+    test_delete_task(token)
     test_agent_submit_result()
     test_health_distribution(token)
     test_os_breakdown(token)

@@ -1,5 +1,6 @@
 from datetime import datetime, timezone, timedelta
 from functools import wraps
+import hmac
 
 import jwt
 from flask import request, jsonify, current_app
@@ -90,7 +91,7 @@ def agent_auth_required(f):
             return jsonify({"error": "Agentトークンが必要です"}), 401
 
         valid_keys = current_app.config.get("AGENT_API_KEYS", [])
-        if token not in valid_keys:
+        if not any(hmac.compare_digest(token, key) for key in valid_keys):
             return jsonify({"error": "無効なAgentトークンです"}), 401
 
         return f(*args, **kwargs)

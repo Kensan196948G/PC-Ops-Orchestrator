@@ -87,7 +87,11 @@ def submit_result():
     if not task:
         return jsonify({"error": f"タスク {task_id} が見つかりません"}), 404
 
-    task.status = data.get("status", "completed")
+    _allowed_statuses = {"completed", "failed", "running"}
+    new_status = data.get("status", "completed")
+    if new_status not in _allowed_statuses:
+        return jsonify({"error": f"status は {_allowed_statuses} のいずれかで指定してください"}), 400
+    task.status = new_status
     task.result = json.dumps(data.get("result", {}), ensure_ascii=False)
     task.error_message = data.get("error_message")
     task.completed_at = datetime.now(timezone.utc)
@@ -113,7 +117,7 @@ def list_tasks():
     task_type = request.args.get("task_type")
     pc_name = request.args.get("pc_name")
     page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 50, type=int)
+    per_page = min(request.args.get("per_page", 50, type=int), 200)
 
     query = Task.query
 

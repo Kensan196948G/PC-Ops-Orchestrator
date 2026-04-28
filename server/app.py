@@ -81,9 +81,14 @@ def create_app(config_name=None):
     with app.app_context():
         db.create_all()
 
+    if config_name == "production":
+        from config import ProductionConfig
+        ProductionConfig.validate_secrets()
+
     return app
 
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    debug = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    app.run(host="0.0.0.0", port=5000, debug=debug)

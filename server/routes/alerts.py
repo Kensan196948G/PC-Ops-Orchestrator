@@ -18,14 +18,15 @@ _HEALTH_WARNING = 80.0
 def list_alerts():
     severity = request.args.get("severity")
     resolved = request.args.get("resolved", "false").lower() == "true"
-    pc_id = request.args.get("pc_id", type=int)
+    pc_id_raw = request.args.get("pc_id")
+    pc_id = int(pc_id_raw) if pc_id_raw is not None else None
     page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 50, type=int)
+    per_page = min(request.args.get("per_page", 50, type=int), 200)
 
     query = Alert.query.filter_by(resolved=resolved)
     if severity:
         query = query.filter(Alert.severity == severity)
-    if pc_id:
+    if pc_id is not None:
         query = query.filter(Alert.pc_id == pc_id)
 
     severity_order = db.case(
@@ -96,7 +97,14 @@ def sync_alerts():
     offline_threshold = now - timedelta(minutes=_OFFLINE_THRESHOLD_MINUTES)
     pcs = PC.query.all()
 
-    created, resolved = 0, 0
+    created, resolved_count = 0, 0
+
+    existing_keys: frozenset[str] = frozenset(
+        row[0]
+        for row in Alert.query.filter_by(resolved=False)
+        .with_entities(Alert.source_key)
+        .all()
+    )
 
     active_keys: set[str] = set()
 
@@ -104,10 +112,7 @@ def sync_alerts():
         candidates = _build_candidates(pc, offline_threshold)
         for candidate in candidates:
             active_keys.add(candidate["source_key"])
-            existing = Alert.query.filter_by(
-                source_key=candidate["source_key"], resolved=False
-            ).first()
-            if not existing:
+            if candidate["source_key"] not in existing_keys:
                 db.session.add(Alert(**candidate))
                 created += 1
 
@@ -118,14 +123,14 @@ def sync_alerts():
     for alert in stale:
         alert.resolved = True
         alert.resolved_at = now
-        resolved += 1
+        resolved_count += 1
 
     db.session.commit()
     return jsonify(
         {
             "message": "アラート同期完了",
             "created": created,
-            "resolved": resolved,
+            "resolved": resolved_count,
             "total_active": Alert.query.filter_by(resolved=False).count(),
         }
     )

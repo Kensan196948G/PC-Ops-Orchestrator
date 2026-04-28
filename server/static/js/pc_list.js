@@ -1,14 +1,18 @@
 let currentPage = 1;
 let searchTimer = null;
 
-function statusBadge(status) {
+function statusBadgeEl(status) {
     const map = {
-        'healthy': '<span class="status-badge status-healthy">正常</span>',
-        'warning': '<span class="status-badge status-warning">要注意</span>',
-        'critical': '<span class="status-badge status-critical">危険</span>',
-        'unknown': '<span class="status-badge status-unknown">不明</span>',
+        'healthy': ['status-healthy', '正常'],
+        'warning': ['status-warning', '要注意'],
+        'critical': ['status-critical', '危険'],
+        'unknown': ['status-unknown', '不明'],
     };
-    return map[status] || map['unknown'];
+    const [cls, label] = map[status] || map['unknown'];
+    const span = document.createElement('span');
+    span.className = `status-badge ${cls}`;
+    span.textContent = label;
+    return span;
 }
 
 function formatGB(val) {
@@ -32,12 +36,23 @@ function truncate(str, len) {
     return str.length > len ? str.substring(0, len) + '...' : str;
 }
 
+function makeMessageRow(message, cols, style) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = cols;
+    td.className = 'text-center';
+    td.textContent = message;
+    if (style) td.style.cssText = style;
+    tr.appendChild(td);
+    return tr;
+}
+
 async function loadPCs(page) {
     currentPage = page || currentPage;
     const search = document.getElementById('search-input').value.trim();
     const status = document.getElementById('status-filter').value;
     const tbody = document.getElementById('pc-table-body');
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center">読み込み中...</td></tr>';
+    tbody.replaceChildren(makeMessageRow('読み込み中...', 9, null));
 
     try {
         const params = new URLSearchParams();
@@ -47,37 +62,71 @@ async function loadPCs(page) {
         params.set('per_page', '30');
 
         const data = await apiFetch('/pcs?' + params.toString());
-        tbody.innerHTML = data.pcs && data.pcs.length > 0 ? data.pcs.map(pc => `
-            <tr onclick="location.href='/pcs/${pc.id}'" style="cursor:pointer;">
-                <td><strong>${pc.pc_name}</strong></td>
-                <td>${pc.os_version || '-'}</td>
-                <td>${truncate(pc.cpu_name, 30) || '-'}</td>
-                <td>${formatGB(pc.memory_total_gb)}</td>
-                <td>${formatDisk(pc.disk_free_gb, pc.disk_total_gb)}</td>
-                <td>${statusBadge(pc.status)}</td>
-                <td>${pc.health_score ?? '-'}</td>
-                <td>${formatTime(pc.last_seen)}</td>
-                <td>${pc.last_seen ? (Date.now() - new Date(pc.last_seen).getTime() < 300000 ? '<span style="color:var(--success)">&#9679;</span>' : '<span style="color:var(--text-muted)">&#9679;</span>') : ''}</td>
-            </tr>
-        `).join('') : '<tr><td colspan="9" class="text-center">PCが登録されていません</td></tr>';
+        tbody.replaceChildren();
+
+        if (data.pcs && data.pcs.length > 0) {
+            data.pcs.forEach(pc => {
+                const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                tr.addEventListener('click', () => { location.href = `/pcs/${pc.id}`; });
+
+                const td = (text) => {
+                    const el = document.createElement('td');
+                    el.textContent = text;
+                    return el;
+                };
+
+                const nameTd = document.createElement('td');
+                const strong = document.createElement('strong');
+                strong.textContent = pc.pc_name;
+                nameTd.appendChild(strong);
+
+                tr.appendChild(nameTd);
+                tr.appendChild(td(pc.os_version || '-'));
+                tr.appendChild(td(truncate(pc.cpu_name, 30) || '-'));
+                tr.appendChild(td(formatGB(pc.memory_total_gb)));
+                tr.appendChild(td(formatDisk(pc.disk_free_gb, pc.disk_total_gb)));
+
+                const statusTd = document.createElement('td');
+                statusTd.appendChild(statusBadgeEl(pc.status));
+                tr.appendChild(statusTd);
+
+                tr.appendChild(td(pc.health_score ?? '-'));
+                tr.appendChild(td(formatTime(pc.last_seen)));
+
+                const dotTd = document.createElement('td');
+                if (pc.last_seen) {
+                    const dot = document.createElement('span');
+                    dot.textContent = '●';
+                    dot.style.color = Date.now() - new Date(pc.last_seen).getTime() < 300000
+                        ? 'var(--success)' : 'var(--text-muted)';
+                    dotTd.appendChild(dot);
+                }
+                tr.appendChild(dotTd);
+
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.replaceChildren(makeMessageRow('PCが登録されていません', 9, null));
+        }
 
         renderPagination(data.total, data.page, data.pages);
     } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="color:var(--danger);">読み込みに失敗しました</td></tr>';
+        tbody.replaceChildren(makeMessageRow('読み込みに失敗しました', 9, 'color:var(--danger);'));
     }
 }
 
 function renderPagination(total, page, pages) {
     const el = document.getElementById('pagination');
-    if (!pages || pages <= 1) {
-        el.innerHTML = '';
-        return;
-    }
-    let html = '';
+    el.replaceChildren();
+    if (!pages || pages <= 1) return;
     for (let i = 1; i <= pages; i++) {
-        html += `<button class="${i === page ? 'active' : ''}" onclick="loadPCs(${i})">${i}</button>`;
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        if (i === page) btn.className = 'active';
+        btn.addEventListener('click', () => loadPCs(i));
+        el.appendChild(btn);
     }
-    el.innerHTML = html;
 }
 
 function searchPCs() {

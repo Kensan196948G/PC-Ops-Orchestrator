@@ -58,8 +58,13 @@ def setup():
     if not data:
         return jsonify({"error": "リクエストボディが必要です"}), 400
 
-    username = data.get("username", "admin")
-    password = data.get("password", "admin")
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+
+    if not username or not password:
+        return jsonify({"error": "username と password は必須です"}), 400
+    if len(password) < 8:
+        return jsonify({"error": "パスワードは 8 文字以上にしてください"}), 400
 
     user = User(
         username=username,

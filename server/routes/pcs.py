@@ -12,7 +12,7 @@ def list_pcs():
     status_filter = request.args.get("status")
     search = request.args.get("search", "").strip()
     page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 50, type=int)
+    per_page = min(request.args.get("per_page", 50, type=int), 200)
 
     query = PC.query
 
@@ -86,7 +86,7 @@ def get_pc_history(pc_id):
     pc = db.session.get(PC, pc_id)
     if not pc:
         return jsonify({"error": f"PC {pc_id} が見つかりません"}), 404
-    days = request.args.get("days", 7, type=int)
+    days = min(request.args.get("days", 7, type=int), 365)
 
     from datetime import datetime, timezone, timedelta
 
