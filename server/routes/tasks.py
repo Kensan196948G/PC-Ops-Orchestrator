@@ -1,6 +1,8 @@
+import csv
+import io
 import json
 from datetime import datetime, timezone
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 from extensions import db
 from models import Task, PC
 from auth import agent_auth_required, login_required, admin_required, log_operation
@@ -129,6 +131,44 @@ def get_task(task_id):
     if not task:
         return jsonify({"error": f"タスク {task_id} が見つかりません"}), 404
     return jsonify({"task": task.to_dict()})
+
+
+@tasks_bp.route("/tasks/export.csv", methods=["GET"])
+@login_required
+def export_tasks_csv():
+    status_filter = request.args.get("status")
+    task_type_filter = request.args.get("task_type")
+
+    query = Task.query
+    if status_filter:
+        query = query.filter(Task.status == status_filter)
+    if task_type_filter:
+        query = query.filter(Task.task_type == task_type_filter)
+
+    tasks = query.order_by(Task.created_at.desc()).limit(5000).all()
+
+    buf = io.StringIO()
+    buf.write("﻿")  # BOM for Excel
+    writer = csv.writer(buf)
+    writer.writerow(["ID", "タスク種別", "PC名", "状態", "優先度", "作成者", "作成日時", "完了日時", "エラー"])
+    for t in tasks:
+        pc_name = t.pc.pc_name if t.pc else ""
+        writer.writerow([
+            t.id,
+            t.task_type or "",
+            pc_name,
+            t.status or "",
+            t.priority if t.priority is not None else "",
+            t.created_by or "",
+            t.created_at.isoformat() if t.created_at else "",
+            t.completed_at.isoformat() if t.completed_at else "",
+            t.error_message or "",
+        ])
+
+    response = make_response(buf.getvalue())
+    response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Content-Disposition"] = "attachment; filename=tasks.csv"
+    return response
 
 
 @tasks_bp.route("/tasks", methods=["GET"])

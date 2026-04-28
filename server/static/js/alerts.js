@@ -159,6 +159,26 @@ async function syncAlerts() {
     }
 }
 
+async function exportAlertsCSV() {
+    const severity = document.getElementById('severity-filter')?.value || '';
+    const resolved = document.getElementById('resolved-filter')?.value || 'false';
+    const params = new URLSearchParams({ resolved });
+    if (severity) params.set('severity', severity);
+    try {
+        const res = await apiFetchRaw('/alerts/export.csv?' + params.toString());
+        if (!res.ok) { showError('エクスポートに失敗しました'); return; }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'alerts.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        showError('エクスポートに失敗しました');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadAlerts(1);
     setInterval(() => loadAlerts(currentAlertsPage), 30000);
