@@ -210,11 +210,32 @@ function _upRow(cells, htmlCells) {
     return tr;
 }
 
+function _swRow(cells) {
+    const tr = document.createElement('tr');
+    cells.forEach(text => {
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.appendChild(td);
+    });
+    return tr;
+}
+
 function _upMessageRow(msg, cols) {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
     td.colSpan = cols;
     td.className = 'text-center';
+    td.textContent = msg;
+    tr.appendChild(td);
+    return tr;
+}
+
+function _swMessageRow(msg, cols, color) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = cols;
+    td.className = 'text-center';
+    if (color) td.style.color = color;
     td.textContent = msg;
     tr.appendChild(td);
     return tr;
@@ -248,8 +269,35 @@ async function loadUpdates() {
     }
 }
 
+async function loadSoftware() {
+    const tbody = document.getElementById('software-body');
+    try {
+        const data = await apiFetch('/pcs/' + PC_ID + '/software');
+        const list = data.software || [];
+        document.getElementById('software-title').textContent =
+            'インストール済みソフトウェア (' + (data.total || 0) + '件)';
+        if (list.length === 0) {
+            tbody.replaceChildren(_swMessageRow('ソフトウェア情報がありません', 4, null));
+            return;
+        }
+        const fragment = document.createDocumentFragment();
+        list.forEach(sw => {
+            fragment.appendChild(_swRow([
+                sw.name || '-',
+                sw.version || '-',
+                sw.publisher || '-',
+                sw.install_date ? new Date(sw.install_date).toLocaleDateString('ja-JP') : '-',
+            ]));
+        });
+        tbody.replaceChildren(fragment);
+    } catch (e) {
+        tbody.replaceChildren(_swMessageRow('読み込みに失敗しました', 4, 'var(--danger)'));
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadPCDetail();
     loadUpdates();
-    setInterval(() => { loadPCDetail(); loadUpdates(); }, 30000);
+    loadSoftware();
+    setInterval(() => { loadPCDetail(); loadUpdates(); loadSoftware(); }, 30000);
 });
