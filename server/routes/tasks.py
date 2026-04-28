@@ -150,20 +150,34 @@ def export_tasks_csv():
     buf = io.StringIO()
     buf.write("﻿")  # BOM for Excel
     writer = csv.writer(buf)
-    writer.writerow(["ID", "タスク種別", "PC名", "状態", "優先度", "作成者", "作成日時", "完了日時", "エラー"])
+    writer.writerow(
+        [
+            "ID",
+            "タスク種別",
+            "PC名",
+            "状態",
+            "優先度",
+            "作成者",
+            "作成日時",
+            "完了日時",
+            "エラー",
+        ]
+    )
     for t in tasks:
         pc_name = t.pc.pc_name if t.pc else ""
-        writer.writerow([
-            t.id,
-            t.task_type or "",
-            pc_name,
-            t.status or "",
-            t.priority if t.priority is not None else "",
-            t.created_by or "",
-            t.created_at.isoformat() if t.created_at else "",
-            t.completed_at.isoformat() if t.completed_at else "",
-            t.error_message or "",
-        ])
+        writer.writerow(
+            [
+                t.id,
+                t.task_type or "",
+                pc_name,
+                t.status or "",
+                t.priority if t.priority is not None else "",
+                t.created_by or "",
+                t.created_at.isoformat() if t.created_at else "",
+                t.completed_at.isoformat() if t.completed_at else "",
+                t.error_message or "",
+            ]
+        )
 
     response = make_response(buf.getvalue())
     response.headers["Content-Type"] = "text/csv; charset=utf-8"

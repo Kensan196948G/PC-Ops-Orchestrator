@@ -73,19 +73,32 @@ def export_alerts_csv():
     buf = io.StringIO()
     buf.write("﻿")  # BOM for Excel
     writer = csv.writer(buf)
-    writer.writerow(["ID", "PC名", "種別", "重大度", "メッセージ", "解決済み", "作成日時", "解決日時"])
+    writer.writerow(
+        [
+            "ID",
+            "PC名",
+            "種別",
+            "重大度",
+            "メッセージ",
+            "解決済み",
+            "作成日時",
+            "解決日時",
+        ]
+    )
     for a in alerts:
         pc_name = a.pc.pc_name if a.pc else ""
-        writer.writerow([
-            a.id,
-            pc_name,
-            a.alert_type or "",
-            a.severity or "",
-            a.message or "",
-            "はい" if a.resolved else "いいえ",
-            a.created_at.isoformat() if a.created_at else "",
-            a.resolved_at.isoformat() if a.resolved_at else "",
-        ])
+        writer.writerow(
+            [
+                a.id,
+                pc_name,
+                a.alert_type or "",
+                a.severity or "",
+                a.message or "",
+                "はい" if a.resolved else "いいえ",
+                a.created_at.isoformat() if a.created_at else "",
+                a.resolved_at.isoformat() if a.resolved_at else "",
+            ]
+        )
 
     response = make_response(buf.getvalue())
     response.headers["Content-Type"] = "text/csv; charset=utf-8"

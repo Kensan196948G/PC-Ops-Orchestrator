@@ -70,20 +70,35 @@ def export_pcs_csv():
     buf = io.StringIO()
     buf.write("﻿")  # BOM for Excel
     writer = csv.writer(buf)
-    writer.writerow(["ID", "PC名", "ドメイン", "OS", "IPアドレス", "MACアドレス", "状態", "ヘルススコア", "最終更新", "Agentバージョン"])
+    writer.writerow(
+        [
+            "ID",
+            "PC名",
+            "ドメイン",
+            "OS",
+            "IPアドレス",
+            "MACアドレス",
+            "状態",
+            "ヘルススコア",
+            "最終更新",
+            "Agentバージョン",
+        ]
+    )
     for pc in pcs:
-        writer.writerow([
-            pc.id,
-            pc.pc_name or "",
-            pc.domain or "",
-            pc.os_version or "",
-            pc.ip_address or "",
-            pc.mac_address or "",
-            pc.status or "",
-            pc.health_score if pc.health_score is not None else "",
-            pc.last_seen.isoformat() if pc.last_seen else "",
-            pc.agent_version or "",
-        ])
+        writer.writerow(
+            [
+                pc.id,
+                pc.pc_name or "",
+                pc.domain or "",
+                pc.os_version or "",
+                pc.ip_address or "",
+                pc.mac_address or "",
+                pc.status or "",
+                pc.health_score if pc.health_score is not None else "",
+                pc.last_seen.isoformat() if pc.last_seen else "",
+                pc.agent_version or "",
+            ]
+        )
 
     response = make_response(buf.getvalue())
     response.headers["Content-Type"] = "text/csv; charset=utf-8"
