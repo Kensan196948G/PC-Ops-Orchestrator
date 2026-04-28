@@ -90,7 +90,9 @@ def submit_result():
     _allowed_statuses = {"completed", "failed", "running"}
     new_status = data.get("status", "completed")
     if new_status not in _allowed_statuses:
-        return jsonify({"error": f"status は {_allowed_statuses} のいずれかで指定してください"}), 400
+        return jsonify(
+            {"error": f"status は {_allowed_statuses} のいずれかで指定してください"}
+        ), 400
     task.status = new_status
     task.result = json.dumps(data.get("result", {}), ensure_ascii=False)
     task.error_message = data.get("error_message")

@@ -83,6 +83,7 @@ def create_app(config_name=None):
 
     if config_name == "production":
         from config import ProductionConfig
+
         ProductionConfig.validate_secrets()
 
     return app

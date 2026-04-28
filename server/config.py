@@ -10,9 +10,13 @@ _INSECURE_DEFAULTS = {
 
 def _require_secret(name: str, value: str | None) -> str:
     if not value:
-        raise ValueError(f"環境変数 {name} が設定されていません。本番起動前に設定してください。")
+        raise ValueError(
+            f"環境変数 {name} が設定されていません。本番起動前に設定してください。"
+        )
     if value in _INSECURE_DEFAULTS:
-        raise ValueError(f"環境変数 {name} にデフォルト値が使われています。安全な値に変更してください。")
+        raise ValueError(
+            f"環境変数 {name} にデフォルト値が使われています。安全な値に変更してください。"
+        )
     return value
 
 
