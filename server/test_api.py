@@ -292,6 +292,7 @@ def test_webui_pages(token):
         ("/tasks", "Task Management"),
         ("/alerts", "Alert Management"),
         ("/users", "User Management"),
+        ("/scheduled-tasks", "Scheduled Tasks"),
     ]
     for path, name in pages:
         headers = {"Authorization": f"Bearer {token}"}
@@ -355,6 +356,126 @@ def test_create_task_command_not_string(token):
     )
 
 
+_st_id = None
+
+
+def test_create_scheduled_task(token):
+    global _st_id
+    body = {
+        "name": "Test Interval Task",
+        "description": "pytest created",
+        "task_type": "collect",
+        "schedule_type": "interval",
+        "interval_minutes": 30,
+        "is_enabled": True,
+    }
+    r = request("POST", "/api/scheduled-tasks", token=token, data=body)
+    assert r.status_code == 201, (
+        f"Create scheduled task failed: {r.status_code} {r.data}"
+    )
+    data = json.loads(r.data)
+    assert "scheduled_task" in data
+    st = data["scheduled_task"]
+    assert st["name"] == "Test Interval Task"
+    assert st["schedule_type"] == "interval"
+    assert st["interval_minutes"] == 30
+    assert st["is_enabled"] is True
+    assert st["next_run_at"] is not None
+    _st_id = st["id"]
+    print(
+        f"  [PASS] Create scheduled task: id={_st_id}, next_run_at={st['next_run_at']}"
+    )
+
+
+def test_list_scheduled_tasks(token):
+    r = request("GET", "/api/scheduled-tasks", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert "scheduled_tasks" in data
+    assert data["total"] >= 1
+    print(f"  [PASS] List scheduled tasks: total={data['total']}")
+
+
+def test_get_scheduled_task(token):
+    r = request("GET", f"/api/scheduled-tasks/{_st_id}", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert data["scheduled_task"]["id"] == _st_id
+    print(f"  [PASS] Get scheduled task: id={_st_id}")
+
+
+def test_update_scheduled_task(token):
+    body = {
+        "name": "Test Daily Task",
+        "task_type": "diagnose",
+        "schedule_type": "daily",
+        "daily_time": "03:00",
+        "is_enabled": True,
+    }
+    r = request("PUT", f"/api/scheduled-tasks/{_st_id}", token=token, data=body)
+    assert r.status_code == 200, f"Update failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    st = data["scheduled_task"]
+    assert st["schedule_type"] == "daily"
+    assert st["daily_time"] == "03:00"
+    print(
+        f"  [PASS] Update scheduled task: id={_st_id}, schedule_type={st['schedule_type']}"
+    )
+
+
+def test_toggle_scheduled_task(token):
+    r = request("POST", f"/api/scheduled-tasks/{_st_id}/toggle", token=token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert data["scheduled_task"]["is_enabled"] is False
+    print(f"  [PASS] Toggle scheduled task (disabled): id={_st_id}")
+
+    r2 = request("POST", f"/api/scheduled-tasks/{_st_id}/toggle", token=token)
+    assert r2.status_code == 200
+    data2 = json.loads(r2.data)
+    assert data2["scheduled_task"]["is_enabled"] is True
+    print(f"  [PASS] Toggle scheduled task (re-enabled): id={_st_id}")
+
+
+def test_run_scheduled_task_now(token):
+    r = request("POST", f"/api/scheduled-tasks/{_st_id}/run-now", token=token)
+    assert r.status_code == 201, f"Run-now failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert "task" in data
+    assert data["task"]["status"] == "pending"
+    print(f"  [PASS] Run scheduled task now: task_id={data['task']['id']}")
+
+
+def test_scheduled_task_invalid_payload(token):
+    r = request(
+        "POST",
+        "/api/scheduled-tasks",
+        token=token,
+        data={
+            "name": "bad",
+            "task_type": "evil",
+            "schedule_type": "interval",
+            "interval_minutes": 1,
+        },
+    )
+    assert r.status_code == 400
+    data = json.loads(r.data)
+    assert "error" in data
+    print(f"  [PASS] Scheduled task invalid task_type rejected: {data['error'][:60]}")
+
+
+def test_delete_scheduled_task(token):
+    r = request("DELETE", f"/api/scheduled-tasks/{_st_id}", token=token)
+    assert r.status_code == 200, f"Delete failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert "message" in data
+    print(f"  [PASS] Delete scheduled task: id={_st_id}")
+
+    r2 = request("GET", f"/api/scheduled-tasks/{_st_id}", token=token)
+    assert r2.status_code == 404
+    print(f"  [PASS] Deleted task not found: id={_st_id}")
+
+
 def run_all():
     print("=== PC-Ops Orchestrator API Tests ===\n")
     setup_module()
@@ -391,6 +512,14 @@ def run_all():
     test_user_management(token)
     test_user_management_forbidden(token)
     test_webui_pages(token)
+    test_create_scheduled_task(token)
+    test_list_scheduled_tasks(token)
+    test_get_scheduled_task(token)
+    test_update_scheduled_task(token)
+    test_toggle_scheduled_task(token)
+    test_run_scheduled_task_now(token)
+    test_scheduled_task_invalid_payload(token)
+    test_delete_scheduled_task(token)
 
     print("\n=== All tests PASSED ===")
 

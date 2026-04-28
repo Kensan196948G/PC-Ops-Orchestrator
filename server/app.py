@@ -26,6 +26,7 @@ def create_app(config_name=None):
     from routes.dashboard import dashboard_bp
     from routes.alerts import alerts_bp
     from routes.audit import audit_bp
+    from routes.scheduled_tasks import scheduled_tasks_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(collect_bp)
@@ -34,6 +35,7 @@ def create_app(config_name=None):
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(alerts_bp)
     app.register_blueprint(audit_bp)
+    app.register_blueprint(scheduled_tasks_bp)
 
     @app.route("/")
     def index():
@@ -63,6 +65,10 @@ def create_app(config_name=None):
     def audit_page():
         return render_template("audit.html")
 
+    @app.route("/scheduled-tasks")
+    def scheduled_tasks_page():
+        return render_template("scheduled_tasks.html")
+
     @app.route("/login")
     def login_page():
         return render_template("login.html")
@@ -89,6 +95,12 @@ def create_app(config_name=None):
 
     with app.app_context():
         db.create_all()
+
+    # Start background scheduler (skip in testing to avoid thread leaks)
+    if config_name != "testing":
+        from scheduler import init_scheduler
+
+        init_scheduler(app)
 
     if config_name == "production":
         from config import ProductionConfig
