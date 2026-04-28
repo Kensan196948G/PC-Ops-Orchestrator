@@ -3,7 +3,7 @@ from flask import Flask, render_template, jsonify
 from werkzeug.middleware.proxy_fix import ProxyFix
 from config import config
 from extensions import db, migrate, limiter, cors
-from auth import login_required
+
 
 
 def create_app(config_name=None):
@@ -35,27 +35,22 @@ def create_app(config_name=None):
     app.register_blueprint(alerts_bp)
 
     @app.route("/")
-    @login_required
     def index():
         return render_template("dashboard.html")
 
     @app.route("/pcs")
-    @login_required
     def pc_list():
         return render_template("pc_list.html")
 
     @app.route("/pcs/<int:pc_id>")
-    @login_required
     def pc_detail(pc_id):
         return render_template("pc_detail.html", pc_id=pc_id)
 
     @app.route("/tasks")
-    @login_required
     def task_list():
         return render_template("tasks.html")
 
     @app.route("/alerts")
-    @login_required
     def alerts_page():
         return render_template("alerts.html")
 
