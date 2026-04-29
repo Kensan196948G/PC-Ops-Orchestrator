@@ -1,8 +1,10 @@
 import os
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, send_from_directory
 from werkzeug.middleware.proxy_fix import ProxyFix
-from config import config
+from config import SWAGGER_DEFAULT_BY_CONFIG, config, env_bool
 from extensions import db, migrate, limiter, cors
+
+API_DOCS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "api_docs")
 
 
 def create_app(config_name=None):
@@ -11,6 +13,10 @@ def create_app(config_name=None):
 
     app = Flask(__name__, template_folder="templates", static_folder="static")
     app.config.from_object(config[config_name])
+    app.config["SWAGGER_ENABLED"] = env_bool(
+        "SWAGGER_ENABLED",
+        SWAGGER_DEFAULT_BY_CONFIG.get(config_name, False),
+    )
 
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
@@ -40,6 +46,24 @@ def create_app(config_name=None):
     app.register_blueprint(scheduled_tasks_bp)
     app.register_blueprint(groups_bp)
     app.register_blueprint(alert_rules_bp)
+
+    if app.config.get("SWAGGER_ENABLED", False):
+        from flask_swagger_ui import get_swaggerui_blueprint
+
+        @app.route("/api/openapi.yaml")
+        def openapi_spec():
+            return send_from_directory(
+                API_DOCS_DIR,
+                "openapi.yaml",
+                mimetype="application/yaml",
+            )
+
+        swaggerui_bp = get_swaggerui_blueprint(
+            "/api/docs",
+            "/api/openapi.yaml",
+            config={"app_name": "PC-Ops Orchestrator API"},
+        )
+        app.register_blueprint(swaggerui_bp)
 
     @app.route("/")
     def index():

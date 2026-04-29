@@ -1,0 +1,1117 @@
+openapi: "3.0.3"
+info:
+  title: PC-Ops Orchestrator API
+  version: "1.0.0"
+  description: |
+    PC管理・監視・タスク自動化プラットフォーム REST API。
+
+    **認証方式**
+    - `BearerAuth` (JWT): 管理者・オペレーター向け。`POST /api/auth/login` で取得。`Authorization: Bearer <JWT>` ヘッダで指定。
+    - `AgentAuth` (API Key): エージェント（PowerShell スクリプト）向け。環境変数 `AGENT_API_KEYS`（カンマ区切りで複数許可）に設定したキーのいずれかを `Authorization: Bearer <API_KEY>` ヘッダで指定。
+
+servers:
+  - url: /api
+    description: ローカル開発サーバー
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 管理者・オペレーター用 JWT トークン
+    AgentAuth:
+      type: http
+      scheme: bearer
+      description: |
+        エージェント用 API キー（`Authorization: Bearer <API_KEY>` ヘッダ）。
+        サーバ側の環境変数 `AGENT_API_KEYS`（カンマ区切りで複数登録可能）に登録されたキーと一致する場合に許可される。
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+
+    PC:
+      type: object
+      properties:
+        id: { type: integer }
+        pc_name: { type: string }
+        domain: { type: string, nullable: true }
+        os_version: { type: string, nullable: true }
+        os_architecture: { type: string, nullable: true }
+        cpu_name: { type: string, nullable: true }
+        cpu_cores: { type: integer, nullable: true }
+        cpu_logical_processors: { type: integer, nullable: true }
+        memory_total_gb: { type: number, nullable: true }
+        memory_available_gb: { type: number, nullable: true }
+        disk_total_gb: { type: number, nullable: true }
+        disk_free_gb: { type: number, nullable: true }
+        ip_address: { type: string, nullable: true }
+        mac_address: { type: string, nullable: true }
+        agent_version: { type: string, nullable: true }
+        status: { type: string, enum: [healthy, warning, critical, offline] }
+        health_score: { type: number }
+        last_seen: { type: string, format: date-time, nullable: true }
+
+    Task:
+      type: object
+      properties:
+        id: { type: integer }
+        task_type:
+          type: string
+          enum: [cleanup, update, diagnose, custom, collect]
+        pc_id: { type: integer, nullable: true }
+        pc_name: { type: string, nullable: true }
+        status: { type: string, enum: [pending, running, completed, failed] }
+        priority: { type: integer }
+        command: { type: string, nullable: true }
+        parameters:
+          type: string
+          nullable: true
+          description: 実装はタスクパラメータを JSON 文字列として保存・返却する
+        result:
+          type: string
+          nullable: true
+          description: 実装は実行結果を JSON 文字列として保存・返却する
+        created_by: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        completed_at: { type: string, format: date-time, nullable: true }
+
+    Alert:
+      type: object
+      properties:
+        id: { type: integer }
+        pc_id: { type: integer, nullable: true }
+        alert_type: { type: string }
+        severity: { type: string, enum: [warning, critical] }
+        message: { type: string }
+        acknowledged: { type: boolean }
+        resolved: { type: boolean }
+        created_at: { type: string, format: date-time }
+
+    AlertRule:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        metric: { type: string, enum: [cpu, memory, disk, offline] }
+        operator: { type: string, enum: [gt, gte, lt, lte] }
+        threshold: { type: number, nullable: true }
+        severity: { type: string, enum: [warning, critical] }
+        notify_email: { type: string, nullable: true }
+        notify_slack_webhook: { type: string, nullable: true }
+        is_enabled: { type: boolean }
+        created_by: { type: string }
+        created_at: { type: string, format: date-time }
+
+    ScheduledTask:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        task_type:
+          type: string
+          enum: [cleanup, update, diagnose, custom, collect]
+        schedule_type: { type: string, enum: [interval, daily, weekly] }
+        interval_minutes: { type: integer, nullable: true }
+        daily_time: { type: string, nullable: true }
+        weekly_day: { type: integer, nullable: true }
+        weekly_time: { type: string, nullable: true }
+        is_enabled: { type: boolean }
+        next_run_at: { type: string, format: date-time, nullable: true }
+
+    Group:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        pc_count: { type: integer }
+        pcs:
+          type: array
+          items: { $ref: '#/components/schemas/PC' }
+
+paths:
+  /auth/login:
+    post:
+      tags: [認証]
+      summary: ログイン
+      description: ユーザー名とパスワードで認証し JWT トークンを取得する。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string, example: admin }
+                password: { type: string, example: admin }
+      responses:
+        '200':
+          description: 認証成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  username: { type: string }
+                  role: { type: string }
+        '401':
+          description: 認証失敗
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/users:
+    get:
+      tags: [認証]
+      summary: ユーザー一覧
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: ユーザー一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users: { type: array, items: { type: object } }
+                  total: { type: integer }
+    post:
+      tags: [認証]
+      summary: ユーザー作成（管理者のみ）
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string }
+                role: { type: string, enum: [admin, operator], default: operator }
+      responses:
+        '201':
+          description: 作成成功
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /collect:
+    post:
+      tags: [エージェント]
+      summary: PC メトリクス収集
+      description: エージェントから PC の基本メトリクスを受け取り、ヘルススコアを更新する。
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pc_name]
+              properties:
+                pc_name: { type: string, example: PC-001 }
+                domain: { type: string }
+                os_version: { type: string }
+                os_architecture: { type: string }
+                cpu_name: { type: string }
+                cpu_cores: { type: integer }
+                cpu_logical_processors: { type: integer }
+                memory_total_gb: { type: number }
+                memory_available_gb: { type: number }
+                disk_total_gb: { type: number }
+                disk_free_gb: { type: number }
+                ip_address: { type: string }
+                mac_address: { type: string }
+                agent_version: { type: string }
+                cpu_usage: { type: number }
+                uptime_days: { type: number }
+                pending_reboot: { type: boolean }
+                windows_update_pending: { type: boolean }
+                last_boot_time: { type: string, format: date-time }
+      responses:
+        '200':
+          description: 収集成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  pc_id: { type: integer }
+                  health_score: { type: number }
+                  status: { type: string }
+                  pending_tasks: { type: array, items: { $ref: '#/components/schemas/Task' } }
+
+  /collect/detail:
+    post:
+      tags: [エージェント]
+      summary: PC 詳細情報収集
+      description: ソフトウェア一覧、Windows Update 情報、イベントログを収集する。
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pc_name]
+              properties:
+                pc_name: { type: string }
+                software:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name: { type: string }
+                      version: { type: string }
+                      publisher: { type: string }
+                      install_date: { type: string }
+                windows_updates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      kb_id: { type: string }
+                      title: { type: string }
+                      severity: { type: string }
+                      installed: { type: boolean }
+                      installed_at: { type: string }
+                event_logs:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      log_type: { type: string }
+                      event_id: { type: integer }
+                      level: { type: string }
+                      source: { type: string }
+                      message: { type: string }
+                      generated_at: { type: string }
+      responses:
+        '200':
+          description: 収集成功
+
+  /result:
+    post:
+      tags: [エージェント]
+      summary: タスク実行結果送信
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_id, status]
+              properties:
+                task_id: { type: integer }
+                status:
+                  type: string
+                  enum: [completed, failed, running]
+                  description: |
+                    実装は最終ステータス（`completed` / `failed`）に加えて、
+                    実行中報告のための `running` も受理する。
+                result:
+                  type: string
+                  description: JSON 文字列（成功時の出力ログ・失敗時のエラー詳細など）。
+      responses:
+        '200':
+          description: 受付成功
+
+  /pcs:
+    get:
+      tags: [PC管理]
+      summary: PC一覧
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 50 }
+        - name: search
+          in: query
+          description: PC名 または IPアドレスで部分一致検索
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [healthy, warning, critical, offline] }
+        - name: os
+          in: query
+          description: OS名で部分一致フィルタ
+          schema: { type: string }
+      responses:
+        '200':
+          description: PC一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pcs: { type: array, items: { $ref: '#/components/schemas/PC' } }
+                  total: { type: integer }
+                  page: { type: integer }
+                  pages: { type: integer }
+
+  /pcs/{pc_id}:
+    get:
+      tags: [PC管理]
+      summary: PC詳細
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: pc_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: PC詳細
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pc: { $ref: '#/components/schemas/PC' }
+        '404':
+          description: PC が見つかりません
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /tasks:
+    get:
+      tags: [タスク管理]
+      summary: タスク一覧
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 50 }
+        - name: status
+          in: query
+          schema: { type: string, enum: [pending, running, completed, failed] }
+      responses:
+        '200':
+          description: タスク一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks: { type: array, items: { $ref: '#/components/schemas/Task' } }
+                  total: { type: integer }
+    post:
+      tags: [タスク管理]
+      summary: タスク作成
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_type]
+              properties:
+                task_type:
+                  type: string
+                  enum: [cleanup, update, diagnose, custom, collect]
+                pc_name: { type: string }
+                priority: { type: integer, default: 0 }
+                command: { type: string, maxLength: 512 }
+      responses:
+        '201':
+          description: タスク作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task: { $ref: '#/components/schemas/Task' }
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /tasks/{task_id}:
+    delete:
+      tags: [タスク管理]
+      summary: タスク削除
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 削除成功
+        '404':
+          description: タスクが見つかりません
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /alerts:
+    get:
+      tags: [アラート管理]
+      summary: アラート一覧
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: resolved
+          in: query
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: アラート一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts: { type: array, items: { $ref: '#/components/schemas/Alert' } }
+                  total: { type: integer }
+                  unresolved_count: { type: integer }
+
+  /alerts/sync:
+    post:
+      tags: [アラート管理]
+      summary: オフラインアラートを同期
+      description: last_seen が一定時間を超えた PC を offline と判定し Alert を生成/解消する。
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 同期結果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created: { type: integer }
+                  resolved: { type: integer }
+
+  /alerts/{alert_id}/acknowledge:
+    post:
+      tags: [アラート管理]
+      summary: アラート確認
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: alert_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 確認済み
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alert: { $ref: '#/components/schemas/Alert' }
+
+  /alerts/{alert_id}/resolve:
+    post:
+      tags: [アラート管理]
+      summary: アラート解消
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: alert_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 解消済み
+
+  /alert-rules:
+    get:
+      tags: [アラートルール]
+      summary: アラートルール一覧
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 50 }
+      responses:
+        '200':
+          description: アラートルール一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alert_rules: { type: array, items: { $ref: '#/components/schemas/AlertRule' } }
+                  total: { type: integer }
+    post:
+      tags: [アラートルール]
+      summary: アラートルール作成
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, metric]
+              properties:
+                name: { type: string, maxLength: 255 }
+                metric: { type: string, enum: [cpu, memory, disk, offline] }
+                operator: { type: string, enum: [gt, gte, lt, lte], default: gt }
+                threshold: { type: number, minimum: 0, maximum: 100 }
+                severity: { type: string, enum: [warning, critical], default: warning }
+                notify_email: { type: string, format: email, nullable: true }
+                notify_slack_webhook: { type: string, format: uri, nullable: true }
+                is_enabled: { type: boolean, default: true }
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alert_rule: { $ref: '#/components/schemas/AlertRule' }
+
+  /alert-rules/{rule_id}:
+    get:
+      tags: [アラートルール]
+      summary: アラートルール詳細
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rule_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: ルール詳細
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alert_rule: { $ref: '#/components/schemas/AlertRule' }
+        '404':
+          description: ルールが見つかりません
+    put:
+      tags: [アラートルール]
+      summary: アラートルール更新
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rule_id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, metric]
+              properties:
+                name: { type: string }
+                metric: { type: string, enum: [cpu, memory, disk, offline] }
+                operator: { type: string, enum: [gt, gte, lt, lte] }
+                threshold: { type: number }
+                severity: { type: string, enum: [warning, critical] }
+                is_enabled: { type: boolean }
+      responses:
+        '200':
+          description: 更新成功
+    delete:
+      tags: [アラートルール]
+      summary: アラートルール削除（管理者のみ）
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rule_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 削除成功
+
+  /alert-rules/{rule_id}/toggle:
+    post:
+      tags: [アラートルール]
+      summary: アラートルール有効/無効切り替え
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rule_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 状態変更成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alert_rule: { $ref: '#/components/schemas/AlertRule' }
+
+  /alert-rules/{rule_id}/test-notify:
+    post:
+      tags: [アラートルール]
+      summary: 通知テスト送信
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rule_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: テスト送信結果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: object
+                    properties:
+                      slack: { type: string, enum: [sent, failed, skipped] }
+                      email: { type: string, enum: [sent, failed, skipped] }
+
+  /scheduled-tasks:
+    get:
+      tags: [スケジュールタスク]
+      summary: スケジュールタスク一覧
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: スケジュールタスク一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scheduled_tasks: { type: array, items: { $ref: '#/components/schemas/ScheduledTask' } }
+                  total: { type: integer }
+    post:
+      tags: [スケジュールタスク]
+      summary: スケジュールタスク作成
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, task_type, schedule_type]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                task_type:
+                  type: string
+                  enum: [cleanup, update, diagnose, custom, collect]
+                schedule_type: { type: string, enum: [interval, daily, weekly] }
+                interval_minutes: { type: integer }
+                daily_time: { type: string, example: "03:00" }
+                weekly_day: { type: integer, minimum: 0, maximum: 6 }
+                weekly_time: { type: string }
+                is_enabled: { type: boolean, default: true }
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scheduled_task: { $ref: '#/components/schemas/ScheduledTask' }
+
+  /scheduled-tasks/{task_id}:
+    get:
+      tags: [スケジュールタスク]
+      summary: スケジュールタスク詳細
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: スケジュールタスク詳細
+    put:
+      tags: [スケジュールタスク]
+      summary: スケジュールタスク更新
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200':
+          description: 更新成功
+    delete:
+      tags: [スケジュールタスク]
+      summary: スケジュールタスク削除
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 削除成功
+
+  /scheduled-tasks/{task_id}/toggle:
+    post:
+      tags: [スケジュールタスク]
+      summary: スケジュールタスク有効/無効切り替え
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 状態変更成功
+
+  /scheduled-tasks/{task_id}/run-now:
+    post:
+      tags: [スケジュールタスク]
+      summary: スケジュールタスクを即時実行
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '201':
+          description: タスク作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task: { $ref: '#/components/schemas/Task' }
+
+  /groups:
+    get:
+      tags: [PCグループ]
+      summary: PCグループ一覧
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: PCグループ一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groups: { type: array, items: { $ref: '#/components/schemas/Group' } }
+                  total: { type: integer }
+    post:
+      tags: [PCグループ]
+      summary: PCグループ作成
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 255 }
+                description: { type: string, nullable: true }
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  group: { $ref: '#/components/schemas/Group' }
+
+  /groups/{group_id}:
+    get:
+      tags: [PCグループ]
+      summary: PCグループ詳細
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: group_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: グループ詳細
+    put:
+      tags: [PCグループ]
+      summary: PCグループ更新
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: group_id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200':
+          description: 更新成功
+    delete:
+      tags: [PCグループ]
+      summary: PCグループ削除
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: group_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 削除成功
+
+  /groups/{group_id}/pcs:
+    post:
+      tags: [PCグループ]
+      summary: PCをグループに追加
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: group_id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pc_name: { type: string }
+                pc_id: { type: integer }
+      responses:
+        '200':
+          description: 追加成功
+
+  /groups/{group_id}/pcs/{pc_id}:
+    delete:
+      tags: [PCグループ]
+      summary: PCをグループから削除
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: group_id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: pc_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 削除成功
+
+  /groups/{group_id}/tasks:
+    post:
+      tags: [PCグループ]
+      summary: グループ全PCにタスクを一括作成
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: group_id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_type]
+              properties:
+                task_type:
+                  type: string
+                  enum: [cleanup, update, diagnose, custom, collect]
+                priority: { type: integer, default: 0 }
+                command: { type: string, maxLength: 512 }
+      responses:
+        '201':
+          description: タスク一括作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks: { type: array, items: { $ref: '#/components/schemas/Task' } }
+                  count: { type: integer }
+
+  /dashboard/stats:
+    get:
+      tags: [ダッシュボード]
+      summary: ダッシュボード統計情報
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 統計情報
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_pcs: { type: integer }
+                  online_pcs: { type: integer }
+                  offline_pcs: { type: integer }
+                  healthy_pcs: { type: integer }
+                  warning_pcs: { type: integer }
+                  critical_pcs: { type: integer }
+                  pending_tasks: { type: integer }
+                  unresolved_alerts: { type: integer }
+                  avg_health_score: { type: number }
+
+  /dashboard/health-distribution:
+    get:
+      tags: [ダッシュボード]
+      summary: ヘルススコア分布
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: ヘルス分布データ
+
+  /dashboard/os-breakdown:
+    get:
+      tags: [ダッシュボード]
+      summary: OS 種別内訳
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OS 内訳データ
+
+  /audit:
+    get:
+      tags: [監査ログ]
+      summary: 監査ログ一覧
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 50 }
+      responses:
+        '200':
+          description: 監査ログ一覧
+
+  /export/pcs:
+    get:
+      tags: [エクスポート]
+      summary: PC一覧 CSV エクスポート
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: CSV データ
+          content:
+            text/csv:
+              schema: { type: string }
+
+  /export/tasks:
+    get:
+      tags: [エクスポート]
+      summary: タスク一覧 CSV エクスポート
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: CSV データ
+          content:
+            text/csv:
+              schema: { type: string }
+
+  /export/alerts:
+    get:
+      tags: [エクスポート]
+      summary: アラート一覧 CSV エクスポート
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: CSV データ
+          content:
+            text/csv:
+              schema: { type: string }

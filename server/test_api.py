@@ -295,12 +295,43 @@ def test_webui_pages(token):
         ("/scheduled-tasks", "Scheduled Tasks"),
         ("/groups", "PC Groups"),
         ("/alert-rules", "Alert Rules"),
+        ("/api/docs/", "API Docs (Swagger UI)"),
+        ("/api/openapi.yaml", "OpenAPI YAML"),
     ]
     for path, name in pages:
         headers = {"Authorization": f"Bearer {token}"}
         r = client.get(path, headers=headers)
         assert r.status_code == 200, f"{name} failed: {r.status_code}"
         print(f"  [PASS] WebUI {name}: {r.status_code}")
+
+
+def test_openapi_yaml_not_under_static():
+    r = client.get("/static/openapi.yaml")
+    assert r.status_code == 404, (
+        "openapi.yaml must NOT be served from /static/ (security: SWAGGER_ENABLED gate)"
+    )
+    print("  [PASS] /static/openapi.yaml correctly returns 404 (not in static dir)")
+
+
+def test_swagger_disabled_returns_404():
+    """Verify SWAGGER_ENABLED=false fully hides API docs and the OpenAPI spec."""
+    original = os.environ.get("SWAGGER_ENABLED")
+    os.environ["SWAGGER_ENABLED"] = "false"
+    try:
+        gated_app = create_app("testing")
+    finally:
+        if original is None:
+            os.environ.pop("SWAGGER_ENABLED", None)
+        else:
+            os.environ["SWAGGER_ENABLED"] = original
+
+    with gated_app.test_client() as gated_client:
+        for path in ("/api/docs/", "/api/openapi.yaml", "/static/openapi.yaml"):
+            r = gated_client.get(path)
+            assert r.status_code == 404, (
+                f"{path} should be 404 when SWAGGER_ENABLED=false, got {r.status_code}"
+            )
+    print("  [PASS] SWAGGER_ENABLED=false hides docs and openapi spec")
 
 
 def test_health_distribution(token):
@@ -703,6 +734,8 @@ def run_all():
     test_user_management(token)
     test_user_management_forbidden(token)
     test_webui_pages(token)
+    test_openapi_yaml_not_under_static()
+    test_swagger_disabled_returns_404()
     test_create_scheduled_task(token)
     test_list_scheduled_tasks(token)
     test_get_scheduled_task(token)

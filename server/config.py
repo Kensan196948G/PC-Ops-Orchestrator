@@ -8,6 +8,13 @@ _INSECURE_DEFAULTS = {
 }
 
 
+def env_bool(name: str, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _require_secret(name: str, value: str | None) -> str:
     if not value:
         raise ValueError(
@@ -59,6 +66,17 @@ class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     RATELIMIT_ENABLED = False
+
+
+# SWAGGER_ENABLED is intentionally evaluated in app.create_app() so that runtime
+# environment changes (e.g. tests toggling the flag) take effect; class-level
+# defaults are bound at import time and would otherwise be sticky.
+SWAGGER_DEFAULT_BY_CONFIG = {
+    "development": True,
+    "default": True,
+    "testing": True,
+    "production": False,
+}
 
 
 config = {
