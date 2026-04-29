@@ -29,7 +29,7 @@ def list_groups():
 
 
 @groups_bp.route("/groups", methods=["POST"])
-@login_required
+@admin_required
 def create_group():
     data = request.get_json()
     if not data:
@@ -84,7 +84,7 @@ def get_group(group_id):
 
 
 @groups_bp.route("/groups/<int:group_id>", methods=["PUT"])
-@login_required
+@admin_required
 def update_group(group_id):
     group = db.session.get(PCGroup, group_id)
     if not group:
@@ -150,7 +150,7 @@ def delete_group(group_id):
 
 
 @groups_bp.route("/groups/<int:group_id>/pcs", methods=["POST"])
-@login_required
+@admin_required
 def add_pc_to_group(group_id):
     group = db.session.get(PCGroup, group_id)
     if not group:
@@ -186,7 +186,7 @@ def add_pc_to_group(group_id):
 
 
 @groups_bp.route("/groups/<int:group_id>/pcs/<int:pc_id>", methods=["DELETE"])
-@login_required
+@admin_required
 def remove_pc_from_group(group_id, pc_id):
     group = db.session.get(PCGroup, group_id)
     if not group:
@@ -212,7 +212,7 @@ def remove_pc_from_group(group_id, pc_id):
 
 
 @groups_bp.route("/groups/<int:group_id>/tasks", methods=["POST"])
-@login_required
+@admin_required
 def create_group_task(group_id):
     """Create tasks for all PCs in a group."""
     group = db.session.get(PCGroup, group_id)

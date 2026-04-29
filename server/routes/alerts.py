@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from flask import Blueprint, request, jsonify, make_response
 from extensions import db
 from models import PC, Alert
-from auth import login_required
+from auth import login_required, require_role
 from notify import notify_alert
 
 alerts_bp = Blueprint("alerts", __name__, url_prefix="/api/alerts")
@@ -116,7 +116,7 @@ def get_alert(alert_id):
 
 
 @alerts_bp.route("/<int:alert_id>/acknowledge", methods=["POST"])
-@login_required
+@require_role("admin", "operator")
 def acknowledge_alert(alert_id):
     alert = db.session.get(Alert, alert_id)
     if not alert:
@@ -132,7 +132,7 @@ def acknowledge_alert(alert_id):
 
 
 @alerts_bp.route("/<int:alert_id>/resolve", methods=["POST"])
-@login_required
+@require_role("admin", "operator")
 def resolve_alert(alert_id):
     alert = db.session.get(Alert, alert_id)
     if not alert:
@@ -147,7 +147,7 @@ def resolve_alert(alert_id):
 
 
 @alerts_bp.route("/sync", methods=["POST"])
-@login_required
+@require_role("admin", "operator")
 def sync_alerts():
     """Generate/update alerts from current PC state (idempotent)."""
     now = datetime.now(timezone.utc)

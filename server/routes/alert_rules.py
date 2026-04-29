@@ -88,7 +88,7 @@ def list_alert_rules():
 
 
 @alert_rules_bp.route("/alert-rules", methods=["POST"])
-@login_required
+@admin_required
 def create_alert_rule():
     data = request.get_json()
     if not data:
@@ -121,7 +121,7 @@ def get_alert_rule(rule_id):
 
 
 @alert_rules_bp.route("/alert-rules/<int:rule_id>", methods=["PUT"])
-@login_required
+@admin_required
 def update_alert_rule(rule_id):
     rule = db.session.get(AlertRule, rule_id)
     if not rule:
@@ -162,7 +162,7 @@ def delete_alert_rule(rule_id):
 
 
 @alert_rules_bp.route("/alert-rules/<int:rule_id>/toggle", methods=["POST"])
-@login_required
+@admin_required
 def toggle_alert_rule(rule_id):
     rule = db.session.get(AlertRule, rule_id)
     if not rule:
@@ -193,7 +193,7 @@ def _send_slack(webhook_url: str, text: str) -> bool:
 
 
 @alert_rules_bp.route("/alert-rules/<int:rule_id>/test-notify", methods=["POST"])
-@login_required
+@admin_required
 def test_notify(rule_id):
     rule = db.session.get(AlertRule, rule_id)
     if not rule:

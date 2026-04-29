@@ -19,7 +19,13 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: 管理者・オペレーター用 JWT トークン
+      description: |
+        WebUI ユーザー用 JWT トークン。`POST /api/auth/login` で取得し、`Authorization: Bearer <JWT>` ヘッダで指定する。
+        ユーザーは以下のロールのいずれかを持つ:
+          - `admin`: 全機能（ユーザー管理 / グループ管理 / アラートルール作成 / PC 削除 など含む）
+          - `operator`: タスク発行・スケジュール管理・アラート確認/解決・監査ログ閲覧（管理機能は不可）
+          - `viewer`: 読み取り専用（ダッシュボード / PC / アラート / ルール / グループ / スケジュールの閲覧のみ）
+        各エンドポイントの `description` に必要ロールを明示する。
     AgentAuth:
       type: http
       scheme: bearer
@@ -160,7 +166,9 @@ paths:
                 properties:
                   token: { type: string }
                   username: { type: string }
-                  role: { type: string }
+                  role:
+                    type: string
+                    enum: [admin, operator, viewer]
         '401':
           description: 認証失敗
           content:
@@ -171,6 +179,7 @@ paths:
     get:
       tags: [認証]
       summary: ユーザー一覧
+      description: 必要ロール `admin` のみ。それ以外は 403。
       security:
         - BearerAuth: []
       responses:
@@ -186,6 +195,7 @@ paths:
     post:
       tags: [認証]
       summary: ユーザー作成（管理者のみ）
+      description: 必要ロール `admin`。`role` は admin/operator/viewer のいずれか（既定: viewer）。
       security:
         - BearerAuth: []
       requestBody:
@@ -198,7 +208,11 @@ paths:
               properties:
                 username: { type: string }
                 password: { type: string }
-                role: { type: string, enum: [admin, operator], default: operator }
+                role:
+                  type: string
+                  enum: [admin, operator, viewer]
+                  default: viewer
+                  description: 未指定時は viewer（最小権限の原則）
       responses:
         '201':
           description: 作成成功

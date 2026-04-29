@@ -1,12 +1,12 @@
 from flask import Blueprint, request, jsonify
 from models import OperationLog
-from auth import login_required
+from auth import require_role
 
 audit_bp = Blueprint("audit", __name__, url_prefix="/api/audit")
 
 
 @audit_bp.route("/logs", methods=["GET"])
-@login_required
+@require_role("admin", "operator")
 def list_logs():
     page = request.args.get("page", 1, type=int)
     per_page = min(request.args.get("per_page", 50, type=int), 200)

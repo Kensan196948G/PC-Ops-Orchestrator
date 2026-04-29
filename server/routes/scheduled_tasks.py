@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
 
-from auth import admin_required, log_operation, login_required
+from auth import admin_required, log_operation, login_required, require_role
 from extensions import db
 from models import PC, ScheduledTask
 from scheduler import _calc_next_run
@@ -130,7 +130,7 @@ def list_scheduled_tasks():
 
 
 @scheduled_tasks_bp.route("/scheduled-tasks", methods=["POST"])
-@login_required
+@require_role("admin", "operator")
 def create_scheduled_task():
     data = request.get_json()
     if not data:
@@ -171,7 +171,7 @@ def get_scheduled_task(task_id):
 
 
 @scheduled_tasks_bp.route("/scheduled-tasks/<int:task_id>", methods=["PUT"])
-@login_required
+@require_role("admin", "operator")
 def update_scheduled_task(task_id):
     st = db.session.get(ScheduledTask, task_id)
     if not st:
@@ -217,7 +217,7 @@ def delete_scheduled_task(task_id):
 
 
 @scheduled_tasks_bp.route("/scheduled-tasks/<int:task_id>/toggle", methods=["POST"])
-@login_required
+@require_role("admin", "operator")
 def toggle_scheduled_task(task_id):
     st = db.session.get(ScheduledTask, task_id)
     if not st:
@@ -243,7 +243,7 @@ def toggle_scheduled_task(task_id):
 
 
 @scheduled_tasks_bp.route("/scheduled-tasks/<int:task_id>/run-now", methods=["POST"])
-@login_required
+@require_role("admin", "operator")
 def run_scheduled_task_now(task_id):
     from models import Task
 
