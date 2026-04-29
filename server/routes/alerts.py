@@ -2,7 +2,7 @@ import csv
 import io
 from datetime import datetime, timezone, timedelta
 from flask import Blueprint, request, jsonify, make_response
-from extensions import db
+from extensions import db, limiter
 from models import PC, Alert
 from auth import login_required, require_role
 from notify import notify_alert
@@ -148,6 +148,7 @@ def resolve_alert(alert_id):
 
 @alerts_bp.route("/sync", methods=["POST"])
 @require_role("admin", "operator")
+@limiter.limit("6 per minute")
 def sync_alerts():
     """Generate/update alerts from current PC state (idempotent)."""
     now = datetime.now(timezone.utc)

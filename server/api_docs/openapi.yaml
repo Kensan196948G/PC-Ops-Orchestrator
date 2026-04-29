@@ -766,6 +766,30 @@ paths:
                         type: string
                         enum: [sent, failed, skipped, not_configured]
 
+  /metrics:
+    get:
+      tags: [Observability]
+      summary: Prometheus 形式メトリクス
+      description: |
+        Prometheus exposition format (text/plain; version=0.0.4) で、本サーバの
+        集約カウンタおよびゲージを返す。**認証不要**（内部ネットワーク前提で
+        scraper からのアクセスを想定）。
+        露出される系列:
+          - `pcs_total{status="..."}`: PC 数（status ラベル毎）
+          - `alerts_unresolved_total{severity="..."}`: 未解決アラート数（severity ラベル毎）
+          - `tasks_pending_total`: pending タスク数
+          - `scheduled_tasks_enabled_total`: 有効スケジュールタスク数
+          - `users_total{role="..."}`: アクティブユーザー数（role ラベル毎）
+          - `ratelimit_hits_total`: 起動以降のレート制限ヒット累計（counter）
+          - `up`: 1 (固定 / 健康確認用)
+      responses:
+        '200':
+          description: Prometheus 形式メトリクス
+          content:
+            text/plain:
+              schema:
+                type: string
+
   /scheduled-tasks:
     get:
       tags: [スケジュールタスク]

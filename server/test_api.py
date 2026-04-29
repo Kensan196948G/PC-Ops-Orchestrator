@@ -692,6 +692,80 @@ def test_alert_rule_channel_type_validation(token):
     print("  [PASS] alert-rule の channel_type バリデーション")
 
 
+def test_metrics_endpoint_format(token):
+    """/api/metrics は Prometheus exposition 形式を返す。"""
+    r = client.get("/api/metrics")
+    assert r.status_code == 200
+    ct = r.headers.get("Content-Type", "")
+    assert ct.startswith("text/plain"), f"unexpected content-type: {ct}"
+    body = r.data.decode("utf-8")
+    # 必須メトリクス系列が出ていること
+    for series in (
+        "pcs_total",
+        "alerts_unresolved_total",
+        "tasks_pending_total",
+        "scheduled_tasks_enabled_total",
+        "users_total",
+        "ratelimit_hits_total",
+        "up",
+    ):
+        assert f"# TYPE {series} " in body, f"missing TYPE comment for {series}"
+        # 少なくとも 1 サンプルが出ているか (ラベル有無問わず)
+        assert series in body
+    # 最後に改行で終わる
+    assert body.endswith("\n")
+    print("  [PASS] /api/metrics の Prometheus 形式が正しい")
+
+
+def test_ratelimit_counter_unit():
+    """bump_counter -> render_metrics -> /api/metrics が一貫して値を反映する単体検証。
+
+    Flask-Limiter のグローバル singleton と app-config 状態を巻き込んだ
+    HTTP 経由 429 検証は環境依存になりやすいため、ここでは pathway を
+    1 段ずつ機械的に検証する:
+
+      1. metrics.bump_counter で counter が増える
+      2. metrics.render_metrics の出力に counter 値が反映される
+      3. /api/metrics 経由でも同値が返る
+    """
+    import metrics as metrics_mod
+
+    metrics_mod.reset_counters_for_test()
+    assert metrics_mod.counter_value("ratelimit_hits_total") == 0
+
+    metrics_mod.bump_counter("ratelimit_hits_total")
+    metrics_mod.bump_counter("ratelimit_hits_total", amount=4)
+    assert metrics_mod.counter_value("ratelimit_hits_total") == 5
+
+    with app.app_context():
+        body = metrics_mod.render_metrics()
+    assert "ratelimit_hits_total 5" in body, body
+
+    r = client.get("/api/metrics")
+    assert r.status_code == 200
+    assert "ratelimit_hits_total 5" in r.data.decode("utf-8")
+
+    metrics_mod.reset_counters_for_test()
+    print("  [PASS] bump_counter→render_metrics→/api/metrics が一貫して値を反映する")
+
+
+def test_ratelimit_error_handler_registered():
+    """app が RateLimitExceeded → 429 + counter インクリメントを行うハンドラを持つ。"""
+    import metrics as metrics_mod
+    from flask_limiter.errors import RateLimitExceeded
+
+    handler = app.error_handler_spec.get(None, {}).get(429, {})
+    assert handler, "no 429 error handler registered"
+    has_rl_handler = any(
+        cls is RateLimitExceeded or issubclass(cls, RateLimitExceeded)
+        for cls in handler.keys()
+    )
+    assert has_rl_handler, "RateLimitExceeded handler missing"
+
+    metrics_mod.reset_counters_for_test()
+    print("  [PASS] RateLimitExceeded ハンドラが登録されている")
+
+
 def test_swagger_disabled_returns_404():
     """Verify SWAGGER_ENABLED=false fully hides API docs and the OpenAPI spec."""
     original = os.environ.get("SWAGGER_ENABLED")
@@ -1120,6 +1194,7 @@ def run_all():
     # fixture; we still want the legacy `python test_api.py` runner to call the
     # validation path so a manual run never silently skips RBAC matrix coverage.
     test_alert_rule_channel_type_validation(token)
+    test_metrics_endpoint_format(token)
     test_openapi_yaml_not_under_static()
     test_swagger_disabled_returns_404()
     test_rbac_role_matrix(token)

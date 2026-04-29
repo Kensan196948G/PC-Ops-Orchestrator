@@ -500,6 +500,46 @@ sequenceDiagram
 | 📌 Jira | チケット自動生成 | `config/config.json` |
 | 🔐 SIEM | セキュリティログ連携 | `config/config.json` |
 
+### 📊 観測性 (Prometheus メトリクス)
+
+`/api/metrics` で **Prometheus exposition format** によるメトリクスを露出します（認証不要、内部ネットワーク前提）。
+
+| 系列 | 種別 | 用途 |
+|---|---|---|
+| `pcs_total{status="healthy/warning/critical/offline"}` | gauge | PC 状態の分布 |
+| `alerts_unresolved_total{severity="critical/high/medium/warning"}` | gauge | 重大度別の未解決アラート数 |
+| `tasks_pending_total` | gauge | 滞留タスクの監視 |
+| `scheduled_tasks_enabled_total` | gauge | 有効スケジュール件数 |
+| `users_total{role="admin/operator/viewer"}` | gauge | ロール別の利用者数 |
+| `ratelimit_hits_total` | counter | レート制限ヒット累計（起動以降） |
+| `up` | gauge | 常に 1（liveness） |
+
+```yaml
+# prometheus.yml の scrape_configs 例
+- job_name: pc-ops-orchestrator
+  scrape_interval: 30s
+  metrics_path: /api/metrics
+  static_configs:
+    - targets: ['pc-ops:5000']
+```
+
+### 🚦 API レート制限 (Flask-Limiter)
+
+過度な書き込みや外部 webhook の暴発を防ぐため、書き込み系エンドポイントにレート制限を適用しています（IP アドレス単位、デフォルトストレージ: メモリ）。
+
+| エンドポイント | 制限 | 理由 |
+|---|---|---|
+| `POST /api/auth/login` | 5/min | ブルートフォース対策 |
+| `POST /api/auth/setup` | 3/min | 初回のみ実行されるべき |
+| `POST /api/auth/users` | 10/min | 暴発抑止 |
+| `POST /api/tasks` | 60/min | operator のタスク発行 |
+| `POST /api/alerts/sync` | 6/min | DB 重い処理 |
+| `POST /api/alert-rules/<id>/test-notify` | 6/min | 外部 webhook 呼び出し |
+| `POST /api/collect` | 600/min | Agent からの情報送信 |
+| その他 | 200/min | デフォルト |
+
+> 制限超過時は HTTP 429 を返し、`ratelimit_hits_total` counter がインクリメントされます。`/api/metrics` 経由で監視可能です。
+
 ### 📨 アラート通知統合 (Issue #58 / M4-2)
 
 WebUI のアラートルール (`/alert-rules`) ごとに **Slack / Microsoft Teams / Generic Webhook / Email** の通知先を登録でき、`/api/alert-rules/<id>/test-notify` で実機到達確認が可能です。

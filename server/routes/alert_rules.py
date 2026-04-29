@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 
 from auth import admin_required, log_operation, login_required
-from extensions import db
+from extensions import db, limiter
 from models import AlertRule
 from notify import ALLOWED_CHANNEL_TYPES, dispatch_via_rule
 
@@ -208,6 +208,7 @@ class _TestAlert:
 
 @alert_rules_bp.route("/alert-rules/<int:rule_id>/test-notify", methods=["POST"])
 @admin_required
+@limiter.limit("6 per minute")
 def test_notify(rule_id):
     rule = db.session.get(AlertRule, rule_id)
     if not rule:

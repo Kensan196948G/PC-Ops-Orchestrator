@@ -39,6 +39,7 @@ def create_app(config_name=None):
     from routes.scheduled_tasks import scheduled_tasks_bp
     from routes.groups import groups_bp
     from routes.alert_rules import alert_rules_bp
+    from routes.metrics import metrics_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(collect_bp)
@@ -50,6 +51,20 @@ def create_app(config_name=None):
     app.register_blueprint(scheduled_tasks_bp)
     app.register_blueprint(groups_bp)
     app.register_blueprint(alert_rules_bp)
+    app.register_blueprint(metrics_bp)
+
+    # Rate limiter -> /metrics integration:
+    # increment the in-process counter every time Flask-Limiter rejects a
+    # request, so Prometheus can graph "ratelimit_hits_total".
+    from flask_limiter.errors import RateLimitExceeded
+    from metrics import bump_counter
+
+    @app.errorhandler(RateLimitExceeded)
+    def _on_rate_limit_exceeded(e):
+        bump_counter("ratelimit_hits_total")
+        return jsonify(
+            {"error": "リクエストが多すぎます。しばらく待ってから再試行してください"}
+        ), 429
 
     if app.config.get("SWAGGER_ENABLED", False):
         from flask_swagger_ui import get_swaggerui_blueprint
