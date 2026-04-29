@@ -207,8 +207,8 @@ class _TestAlert:
 
 
 @alert_rules_bp.route("/alert-rules/<int:rule_id>/test-notify", methods=["POST"])
-@admin_required
 @limiter.limit("6 per minute")
+@admin_required
 def test_notify(rule_id):
     rule = db.session.get(AlertRule, rule_id)
     if not rule:

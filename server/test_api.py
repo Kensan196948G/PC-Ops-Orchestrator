@@ -694,13 +694,17 @@ def test_alert_rule_channel_type_validation(token):
 
 def test_metrics_endpoint_format(token):
     """/api/metrics は Prometheus exposition 形式を返す。"""
+    import re
+
     r = client.get("/api/metrics")
     assert r.status_code == 200
     ct = r.headers.get("Content-Type", "")
     assert ct.startswith("text/plain"), f"unexpected content-type: {ct}"
+    # Prometheus exposition は version パラメータを保持して欲しい
+    assert "version=0.0.4" in ct, f"version param missing in Content-Type: {ct}"
     body = r.data.decode("utf-8")
-    # 必須メトリクス系列が出ていること
-    for series in (
+
+    all_series = (
         "pcs_total",
         "alerts_unresolved_total",
         "tasks_pending_total",
@@ -708,13 +712,29 @@ def test_metrics_endpoint_format(token):
         "users_total",
         "ratelimit_hits_total",
         "up",
-    ):
+    )
+    # 必須メトリクスの # TYPE コメントは必ず出る
+    for series in all_series:
         assert f"# TYPE {series} " in body, f"missing TYPE comment for {series}"
-        # 少なくとも 1 サンプルが出ているか (ラベル有無問わず)
-        assert series in body
+
+    # サンプル行が必ず存在する系列（DB 集計でも常にスカラー or 必ず admin 1 件）
+    # — pcs_total と alerts_unresolved_total はラベル付きで 0 件のときに
+    # サンプル行を出さないため、ここでは検証対象外
+    always_sampled = (
+        "tasks_pending_total",
+        "scheduled_tasks_enabled_total",
+        "users_total",
+        "ratelimit_hits_total",
+        "up",
+    )
+    for series in always_sampled:
+        sample_re = rf"^{re.escape(series)}(\{{[^}}]*\}})?\s+\d"
+        assert re.search(sample_re, body, re.MULTILINE), (
+            f"no sample line for {series} (only TYPE comment matched?)"
+        )
     # 最後に改行で終わる
     assert body.endswith("\n")
-    print("  [PASS] /api/metrics の Prometheus 形式が正しい")
+    print("  [PASS] /api/metrics の Prometheus 形式が正しい (サンプル行も検証)")
 
 
 def test_ratelimit_counter_unit():
@@ -749,21 +769,53 @@ def test_ratelimit_counter_unit():
     print("  [PASS] bump_counter→render_metrics→/api/metrics が一貫して値を反映する")
 
 
-def test_ratelimit_error_handler_registered():
-    """app が RateLimitExceeded → 429 + counter インクリメントを行うハンドラを持つ。"""
+def test_ratelimit_error_handler_via_public_api():
+    """RateLimitExceeded ハンドラが /api/* は JSON、それ以外は HTML を返し、
+    どちらでも counter が増えることを公開 API 経由で検証する。
+    （RateLimitExceeded は Limit 型の引数を要求するため Mock で構築）。"""
+    from unittest.mock import MagicMock
     import metrics as metrics_mod
     from flask_limiter.errors import RateLimitExceeded
 
-    handler = app.error_handler_spec.get(None, {}).get(429, {})
-    assert handler, "no 429 error handler registered"
-    has_rl_handler = any(
-        cls is RateLimitExceeded or issubclass(cls, RateLimitExceeded)
-        for cls in handler.keys()
-    )
-    assert has_rl_handler, "RateLimitExceeded handler missing"
-
     metrics_mod.reset_counters_for_test()
-    print("  [PASS] RateLimitExceeded ハンドラが登録されている")
+
+    def fake_exc():
+        limit = MagicMock()
+        limit.error_message = None
+        return RateLimitExceeded(limit)
+
+    def _normalize(resp):
+        if isinstance(resp, tuple):
+            body, status = resp[0], resp[1]
+        else:
+            body, status = resp, getattr(resp, "status_code", None)
+        if hasattr(body, "get_data"):
+            payload = body.get_data(as_text=True)
+            if status is None:
+                status = body.status_code
+        else:
+            payload = str(body)
+        return status, payload
+
+    # /api/* path → JSON (Flask の jsonify は default で非 ASCII を escape)
+    with app.test_request_context("/api/foo"):
+        status, payload = _normalize(app.handle_user_exception(fake_exc()))
+    assert status == 429
+    parsed = json.loads(payload)
+    assert "リクエストが多すぎます" in parsed["error"]
+
+    # 非 API path → HTML テンプレート (error.html)
+    with app.test_request_context("/login"):
+        status, payload = _normalize(app.handle_user_exception(fake_exc()))
+    assert status == 429
+    assert "<html" in payload.lower() or "<!doctype" in payload.lower(), (
+        "HTML route should render the error.html template"
+    )
+
+    hits = metrics_mod.counter_value("ratelimit_hits_total")
+    assert hits == 2, f"counter should be incremented for both calls, got {hits}"
+    metrics_mod.reset_counters_for_test()
+    print("  [PASS] 429 ハンドラが /api JSON / HTML 両分岐で counter を更新")
 
 
 def test_swagger_disabled_returns_404():
@@ -1195,6 +1247,8 @@ def run_all():
     # validation path so a manual run never silently skips RBAC matrix coverage.
     test_alert_rule_channel_type_validation(token)
     test_metrics_endpoint_format(token)
+    test_ratelimit_counter_unit()
+    test_ratelimit_error_handler_via_public_api()
     test_openapi_yaml_not_under_static()
     test_swagger_disabled_returns_404()
     test_rbac_role_matrix(token)

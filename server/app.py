@@ -56,14 +56,27 @@ def create_app(config_name=None):
     # Rate limiter -> /metrics integration:
     # increment the in-process counter every time Flask-Limiter rejects a
     # request, so Prometheus can graph "ratelimit_hits_total".
+    # API paths get a JSON body, HTML pages fall back to the existing 4xx
+    # template so the WebUI doesn't suddenly receive raw JSON.
+    from flask import request as _flask_request
     from flask_limiter.errors import RateLimitExceeded
     from metrics import bump_counter
 
     @app.errorhandler(RateLimitExceeded)
     def _on_rate_limit_exceeded(e):
         bump_counter("ratelimit_hits_total")
-        return jsonify(
-            {"error": "リクエストが多すぎます。しばらく待ってから再試行してください"}
+        if _flask_request.path.startswith("/api/"):
+            return jsonify(
+                {
+                    "error": (
+                        "リクエストが多すぎます。しばらく待ってから再試行してください"
+                    )
+                }
+            ), 429
+        return render_template(
+            "error.html",
+            code=429,
+            message="リクエストが多すぎます。しばらく待ってから再試行してください",
         ), 429
 
     if app.config.get("SWAGGER_ENABLED", False):

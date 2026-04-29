@@ -18,4 +18,8 @@ def get_metrics():
     internet, gate the route behind your reverse proxy ACL.
     """
     body = render_metrics()
-    return Response(body, mimetype=PROMETHEUS_CONTENT_TYPE)
+    # Prometheus exposition format requires the *full* Content-Type (with the
+    # `version=...` parameter) to round-trip exactly. Werkzeug's `mimetype=`
+    # parameter strips charset/version subparams in some versions, so we
+    # set Content-Type via headers to be safe.
+    return Response(body, headers={"Content-Type": PROMETHEUS_CONTENT_TYPE})

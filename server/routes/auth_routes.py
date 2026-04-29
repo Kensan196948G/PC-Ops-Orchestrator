@@ -91,8 +91,8 @@ def list_users():
 
 
 @auth_bp.route("/users", methods=["POST"])
-@admin_required
 @limiter.limit("10 per minute")
+@admin_required
 def create_user():
     data = request.get_json()
     if not data:

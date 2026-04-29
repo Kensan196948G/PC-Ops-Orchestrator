@@ -46,8 +46,8 @@ def get_pending_tasks():
 
 
 @tasks_bp.route("/tasks", methods=["POST"])
-@require_role("admin", "operator")
 @limiter.limit("60 per minute")
+@require_role("admin", "operator")
 def create_task():
     data = request.get_json()
     if not data:

@@ -460,7 +460,7 @@ sequenceDiagram
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| API 統合テスト（Python） | 57項目 | ✅ PASS |
+| API 統合テスト（Python） | 60項目 | ✅ PASS |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
 | Agent Teams E2E テスト | 複数 | ✅ PASS |

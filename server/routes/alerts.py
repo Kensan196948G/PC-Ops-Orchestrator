@@ -147,8 +147,8 @@ def resolve_alert(alert_id):
 
 
 @alerts_bp.route("/sync", methods=["POST"])
-@require_role("admin", "operator")
 @limiter.limit("6 per minute")
+@require_role("admin", "operator")
 def sync_alerts():
     """Generate/update alerts from current PC state (idempotent)."""
     now = datetime.now(timezone.utc)
