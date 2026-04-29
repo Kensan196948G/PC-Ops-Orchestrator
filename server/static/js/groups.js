@@ -43,17 +43,17 @@ async function loadGroups(page = 1) {
 
         const tdActions = row.insertCell();
         tdActions.className = 'action-cell';
-        tdActions.appendChild(makeBtn('▶', 'btn-secondary btn-xs', 'run-task', g.id, '一括タスク実行'));
-        tdActions.appendChild(makeBtn('✎', 'btn-secondary btn-xs', 'edit', g.id, '編集'));
-        tdActions.appendChild(makeBtn('✕', 'btn-danger btn-xs', 'delete', g.id, '削除'));
+        tdActions.appendChild(makeBtn('▶', 'btn-secondary btn-xs', 'run-task', g.id, '一括タスク実行', 'role-admin-only'));
+        tdActions.appendChild(makeBtn('✎', 'btn-secondary btn-xs', 'edit', g.id, '編集', 'role-admin-only'));
+        tdActions.appendChild(makeBtn('✕', 'btn-danger btn-xs', 'delete', g.id, '削除', 'role-admin-only'));
     }
 
     renderPagination('groups-pagination', data.page, data.pages, loadGroups);
 }
 
-function makeBtn(label, classes, action, id, title) {
+function makeBtn(label, classes, action, id, title, roleClass) {
     const btn = document.createElement('button');
-    btn.className = `btn ${classes}`;
+    btn.className = `btn ${classes}` + (roleClass ? ` ${roleClass}` : '');
     btn.textContent = label;
     btn.title = title;
     btn.dataset.action = action;
@@ -195,7 +195,7 @@ async function openMembersModal(groupId) {
         tdStatus.appendChild(badge);
         const tdOp = row.insertCell();
         const btn = document.createElement('button');
-        btn.className = 'btn btn-danger btn-xs';
+        btn.className = 'btn btn-danger btn-xs role-admin-only';
         btn.textContent = '削除';
         btn.dataset.action = 'remove-pc';
         btn.dataset.id = groupId;

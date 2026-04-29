@@ -70,23 +70,24 @@ async function loadScheduledTasks(page = 1) {
         // Action buttons — pass only numeric id via data-* to avoid injection
         const tdActions = row.insertCell();
         tdActions.className = 'action-cell';
-        tdActions.appendChild(makeBtn('▶', 'btn-secondary btn-xs', 'run-now', st.id, '今すぐ実行'));
+        tdActions.appendChild(makeBtn('▶', 'btn-secondary btn-xs', 'run-now', st.id, '今すぐ実行', 'role-operator-or-admin'));
         tdActions.appendChild(makeBtn(
             st.is_enabled ? '停止' : '開始',
             st.is_enabled ? 'btn-warning btn-xs' : 'btn-success btn-xs',
             'toggle', st.id,
             st.is_enabled ? '無効化' : '有効化',
+            'role-operator-or-admin',
         ));
-        tdActions.appendChild(makeBtn('✎', 'btn-secondary btn-xs', 'edit', st.id, '編集'));
-        tdActions.appendChild(makeBtn('✕', 'btn-danger btn-xs', 'delete', st.id, '削除'));
+        tdActions.appendChild(makeBtn('✎', 'btn-secondary btn-xs', 'edit', st.id, '編集', 'role-operator-or-admin'));
+        tdActions.appendChild(makeBtn('✕', 'btn-danger btn-xs', 'delete', st.id, '削除', 'role-admin-only'));
     }
 
     renderPagination('scheduled-tasks-pagination', data.page, data.pages, loadScheduledTasks);
 }
 
-function makeBtn(label, classes, action, id, title) {
+function makeBtn(label, classes, action, id, title, roleClass) {
     const btn = document.createElement('button');
-    btn.className = `btn ${classes}`;
+    btn.className = `btn ${classes}` + (roleClass ? ` ${roleClass}` : '');
     btn.textContent = label;
     btn.title = title;
     btn.dataset.action = action;
