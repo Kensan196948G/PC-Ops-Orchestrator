@@ -40,6 +40,17 @@ components:
         error:
           type: string
 
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        role:
+          type: string
+          enum: [admin, operator, viewer]
+        is_active: { type: boolean }
+        created_at: { type: string, format: date-time }
+
     PC:
       type: object
       properties:
@@ -165,10 +176,7 @@ paths:
                 type: object
                 properties:
                   token: { type: string }
-                  username: { type: string }
-                  role:
-                    type: string
-                    enum: [admin, operator, viewer]
+                  user: { $ref: '#/components/schemas/User' }
         '401':
           description: 認証失敗
           content:

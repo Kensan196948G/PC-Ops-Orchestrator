@@ -20,6 +20,10 @@ def create_app(config_name=None):
 
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
+    @app.context_processor
+    def inject_feature_flags():
+        return {"swagger_enabled": bool(app.config.get("SWAGGER_ENABLED"))}
+
     db.init_app(app)
     migrate.init_app(app, db)
     limiter.init_app(app)

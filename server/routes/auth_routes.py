@@ -98,7 +98,10 @@ def create_user():
 
     username = data.get("username", "").strip()
     password = data.get("password", "")
-    role = data.get("role", "viewer").strip()
+    raw_role = data.get("role", "viewer")
+    if not isinstance(raw_role, str):
+        return jsonify({"error": "role は文字列で指定してください"}), 400
+    role = raw_role.strip()
 
     if not username or not password:
         return jsonify({"error": "username と password は必須です"}), 400
@@ -135,7 +138,8 @@ def update_user(user_id):
 
     data = request.get_json() or {}
     if "role" in data:
-        if data["role"] not in ALLOWED_ROLES:
+        raw_role = data["role"]
+        if not isinstance(raw_role, str) or raw_role.strip() not in ALLOWED_ROLES:
             return jsonify(
                 {
                     "error": (
@@ -144,7 +148,7 @@ def update_user(user_id):
                     )
                 }
             ), 400
-        target.role = data["role"]
+        target.role = raw_role.strip()
     if "is_active" in data:
         target.is_active = bool(data["is_active"])
     if "password" in data:

@@ -53,10 +53,12 @@
                     <span class="nav-icon">&#9998;</span>
                     操作ログ
                 </a>
+                {% if swagger_enabled %}
                 <a href="/api/docs/" class="nav-item" data-page="api-docs" id="nav-api-docs" target="_blank" rel="noopener">
                     <span class="nav-icon">&#9776;</span>
                     API ドキュメント
                 </a>
+                {% endif %}
                 <div class="nav-divider"></div>
                 <a href="#" class="nav-item" id="logout-btn">
                     <span class="nav-icon">&#9660;</span>
