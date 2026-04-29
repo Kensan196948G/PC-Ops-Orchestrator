@@ -6,8 +6,8 @@ info:
     PC管理・監視・タスク自動化プラットフォーム REST API。
 
     **認証方式**
-    - `BearerAuth` (JWT): 管理者・オペレーター向け。`POST /api/auth/login` で取得。
-    - `AgentAuth` (API Key): エージェント（PowerShell スクリプト）向け。環境変数 `AGENT_KEY` の値。
+    - `BearerAuth` (JWT): 管理者・オペレーター向け。`POST /api/auth/login` で取得。`Authorization: Bearer <JWT>` ヘッダで指定。
+    - `AgentAuth` (API Key): エージェント（PowerShell スクリプト）向け。環境変数 `AGENT_API_KEYS`（カンマ区切りで複数許可）に設定したキーのいずれかを `Authorization: Bearer <API_KEY>` ヘッダで指定。
 
 servers:
   - url: /api
@@ -23,7 +23,9 @@ components:
     AgentAuth:
       type: http
       scheme: bearer
-      description: エージェント用 API キー（デフォルト値は AGENT_KEY 環境変数）
+      description: |
+        エージェント用 API キー（`Authorization: Bearer <API_KEY>` ヘッダ）。
+        サーバ側の環境変数 `AGENT_API_KEYS`（カンマ区切りで複数登録可能）に登録されたキーと一致する場合に許可される。
 
   schemas:
     Error:
@@ -58,13 +60,25 @@ components:
       type: object
       properties:
         id: { type: integer }
-        task_type: { type: string }
+        task_type:
+          type: string
+          enum: [cleanup, update, diagnose, custom, collect]
         pc_id: { type: integer, nullable: true }
+        pc_name: { type: string, nullable: true }
         status: { type: string, enum: [pending, running, completed, failed] }
         priority: { type: integer }
         command: { type: string, nullable: true }
-        result: { type: object, nullable: true }
+        parameters:
+          type: string
+          nullable: true
+          description: 実装はタスクパラメータを JSON 文字列として保存・返却する
+        result:
+          type: string
+          nullable: true
+          description: 実装は実行結果を JSON 文字列として保存・返却する
+        created_by: { type: string, nullable: true }
         created_at: { type: string, format: date-time }
+        completed_at: { type: string, format: date-time, nullable: true }
 
     Alert:
       type: object
@@ -98,7 +112,9 @@ components:
       properties:
         id: { type: integer }
         name: { type: string }
-        task_type: { type: string }
+        task_type:
+          type: string
+          enum: [cleanup, update, diagnose, custom, collect]
         schedule_type: { type: string, enum: [interval, daily, weekly] }
         interval_minutes: { type: integer, nullable: true }
         daily_time: { type: string, nullable: true }
@@ -305,8 +321,15 @@ paths:
               required: [task_id, status]
               properties:
                 task_id: { type: integer }
-                status: { type: string, enum: [completed, failed] }
-                result: { type: object }
+                status:
+                  type: string
+                  enum: [completed, failed, running]
+                  description: |
+                    実装は最終ステータス（`completed` / `failed`）に加えて、
+                    実行中報告のための `running` も受理する。
+                result:
+                  type: string
+                  description: JSON 文字列（成功時の出力ログ・失敗時のエラー詳細など）。
       responses:
         '200':
           description: 受付成功
@@ -415,9 +438,9 @@ paths:
               properties:
                 task_type:
                   type: string
-                  enum: [collect, cleanup, diagnose, update, reboot, custom]
+                  enum: [cleanup, update, diagnose, custom, collect]
                 pc_name: { type: string }
-                priority: { type: integer, default: 1 }
+                priority: { type: integer, default: 0 }
                 command: { type: string, maxLength: 512 }
       responses:
         '201':
@@ -727,7 +750,9 @@ paths:
               properties:
                 name: { type: string }
                 description: { type: string }
-                task_type: { type: string }
+                task_type:
+                  type: string
+                  enum: [cleanup, update, diagnose, custom, collect]
                 schedule_type: { type: string, enum: [interval, daily, weekly] }
                 interval_minutes: { type: integer }
                 daily_time: { type: string, example: "03:00" }
@@ -975,9 +1000,11 @@ paths:
               type: object
               required: [task_type]
               properties:
-                task_type: { type: string }
-                priority: { type: integer, default: 1 }
-                command: { type: string }
+                task_type:
+                  type: string
+                  enum: [cleanup, update, diagnose, custom, collect]
+                priority: { type: integer, default: 0 }
+                command: { type: string, maxLength: 512 }
       responses:
         '201':
           description: タスク一括作成成功

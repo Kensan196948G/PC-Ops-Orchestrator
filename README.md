@@ -159,8 +159,12 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | 🖥️ PC一覧 | 検索・フィルタリング、状態表示、スコア確認、**CSVエクスポート**（30秒自動更新） |
 | 🔍 PC詳細 | 基本情報・ハードウェア情報・リソース履歴グラフ・タスク実行・**Windows Update一覧**・**インストール済みソフトウェア一覧** |
 | 📋 タスク管理 | タスク作成（クリーンアップ/更新/診断/カスタム）、状態監視、**CSVエクスポート**（30秒自動更新） |
+| ⏰ スケジュールタスク | **定期実行タスクの登録・編集**、cron 形式スケジュール、有効/無効トグル、即時実行 |
+| 👥 PC グループ管理 | **PC をグループ化**して一括タスク発行、グループ内 PC 管理 |
 | ⚠️ アラート管理 | アラート確認・解決・同期、重大度フィルタ、**CSVエクスポート**（30秒自動更新） |
+| 🛎️ アラートルール設定 | **しきい値・通知先（Webhook 等）の管理**、有効/無効トグル、テスト通知 |
 | 📝 操作ログ | WebUIおよびAgent操作の監査ログ、ユーザー/操作種別フィルタ |
+| 📚 API ドキュメント | **Swagger UI** (`/api/docs/`) でブラウザから API 仕様確認・試行 |
 
 ---
 
@@ -192,6 +196,24 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | GET | `/api/pcs/<id>/updates` | JWT | PC詳細 → Windows Update 一覧 |
 | GET | `/api/tasks/export.csv` | JWT | タスク一覧 CSV エクスポート |
 | GET | `/api/logs` | JWT | 操作ログ（監査ログ）一覧 |
+| GET/POST | `/api/scheduled-tasks` | JWT | スケジュールタスク一覧・作成 |
+| GET/PUT/DELETE | `/api/scheduled-tasks/<id>` | JWT | スケジュールタスク詳細・更新・削除 |
+| POST | `/api/scheduled-tasks/<id>/toggle` | JWT | 有効/無効切り替え |
+| POST | `/api/scheduled-tasks/<id>/run-now` | JWT | 即時実行 |
+| GET/POST | `/api/groups` | JWT | PC グループ一覧・作成 |
+| GET/PUT/DELETE | `/api/groups/<id>` | JWT | グループ詳細・更新・削除 |
+| POST | `/api/groups/<id>/pcs` | JWT | グループへ PC 追加 |
+| DELETE | `/api/groups/<id>/pcs/<pc_id>` | JWT | グループから PC 削除 |
+| POST | `/api/groups/<id>/tasks` | JWT | グループ内全 PC へ一括タスク発行 |
+| GET/POST | `/api/alert-rules` | JWT | アラートルール一覧・作成 |
+| GET/PUT/DELETE | `/api/alert-rules/<id>` | JWT | ルール詳細・更新・削除 |
+| POST | `/api/alert-rules/<id>/toggle` | JWT | ルール有効/無効切替 |
+| POST | `/api/alert-rules/<id>/test-notify` | JWT | 通知先テスト送信 |
+| GET | `/api/auth/users` | JWT(admin) | ユーザー一覧（管理者のみ） |
+| POST | `/api/auth/users` | JWT(admin) | ユーザー作成 |
+| PATCH/DELETE | `/api/auth/users/<id>` | JWT(admin) | ユーザー更新・削除 |
+| GET | `/api/docs/` | - | **Swagger UI（OpenAPI 3.0 ドキュメント）** |
+| GET | `/api/openapi.yaml` | - | OpenAPI 3.0 仕様 (YAML) |
 
 ---
 
@@ -375,11 +397,11 @@ sequenceDiagram
 │   ├── config.py                 設定
 │   ├── models.py                 SQLAlchemyモデル（7テーブル）
 │   ├── auth.py                   JWT + API Key認証
-│   ├── routes/                   Blueprintルート（auth/collect/tasks/pcs/dashboard/alerts）
-│   ├── templates/                Jinja2テンプレート（dashboard/pc_list/tasks/alerts）
-│   ├── static/                   CSS + JS（alerts.js など）
+│   ├── routes/                   Blueprintルート（auth/collect/tasks/pcs/dashboard/alerts/scheduled_tasks/groups/alert_rules/audit）
+│   ├── templates/                Jinja2テンプレート（dashboard/pc_list/tasks/alerts/scheduled_tasks/groups/alert_rules/audit/users）
+│   ├── static/                   CSS + JS + openapi.yaml（OpenAPI 3.0 仕様）
 │   ├── requirements.txt          Python依存関係
-│   └── test_api.py               統合テスト（18項目）
+│   └── test_api.py               統合テスト（57項目）
 │
 ├── 📡 agent/                     ← Agent（PowerShell）
 │   ├── PCOpsAgent.ps1            情報収集＋タスク実行
@@ -400,7 +422,7 @@ sequenceDiagram
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| API 統合テスト（Python） | 18項目 | ✅ PASS |
+| API 統合テスト（Python） | 57項目 | ✅ PASS |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
 | Agent Teams E2E テスト | 複数 | ✅ PASS |
