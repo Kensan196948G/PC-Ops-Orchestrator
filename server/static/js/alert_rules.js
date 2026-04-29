@@ -48,8 +48,14 @@ async function loadRules(page = 1) {
         const tdNotify = row.insertCell();
         const parts = [];
         if (r.notify_slack_webhook) parts.push('Slack');
+        if (r.notify_teams_webhook) parts.push('Teams');
+        if (r.notify_webhook_url) parts.push('Webhook');
         if (r.notify_email) parts.push('Mail');
-        tdNotify.textContent = parts.length ? parts.join(', ') : '-';
+        let notifyText = parts.length ? parts.join(', ') : '-';
+        if (r.channel_type) {
+            notifyText += ` (${r.channel_type})`;
+        }
+        tdNotify.textContent = notifyText;
 
         const tdState = row.insertCell();
         const toggle = document.createElement('button');
@@ -96,7 +102,10 @@ document.addEventListener('click', async (e) => {
         const data = await apiFetch(`/alert-rules/${id}/test-notify`, { method: 'POST' });
         if (data.error) { showError(data.error); return; }
         const res = data.results || {};
-        showSuccess(`テスト通知送信: Slack=${res.slack || '-'}, Mail=${res.email || '-'}`);
+        const summary = ['slack', 'teams', 'generic_webhook', 'email']
+            .map((c) => `${c}=${res[c] || '-'}`)
+            .join(', ');
+        showSuccess(`テスト通知: ${summary}`);
     } else if (action === 'delete') {
         const name = btn.closest('tr')?.querySelector('strong')?.textContent || '';
         if (!confirm(`「${name}」を削除しますか？`)) return;
@@ -113,7 +122,29 @@ function showCreateModal() {
     document.getElementById('rule-id').value = '';
     document.getElementById('rule-enabled').checked = true;
     toggleThreshold();
+    toggleChannelInputs();
     document.getElementById('rule-modal').classList.add('active');
+}
+
+function toggleChannelInputs() {
+    // チャネル種別 select に応じて関連入力だけを表示する。
+    // 空 ("自動") のときは全フィールド表示。
+    const sel = document.getElementById('rule-channel-type');
+    if (!sel) return;
+    const value = sel.value;
+    document.querySelectorAll('[data-channel]').forEach((el) => {
+        if (!value) {
+            el.style.display = '';
+            return;
+        }
+        const ch = el.dataset.channel;
+        const visible =
+            (value === 'slack' && ch === 'slack') ||
+            (value === 'teams' && ch === 'teams') ||
+            (value === 'generic_webhook' && ch === 'generic') ||
+            (value === 'email' && ch === 'email');
+        el.style.display = visible ? '' : 'none';
+    });
 }
 
 function closeRuleModal(e) {
@@ -141,9 +172,13 @@ async function editRule(id) {
     document.getElementById('rule-threshold').value = r.threshold ?? '';
     document.getElementById('rule-severity').value = r.severity || 'warning';
     document.getElementById('rule-slack').value = r.notify_slack_webhook || '';
+    document.getElementById('rule-teams').value = r.notify_teams_webhook || '';
+    document.getElementById('rule-generic').value = r.notify_webhook_url || '';
     document.getElementById('rule-email').value = r.notify_email || '';
+    document.getElementById('rule-channel-type').value = r.channel_type || '';
     document.getElementById('rule-enabled').checked = r.is_enabled;
     toggleThreshold();
+    toggleChannelInputs();
     document.getElementById('rule-modal').classList.add('active');
 }
 
@@ -160,7 +195,10 @@ async function submitRuleForm(e) {
         threshold: metric !== 'offline' ? parseFloat(thresholdRaw) : null,
         severity: document.getElementById('rule-severity').value,
         notify_slack_webhook: document.getElementById('rule-slack').value || null,
+        notify_teams_webhook: document.getElementById('rule-teams').value || null,
+        notify_webhook_url: document.getElementById('rule-generic').value || null,
         notify_email: document.getElementById('rule-email').value || null,
+        channel_type: document.getElementById('rule-channel-type').value || null,
         is_enabled: document.getElementById('rule-enabled').checked,
     };
 

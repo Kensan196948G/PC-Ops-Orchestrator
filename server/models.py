@@ -311,6 +311,11 @@ class AlertRule(db.Model):
     )  # warning/critical
     notify_email = db.Column(db.Text)
     notify_slack_webhook = db.Column(db.Text)
+    notify_teams_webhook = db.Column(db.Text)
+    notify_webhook_url = db.Column(db.Text)
+    # Preferred channel for test-notify and the Alert dispatcher when set.
+    # NULL = legacy mode (use whichever notify_* columns are populated).
+    channel_type = db.Column(db.String(32))
     is_enabled = db.Column(db.Boolean, default=True, index=True)
     created_by = db.Column(db.String(255), default="system")
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -330,6 +335,9 @@ class AlertRule(db.Model):
             "severity": self.severity,
             "notify_email": self.notify_email,
             "notify_slack_webhook": self.notify_slack_webhook,
+            "notify_teams_webhook": self.notify_teams_webhook,
+            "notify_webhook_url": self.notify_webhook_url,
+            "channel_type": self.channel_type,
             "is_enabled": self.is_enabled,
             "created_by": self.created_by,
             "created_at": self.created_at.isoformat() if self.created_at else None,

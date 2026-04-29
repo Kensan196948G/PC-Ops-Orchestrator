@@ -500,6 +500,32 @@ sequenceDiagram
 | 📌 Jira | チケット自動生成 | `config/config.json` |
 | 🔐 SIEM | セキュリティログ連携 | `config/config.json` |
 
+### 📨 アラート通知統合 (Issue #58 / M4-2)
+
+WebUI のアラートルール (`/alert-rules`) ごとに **Slack / Microsoft Teams / Generic Webhook / Email** の通知先を登録でき、`/api/alert-rules/<id>/test-notify` で実機到達確認が可能です。
+
+| チャネル | ペイロード形式 | 設定先カラム / env |
+|---|---|---|
+| 💬 Slack | Slack Incoming Webhook (`{"text": ...}`) | `notify_slack_webhook` / `SLACK_WEBHOOK_URL` |
+| 📧 Microsoft Teams | MessageCard (`@type: MessageCard`) | `notify_teams_webhook` |
+| 🌐 Generic Webhook | アラート全フィールドを JSON POST | `notify_webhook_url` |
+| ✉️ Email | SMTP STARTTLS（プレーンテキスト） | `notify_email` / `SMTP_*` |
+
+`channel_type` カラムを設定すると、そのチャネルのみへ送信。未設定（NULL）の場合は登録されている全チャネルへ送信します（後方互換）。Webhook 送信は **タイムアウト 5 秒、最大 3 回リトライ** で、失敗は `warning` ログに記録され処理は継続します。
+
+```bash
+# 例: Slack のみ（環境変数で全アラート共通先を設定）
+export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/XXX/YYY/ZZZ"
+
+# 例: SMTP 経由メール
+export SMTP_HOST="smtp.example.com"
+export SMTP_PORT=587
+export SMTP_USER="alerts@example.com"
+export SMTP_PASSWORD="..."
+export ALERT_EMAIL_FROM="alerts@example.com"
+export ALERT_EMAIL_TO="oncall@example.com,manager@example.com"
+```
+
 ---
 
 ## ⚠️ 注意事項

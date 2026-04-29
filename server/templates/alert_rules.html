@@ -72,10 +72,28 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label class="form-label">通知チャネル (任意)</label>
+                    <select id="rule-channel-type" class="form-input" onchange="toggleChannelInputs()">
+                        <option value="">自動（設定された通知先すべて）</option>
+                        <option value="slack">Slack のみ</option>
+                        <option value="teams">Microsoft Teams のみ</option>
+                        <option value="email">Email のみ</option>
+                        <option value="generic_webhook">Generic Webhook のみ</option>
+                    </select>
+                </div>
+                <div class="form-group" data-channel="slack">
                     <label class="form-label">Slack Webhook URL</label>
                     <input type="url" id="rule-slack" class="form-input" placeholder="https://hooks.slack.com/...">
                 </div>
-                <div class="form-group">
+                <div class="form-group" data-channel="teams">
+                    <label class="form-label">Microsoft Teams Webhook URL</label>
+                    <input type="url" id="rule-teams" class="form-input" placeholder="https://outlook.office.com/webhook/...">
+                </div>
+                <div class="form-group" data-channel="generic">
+                    <label class="form-label">Generic Webhook URL (JSON POST)</label>
+                    <input type="url" id="rule-generic" class="form-input" placeholder="https://example.com/hooks/alerts">
+                </div>
+                <div class="form-group" data-channel="email">
                     <label class="form-label">通知メールアドレス</label>
                     <input type="email" id="rule-email" class="form-input" placeholder="admin@example.com">
                 </div>

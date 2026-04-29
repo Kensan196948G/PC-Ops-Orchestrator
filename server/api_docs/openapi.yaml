@@ -120,6 +120,15 @@ components:
         severity: { type: string, enum: [warning, critical] }
         notify_email: { type: string, nullable: true }
         notify_slack_webhook: { type: string, nullable: true }
+        notify_teams_webhook: { type: string, nullable: true }
+        notify_webhook_url: { type: string, nullable: true }
+        channel_type:
+          type: string
+          nullable: true
+          enum: [slack, teams, email, generic_webhook]
+          description: |
+            空 (null) のときは設定された notify_* すべてに送信する後方互換挙動。
+            値を指定すると、対応する notify_* カラムのみを使い他は無視する。
         is_enabled: { type: boolean }
         created_by: { type: string }
         created_at: { type: string, format: date-time }
@@ -729,17 +738,33 @@ paths:
           schema: { type: integer }
       responses:
         '200':
-          description: テスト送信結果
+          description: |
+            テスト送信結果。`results` は登録された 4 チャネル全てに対して状態を返す。
+              - `sent`: 送信成功
+              - `failed`: 送信失敗（リトライ後）
+              - `skipped`: 通知先は登録されているが今回は対象外（例: channel_type で限定）
+              - `not_configured`: 通知先未登録
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  message: { type: string }
                   results:
                     type: object
                     properties:
-                      slack: { type: string, enum: [sent, failed, skipped] }
-                      email: { type: string, enum: [sent, failed, skipped] }
+                      slack:
+                        type: string
+                        enum: [sent, failed, skipped, not_configured]
+                      teams:
+                        type: string
+                        enum: [sent, failed, skipped, not_configured]
+                      generic_webhook:
+                        type: string
+                        enum: [sent, failed, skipped, not_configured]
+                      email:
+                        type: string
+                        enum: [sent, failed, skipped, not_configured]
 
   /scheduled-tasks:
     get:
