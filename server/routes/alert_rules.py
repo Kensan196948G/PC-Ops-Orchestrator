@@ -218,6 +218,9 @@ def test_notify(rule_id):
 
     # Translate per-channel booleans into a UI-friendly status map for every
     # known channel, so the front-end always knows what was attempted.
+    #   sent[channel] = True/False  → "sent" / "failed"
+    #   target が空                  → "not_configured" (この通知先は未登録)
+    #   target はあるが今回は送らない → "skipped" (例: channel_type で限定された)
     results = {}
     rule_targets = {
         "slack": rule.notify_slack_webhook,
@@ -228,8 +231,10 @@ def test_notify(rule_id):
     for channel, target in rule_targets.items():
         if channel in sent:
             results[channel] = "sent" if sent[channel] else "failed"
+        elif not target:
+            results[channel] = "not_configured"
         else:
-            results[channel] = "skipped" if not target else "not_configured"
+            results[channel] = "skipped"
 
     log_operation(
         "test_notify_alert_rule",

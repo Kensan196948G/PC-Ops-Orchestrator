@@ -215,17 +215,35 @@ def send_email_via_smtp(
 # ---------------------------------------------------------------------------
 
 
-def send_email(alert) -> bool:
-    """Send the default alert email using SMTP_* environment variables."""
+def send_email(alert, *, override_to_addrs: Optional[list[str]] = None) -> bool:
+    """Send the default alert email using SMTP_* environment variables.
+
+    ``override_to_addrs`` lets callers (e.g. ``dispatch_via_rule``) supply a
+    rule-specific recipient list instead of falling back to ``ALERT_EMAIL_TO``.
+    Returns False (rather than raising) when the SMTP_PORT env var is unparsable
+    or when host/recipients are missing — keeps `/test-notify` from 500-ing on
+    misconfigured environments.
+    """
     smtp_host = os.environ.get("SMTP_HOST", "")
-    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    if not smtp_host:
+        return False
+    try:
+        smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    except ValueError:
+        logger.warning("SMTP_PORT is not a valid integer; skipping email notification")
+        return False
     smtp_user = os.environ.get("SMTP_USER", "")
     smtp_password = os.environ.get("SMTP_PASSWORD", "")
     from_addr = os.environ.get("ALERT_EMAIL_FROM", smtp_user)
-    to_addrs_raw = os.environ.get("ALERT_EMAIL_TO", "")
-    to_addrs = [a.strip() for a in to_addrs_raw.split(",") if a.strip()]
-    if not smtp_host or not to_addrs:
+
+    if override_to_addrs:
+        to_addrs = [a.strip() for a in override_to_addrs if a and a.strip()]
+    else:
+        to_addrs_raw = os.environ.get("ALERT_EMAIL_TO", "")
+        to_addrs = [a.strip() for a in to_addrs_raw.split(",") if a.strip()]
+    if not to_addrs:
         return False
+
     subject, body = build_email_message(alert)
     return send_email_via_smtp(
         host=smtp_host,
@@ -237,6 +255,20 @@ def send_email(alert) -> bool:
         subject=subject,
         body=body,
     )
+
+
+def _parse_email_targets(raw: Optional[str]) -> list[str]:
+    """Parse a rule.notify_email value (comma/semicolon/whitespace) into addresses."""
+    if not raw:
+        return []
+    # Allow ',', ';', whitespace as separators.
+    pieces: list[str] = []
+    for chunk in raw.replace(";", ",").split(","):
+        for piece in chunk.split():
+            cleaned = piece.strip()
+            if cleaned:
+                pieces.append(cleaned)
+    return pieces
 
 
 def send_slack(alert) -> bool:
@@ -295,6 +327,8 @@ def dispatch_via_rule(alert, rule) -> dict[str, bool]:
 
     channel_type = (getattr(rule, "channel_type", None) or "").strip() or None
 
+    rule_email_targets = _parse_email_targets(getattr(rule, "notify_email", None))
+
     # If explicit channel_type set, honor it strictly.
     if channel_type:
         if channel_type == CHANNEL_SLACK and rule.notify_slack_webhook:
@@ -309,8 +343,10 @@ def dispatch_via_rule(alert, rule) -> dict[str, bool]:
             results[CHANNEL_GENERIC] = send_webhook(
                 rule.notify_webhook_url, build_generic_payload(alert)
             )
-        elif channel_type == CHANNEL_EMAIL and rule.notify_email:
-            results[CHANNEL_EMAIL] = send_email(alert)
+        elif channel_type == CHANNEL_EMAIL and rule_email_targets:
+            results[CHANNEL_EMAIL] = send_email(
+                alert, override_to_addrs=rule_email_targets
+            )
         return results
 
     # Legacy path: send to whichever notify_* columns are populated.
@@ -326,6 +362,6 @@ def dispatch_via_rule(alert, rule) -> dict[str, bool]:
         results[CHANNEL_GENERIC] = send_webhook(
             rule.notify_webhook_url, build_generic_payload(alert)
         )
-    if rule.notify_email:
-        results[CHANNEL_EMAIL] = send_email(alert)
+    if rule_email_targets:
+        results[CHANNEL_EMAIL] = send_email(alert, override_to_addrs=rule_email_targets)
     return results

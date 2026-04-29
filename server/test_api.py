@@ -1116,6 +1116,9 @@ def run_all():
     test_webui_pages(token)
     test_template_role_classes_present(token)
     test_notify_payload_builders()
+    # Webhook retry tests are pytest-only because they rely on the monkeypatch
+    # fixture; we still want the legacy `python test_api.py` runner to call the
+    # validation path so a manual run never silently skips RBAC matrix coverage.
     test_alert_rule_channel_type_validation(token)
     test_openapi_yaml_not_under_static()
     test_swagger_disabled_returns_404()
