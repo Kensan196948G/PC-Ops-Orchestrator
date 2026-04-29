@@ -535,7 +535,17 @@ def test_template_role_classes_present(token):
         body = r.data.decode()
         for cls in expected_classes:
             assert cls in body, f"{path} should contain class {cls!r}"
-    print("  [PASS] 各ページに role-* クラスが含まれる")
+
+    # pc_detail はテンプレートファイル直読みで検証（pc_id パスパラメータが必要なため）
+    pc_detail_path = os.path.join(
+        os.path.dirname(__file__), "templates", "pc_detail.html"
+    )
+    with open(pc_detail_path, encoding="utf-8") as f:
+        pc_detail_body = f.read()
+    assert "role-operator-or-admin" in pc_detail_body, (
+        "pc_detail.html should contain role-operator-or-admin (タスク実行ボタン)"
+    )
+    print("  [PASS] 各ページ (pc_detail 含む) に role-* クラスが含まれる")
 
 
 def test_swagger_disabled_returns_404():
