@@ -692,6 +692,132 @@ def test_alert_rule_channel_type_validation(token):
     print("  [PASS] alert-rule の channel_type バリデーション")
 
 
+def test_metrics_endpoint_format(token):
+    """/api/metrics は Prometheus exposition 形式を返す。"""
+    import re
+
+    r = client.get("/api/metrics")
+    assert r.status_code == 200
+    ct = r.headers.get("Content-Type", "")
+    assert ct.startswith("text/plain"), f"unexpected content-type: {ct}"
+    # Prometheus exposition は version パラメータを保持して欲しい
+    assert "version=0.0.4" in ct, f"version param missing in Content-Type: {ct}"
+    body = r.data.decode("utf-8")
+
+    all_series = (
+        "pcs_total",
+        "alerts_unresolved_total",
+        "tasks_pending_total",
+        "scheduled_tasks_enabled_total",
+        "users_total",
+        "ratelimit_hits_total",
+        "up",
+    )
+    # 必須メトリクスの # TYPE コメントは必ず出る
+    for series in all_series:
+        assert f"# TYPE {series} " in body, f"missing TYPE comment for {series}"
+
+    # サンプル行が必ず存在する系列（DB 集計でも常にスカラー or 必ず admin 1 件）
+    # — pcs_total と alerts_unresolved_total はラベル付きで 0 件のときに
+    # サンプル行を出さないため、ここでは検証対象外
+    always_sampled = (
+        "tasks_pending_total",
+        "scheduled_tasks_enabled_total",
+        "users_total",
+        "ratelimit_hits_total",
+        "up",
+    )
+    for series in always_sampled:
+        sample_re = rf"^{re.escape(series)}(\{{[^}}]*\}})?\s+\d"
+        assert re.search(sample_re, body, re.MULTILINE), (
+            f"no sample line for {series} (only TYPE comment matched?)"
+        )
+    # 最後に改行で終わる
+    assert body.endswith("\n")
+    print("  [PASS] /api/metrics の Prometheus 形式が正しい (サンプル行も検証)")
+
+
+def test_ratelimit_counter_unit():
+    """bump_counter -> render_metrics -> /api/metrics が一貫して値を反映する単体検証。
+
+    Flask-Limiter のグローバル singleton と app-config 状態を巻き込んだ
+    HTTP 経由 429 検証は環境依存になりやすいため、ここでは pathway を
+    1 段ずつ機械的に検証する:
+
+      1. metrics.bump_counter で counter が増える
+      2. metrics.render_metrics の出力に counter 値が反映される
+      3. /api/metrics 経由でも同値が返る
+    """
+    import metrics as metrics_mod
+
+    metrics_mod.reset_counters_for_test()
+    assert metrics_mod.counter_value("ratelimit_hits_total") == 0
+
+    metrics_mod.bump_counter("ratelimit_hits_total")
+    metrics_mod.bump_counter("ratelimit_hits_total", amount=4)
+    assert metrics_mod.counter_value("ratelimit_hits_total") == 5
+
+    with app.app_context():
+        body = metrics_mod.render_metrics()
+    assert "ratelimit_hits_total 5" in body, body
+
+    r = client.get("/api/metrics")
+    assert r.status_code == 200
+    assert "ratelimit_hits_total 5" in r.data.decode("utf-8")
+
+    metrics_mod.reset_counters_for_test()
+    print("  [PASS] bump_counter→render_metrics→/api/metrics が一貫して値を反映する")
+
+
+def test_ratelimit_error_handler_via_public_api():
+    """RateLimitExceeded ハンドラが /api/* は JSON、それ以外は HTML を返し、
+    どちらでも counter が増えることを公開 API 経由で検証する。
+    （RateLimitExceeded は Limit 型の引数を要求するため Mock で構築）。"""
+    from unittest.mock import MagicMock
+    import metrics as metrics_mod
+    from flask_limiter.errors import RateLimitExceeded
+
+    metrics_mod.reset_counters_for_test()
+
+    def fake_exc():
+        limit = MagicMock()
+        limit.error_message = None
+        return RateLimitExceeded(limit)
+
+    def _normalize(resp):
+        if isinstance(resp, tuple):
+            body, status = resp[0], resp[1]
+        else:
+            body, status = resp, getattr(resp, "status_code", None)
+        if hasattr(body, "get_data"):
+            payload = body.get_data(as_text=True)
+            if status is None:
+                status = body.status_code
+        else:
+            payload = str(body)
+        return status, payload
+
+    # /api/* path → JSON (Flask の jsonify は default で非 ASCII を escape)
+    with app.test_request_context("/api/foo"):
+        status, payload = _normalize(app.handle_user_exception(fake_exc()))
+    assert status == 429
+    parsed = json.loads(payload)
+    assert "リクエストが多すぎます" in parsed["error"]
+
+    # 非 API path → HTML テンプレート (error.html)
+    with app.test_request_context("/login"):
+        status, payload = _normalize(app.handle_user_exception(fake_exc()))
+    assert status == 429
+    assert "<html" in payload.lower() or "<!doctype" in payload.lower(), (
+        "HTML route should render the error.html template"
+    )
+
+    hits = metrics_mod.counter_value("ratelimit_hits_total")
+    assert hits == 2, f"counter should be incremented for both calls, got {hits}"
+    metrics_mod.reset_counters_for_test()
+    print("  [PASS] 429 ハンドラが /api JSON / HTML 両分岐で counter を更新")
+
+
 def test_swagger_disabled_returns_404():
     """Verify SWAGGER_ENABLED=false fully hides API docs and the OpenAPI spec."""
     original = os.environ.get("SWAGGER_ENABLED")
@@ -1120,6 +1246,9 @@ def run_all():
     # fixture; we still want the legacy `python test_api.py` runner to call the
     # validation path so a manual run never silently skips RBAC matrix coverage.
     test_alert_rule_channel_type_validation(token)
+    test_metrics_endpoint_format(token)
+    test_ratelimit_counter_unit()
+    test_ratelimit_error_handler_via_public_api()
     test_openapi_yaml_not_under_static()
     test_swagger_disabled_returns_404()
     test_rbac_role_matrix(token)

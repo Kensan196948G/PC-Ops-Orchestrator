@@ -53,6 +53,7 @@ def me():
 
 
 @auth_bp.route("/setup", methods=["POST"])
+@limiter.limit("3 per minute")
 def setup():
     if User.query.first():
         return jsonify({"error": "既に初期設定済みです"}), 400
@@ -90,6 +91,7 @@ def list_users():
 
 
 @auth_bp.route("/users", methods=["POST"])
+@limiter.limit("10 per minute")
 @admin_required
 def create_user():
     data = request.get_json()

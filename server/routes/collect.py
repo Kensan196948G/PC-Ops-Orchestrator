@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
-from extensions import db
+from extensions import db, limiter
 from models import (
     PC,
     SystemSnapshot,
@@ -16,6 +16,7 @@ collect_bp = Blueprint("collect", __name__, url_prefix="/api")
 
 
 @collect_bp.route("/collect", methods=["POST"])
+@limiter.limit("600 per minute")
 @agent_auth_required
 def collect():
     data = request.get_json()
