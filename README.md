@@ -92,6 +92,15 @@ pip install waitress
 waitress-serve --port=443 wsgi:app
 ```
 
+### 📚 API ドキュメント (Swagger UI)
+
+| 環境 | デフォルト | 有効化方法 | URL |
+|---|---|---|---|
+| development / testing | ✅ 有効 | デフォルト | `http://localhost:5000/api/docs/` |
+| production | ❌ 無効 | 環境変数 `SWAGGER_ENABLED=true` | `https://<host>/api/docs/` |
+
+> 🔒 **セキュリティ:** 本番では `SWAGGER_ENABLED=false`（既定）により `/api/docs/` および `/api/openapi.yaml` は 404 を返します。意図的に公開する場合のみ `true` に設定してください。
+
 ---
 
 ## 🐳 Docker デプロイ（推奨）
