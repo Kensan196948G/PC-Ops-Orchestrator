@@ -3,6 +3,7 @@
 import json
 import sys
 import os
+import uuid
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -32,7 +33,9 @@ def request(method, path, token=None, data=None):
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    body = json.dumps(data) if data else None
+    # data is not None ではなく truthy 判定にすると `{}` が「body 無し」扱いに
+    # なってしまうため、明示的に None と区別する。
+    body = json.dumps(data) if data is not None else None
     return client.open(path, method=method, headers=headers, data=body)
 
 
@@ -285,6 +288,32 @@ def test_user_management_forbidden(token):
     print(f"  [PASS] User create invalid rejected: {r.status_code}")
 
 
+def test_user_role_type_validation(token):
+    """role に非文字列を渡すと 500 ではなく 400 で弾かれるべき (CodeRabbit/Copilot 指摘)。"""
+    suffix = uuid.uuid4().hex[:8]
+    payloads = [
+        {"role": None},
+        {"role": ["admin"]},
+        {"role": {"name": "admin"}},
+        {"role": 123},
+    ]
+    for bad_role in payloads:
+        r = request(
+            "POST",
+            "/api/auth/users",
+            token=token,
+            data={
+                "username": f"bad_role_{suffix}",
+                "password": "pass-1234",
+                **bad_role,
+            },
+        )
+        assert r.status_code == 400, (
+            f"role={bad_role['role']!r} expected 400 got {r.status_code} {r.data}"
+        )
+    print("  [PASS] User create with invalid role type returns 400 (not 500)")
+
+
 def test_webui_pages(token):
     pages = [
         ("/", "Dashboard"),
@@ -311,6 +340,178 @@ def test_openapi_yaml_not_under_static():
         "openapi.yaml must NOT be served from /static/ (security: SWAGGER_ENABLED gate)"
     )
     print("  [PASS] /static/openapi.yaml correctly returns 404 (not in static dir)")
+
+
+def _login_as(username: str, password: str) -> str:
+    r = request(
+        "POST",
+        "/api/auth/login",
+        data={"username": username, "password": password},
+    )
+    assert r.status_code == 200, (
+        f"login failed for {username}: {r.status_code} {r.data}"
+    )
+    return json.loads(r.data)["token"]
+
+
+def test_rbac_role_matrix(token):
+    """Create operator and viewer users, then verify the permission matrix.
+
+    Uses unique usernames + try/finally so partial failures cannot poison
+    later runs with stale 409 conflicts.
+    """
+    suffix = uuid.uuid4().hex[:8]
+    op_username = f"rbac_op_{suffix}"
+    op_password = "operator-pass-1"
+    viewer_username = f"rbac_viewer_{suffix}"
+    viewer_password = "viewer-pass-1"
+
+    try:
+        # admin が両ロールのユーザーを作成
+        for username, password, role in (
+            (op_username, op_password, "operator"),
+            (viewer_username, viewer_password, "viewer"),
+        ):
+            r = request(
+                "POST",
+                "/api/auth/users",
+                token=token,
+                data={"username": username, "password": password, "role": role},
+            )
+            assert r.status_code == 201, (
+                f"create {role} failed: {r.status_code} {r.data}"
+            )
+
+        op_token = _login_as(op_username, op_password)
+        viewer_token = _login_as(viewer_username, viewer_password)
+        print("  [PASS] operator/viewer のログイン成功")
+
+        # body は明示的に切り替える: None=「body 無し」、{...}=「body あり」
+        # POST だが body 無しを送ると helper が 400 を返すため、ロール判定の
+        # 前後で生じる 400 を区別する目的で各ケースに body を含める。
+        valid_task_body = {"task_type": "cleanup"}
+        valid_sched_body = {
+            "name": f"rbac_test_{suffix}",
+            "task_type": "cleanup",
+            "schedule_type": "interval",
+            "interval_minutes": 60,
+        }
+
+        cases = [
+            # (method, path, body, viewer_expected, operator_expected, description)
+            (
+                "GET",
+                "/api/dashboard/stats",
+                None,
+                200,
+                200,
+                "ダッシュボード閲覧は全ロール可",
+            ),
+            ("GET", "/api/pcs", None, 200, 200, "PC 一覧は全ロール可"),
+            ("GET", "/api/alerts", None, 200, 200, "アラート閲覧は全ロール可"),
+            (
+                "GET",
+                "/api/alert-rules",
+                None,
+                200,
+                200,
+                "アラートルール閲覧は全ロール可",
+            ),
+            (
+                "GET",
+                "/api/scheduled-tasks",
+                None,
+                200,
+                200,
+                "スケジュール閲覧は全ロール可",
+            ),
+            ("GET", "/api/groups", None, 200, 200, "グループ閲覧は全ロール可"),
+            (
+                "GET",
+                "/api/tasks",
+                None,
+                200,
+                200,
+                "タスク一覧は全ロール可",
+            ),
+            (
+                "POST",
+                "/api/alerts/sync",
+                {},
+                403,
+                200,
+                "アラート同期は viewer 不可",
+            ),
+            (
+                "POST",
+                "/api/tasks",
+                valid_task_body,
+                403,
+                201,
+                "タスク作成は viewer 403、operator 201（実装の通り作成成功）",
+            ),
+            (
+                "POST",
+                "/api/scheduled-tasks",
+                valid_sched_body,
+                403,
+                201,
+                "スケジュール作成は viewer 403、operator 201",
+            ),
+            (
+                "POST",
+                "/api/alert-rules",
+                {"name": "x", "metric": "cpu", "operator": "gt", "threshold": 90},
+                403,
+                403,
+                "アラートルール作成は viewer/operator 共に不可（admin のみ）",
+            ),
+            (
+                "POST",
+                "/api/groups",
+                {"name": f"rbac_group_{suffix}"},
+                403,
+                403,
+                "グループ作成は viewer/operator 共に不可（admin のみ）",
+            ),
+            (
+                "GET",
+                "/api/auth/users",
+                None,
+                403,
+                403,
+                "ユーザー一覧は admin 専用",
+            ),
+            (
+                "GET",
+                "/api/audit/logs",
+                None,
+                403,
+                200,
+                "監査ログは viewer 不可、operator は閲覧可",
+            ),
+        ]
+
+        for method, path, body, viewer_expect, op_expect, desc in cases:
+            rv = request(method, path, token=viewer_token, data=body)
+            assert rv.status_code == viewer_expect, (
+                f"viewer {method} {path} expected {viewer_expect} "
+                f"got {rv.status_code}: {rv.data}"
+            )
+            ro = request(method, path, token=op_token, data=body)
+            assert ro.status_code == op_expect, (
+                f"operator {method} {path} expected {op_expect} "
+                f"got {ro.status_code}: {ro.data}"
+            )
+            print(f"  [PASS] {desc} (viewer={viewer_expect}, operator={op_expect})")
+    finally:
+        # 必ず後始末する（途中で assertion 失敗してもユーザーが残らない）
+        with app.app_context():
+            for username in (op_username, viewer_username):
+                u = User.query.filter_by(username=username).first()
+                if u:
+                    db.session.delete(u)
+            db.session.commit()
 
 
 def test_swagger_disabled_returns_404():
@@ -733,9 +934,11 @@ def run_all():
     test_alerts_acknowledge_and_resolve(token)
     test_user_management(token)
     test_user_management_forbidden(token)
+    test_user_role_type_validation(token)
     test_webui_pages(token)
     test_openapi_yaml_not_under_static()
     test_swagger_disabled_returns_404()
+    test_rbac_role_matrix(token)
     test_create_scheduled_task(token)
     test_list_scheduled_tasks(token)
     test_get_scheduled_task(token)

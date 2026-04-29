@@ -9,6 +9,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from models import User, OperationLog
 from extensions import db
 
+ALLOWED_ROLES: frozenset[str] = frozenset({"admin", "operator", "viewer"})
+
 
 def hash_password(password):
     return generate_password_hash(password)
@@ -67,15 +69,41 @@ def login_required(f):
     return decorated
 
 
-def admin_required(f):
-    @login_required
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if request.current_user.role != "admin":
-            return jsonify({"error": "管理者権限が必要です"}), 403
-        return f(*args, **kwargs)
+def require_role(*roles):
+    """Restrict access to users whose role is one of the given values.
 
-    return decorated
+    Always implies login_required: callers do not need to stack both decorators.
+    Returns 401 when unauthenticated, 403 when authenticated but lacking role.
+    """
+    allowed = set(roles) or {"admin"}
+    invalid = allowed - ALLOWED_ROLES
+    if invalid:
+        raise ValueError(f"unknown role(s): {sorted(invalid)}")
+
+    def wrapper(f):
+        @login_required
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            user_role = getattr(request.current_user, "role", None)
+            if user_role not in allowed:
+                return jsonify(
+                    {
+                        "error": (
+                            "この操作には次のいずれかの権限が必要です: "
+                            + ", ".join(sorted(allowed))
+                        )
+                    }
+                ), 403
+            return f(*args, **kwargs)
+
+        return decorated
+
+    return wrapper
+
+
+def admin_required(f):
+    """Backward-compatible alias for ``@require_role("admin")``."""
+    return require_role("admin")(f)
 
 
 def agent_auth_required(f):
@@ -100,15 +128,19 @@ def agent_auth_required(f):
 
 
 def log_operation(action, target=None, details=None):
+    if hasattr(request, "current_user") and request.current_user is not None:
+        user = request.current_user
+        created_by = f"{user.username}[{user.role}]"
+    else:
+        created_by = "system"
+
     op = OperationLog(
         action=action,
         target=target,
         details=details,
         ip_address=request.remote_addr,
         user_agent=request.user_agent.string if request.user_agent else None,
-        created_by=getattr(request, "current_user", None).username
-        if hasattr(request, "current_user")
-        else "system",
+        created_by=created_by,
     )
     db.session.add(op)
     db.session.commit()

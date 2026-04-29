@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from extensions import db, limiter
 from models import User
 from auth import (
+    ALLOWED_ROLES,
     hash_password,
     verify_password,
     create_token,
@@ -97,15 +98,23 @@ def create_user():
 
     username = data.get("username", "").strip()
     password = data.get("password", "")
-    role = data.get("role", "operator").strip()
+    raw_role = data.get("role", "viewer")
+    if not isinstance(raw_role, str):
+        return jsonify({"error": "role は文字列で指定してください"}), 400
+    role = raw_role.strip()
 
     if not username or not password:
         return jsonify({"error": "username と password は必須です"}), 400
     if len(password) < 8:
         return jsonify({"error": "パスワードは 8 文字以上にしてください"}), 400
-    if role not in ("admin", "operator"):
+    if role not in ALLOWED_ROLES:
         return jsonify(
-            {"error": "role は admin または operator を指定してください"}
+            {
+                "error": (
+                    "role は次のいずれかを指定してください: "
+                    + ", ".join(sorted(ALLOWED_ROLES))
+                )
+            }
         ), 400
     if User.query.filter_by(username=username).first():
         return jsonify({"error": "そのユーザー名は既に使用されています"}), 409
@@ -129,11 +138,17 @@ def update_user(user_id):
 
     data = request.get_json() or {}
     if "role" in data:
-        if data["role"] not in ("admin", "operator"):
+        raw_role = data["role"]
+        if not isinstance(raw_role, str) or raw_role.strip() not in ALLOWED_ROLES:
             return jsonify(
-                {"error": "role は admin または operator を指定してください"}
+                {
+                    "error": (
+                        "role は次のいずれかを指定してください: "
+                        + ", ".join(sorted(ALLOWED_ROLES))
+                    )
+                }
             ), 400
-        target.role = data["role"]
+        target.role = raw_role.strip()
     if "is_active" in data:
         target.is_active = bool(data["is_active"])
     if "password" in data:

@@ -53,6 +53,12 @@
                     <span class="nav-icon">&#9998;</span>
                     操作ログ
                 </a>
+                {% if swagger_enabled %}
+                <a href="/api/docs/" class="nav-item" data-page="api-docs" id="nav-api-docs" target="_blank" rel="noopener">
+                    <span class="nav-icon">&#9776;</span>
+                    API ドキュメント
+                </a>
+                {% endif %}
                 <div class="nav-divider"></div>
                 <a href="#" class="nav-item" id="logout-btn">
                     <span class="nav-icon">&#9660;</span>
@@ -161,11 +167,27 @@
             try {
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 const info = document.getElementById('user-info');
-                if (info) info.textContent = user.username || '---';
+                if (info) {
+                    const roleLabel = user.role ? ` [${user.role}]` : '';
+                    info.textContent = (user.username || '---') + roleLabel;
+                }
+                window.CURRENT_USER_ROLE = user.role || null;
                 const navUsers = document.getElementById('nav-users');
                 if (navUsers && user.role === 'admin') navUsers.style.display = '';
                 const navAudit = document.getElementById('nav-audit');
-                if (navAudit && user.role === 'admin') navAudit.style.display = '';
+                if (navAudit && (user.role === 'admin' || user.role === 'operator')) {
+                    navAudit.style.display = '';
+                }
+                // Hide write-only actions for viewers (best-effort UX; API enforces auth)
+                if (user.role === 'viewer') {
+                    document.body.classList.add('role-viewer');
+                }
+                if (user.role === 'operator') {
+                    document.body.classList.add('role-operator');
+                }
+                if (user.role === 'admin') {
+                    document.body.classList.add('role-admin');
+                }
             } catch (e) {}
 
             if (TOKEN) {

@@ -5,7 +5,13 @@ from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify, make_response
 from extensions import db
 from models import Task, PC
-from auth import agent_auth_required, login_required, admin_required, log_operation
+from auth import (
+    agent_auth_required,
+    login_required,
+    admin_required,
+    log_operation,
+    require_role,
+)
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/api")
 
@@ -40,7 +46,7 @@ def get_pending_tasks():
 
 
 @tasks_bp.route("/tasks", methods=["POST"])
-@login_required
+@require_role("admin", "operator")
 def create_task():
     data = request.get_json()
     if not data:

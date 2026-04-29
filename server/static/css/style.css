@@ -676,3 +676,13 @@ select.form-input {
     justify-content: flex-end;
     margin-top: 1rem;
 }
+
+/* RBAC: hide elements based on role */
+body.role-viewer .role-write,
+body.role-viewer .role-admin-only,
+body.role-viewer .role-operator-or-admin {
+    display: none !important;
+}
+body.role-operator .role-admin-only {
+    display: none !important;
+}
