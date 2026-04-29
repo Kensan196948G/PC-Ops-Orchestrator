@@ -514,6 +514,30 @@ def test_rbac_role_matrix(token):
             db.session.commit()
 
 
+def test_template_role_classes_present(token):
+    """主要ページ HTML に role-* クラスが含まれていることを確認。
+
+    JS で動的生成されるボタンには直接到達できないため、ここでは
+    静的テンプレートの一次操作ボタンに RBAC クラスが付与されている
+    ことを確認する（フォロー段階適用 PR の回帰防止）。
+    """
+    pages = {
+        "/users": ["role-admin-only"],
+        "/groups": ["role-admin-only"],
+        "/alert-rules": ["role-admin-only"],
+        "/scheduled-tasks": ["role-operator-or-admin"],
+        "/tasks": ["role-operator-or-admin"],
+        "/alerts": ["role-operator-or-admin"],
+    }
+    for path, expected_classes in pages.items():
+        r = client.get(path, headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 200, f"{path} failed: {r.status_code}"
+        body = r.data.decode()
+        for cls in expected_classes:
+            assert cls in body, f"{path} should contain class {cls!r}"
+    print("  [PASS] 各ページに role-* クラスが含まれる")
+
+
 def test_swagger_disabled_returns_404():
     """Verify SWAGGER_ENABLED=false fully hides API docs and the OpenAPI spec."""
     original = os.environ.get("SWAGGER_ENABLED")
@@ -936,6 +960,7 @@ def run_all():
     test_user_management_forbidden(token)
     test_user_role_type_validation(token)
     test_webui_pages(token)
+    test_template_role_classes_present(token)
     test_openapi_yaml_not_under_static()
     test_swagger_disabled_returns_404()
     test_rbac_role_matrix(token)

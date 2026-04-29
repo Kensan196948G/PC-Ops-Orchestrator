@@ -17,9 +17,9 @@ function makeStatusBadge(resolved) {
     return span;
 }
 
-function makeBtn(label, cls, handler) {
+function makeBtn(label, cls, handler, roleClass) {
     const btn = document.createElement('button');
-    btn.className = 'btn ' + cls;
+    btn.className = 'btn ' + cls + (roleClass ? ' ' + roleClass : '');
     btn.style.cssText = 'padding:0.2rem 0.5rem;font-size:0.75rem;margin-right:0.25rem;';
     btn.textContent = label;
     btn.onclick = handler;
@@ -56,9 +56,9 @@ function buildAlertRow(a) {
     const tdActions = document.createElement('td');
     if (!a.resolved) {
         if (!a.acknowledged) {
-            tdActions.appendChild(makeBtn('確認', 'btn-secondary', () => acknowledgeAlert(a.id)));
+            tdActions.appendChild(makeBtn('確認', 'btn-secondary', () => acknowledgeAlert(a.id), 'role-operator-or-admin'));
         }
-        tdActions.appendChild(makeBtn('解決', 'btn-danger', () => resolveAlert(a.id)));
+        tdActions.appendChild(makeBtn('解決', 'btn-danger', () => resolveAlert(a.id), 'role-operator-or-admin'));
     }
 
     [tdId, tdSev, tdType, tdMsg, tdTime, tdStatus, tdActions].forEach(td => tr.appendChild(td));

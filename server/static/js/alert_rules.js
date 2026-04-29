@@ -53,7 +53,7 @@ async function loadRules(page = 1) {
 
         const tdState = row.insertCell();
         const toggle = document.createElement('button');
-        toggle.className = r.is_enabled ? 'btn btn-xs btn-primary' : 'btn btn-xs btn-secondary';
+        toggle.className = (r.is_enabled ? 'btn btn-xs btn-primary' : 'btn btn-xs btn-secondary') + ' role-admin-only';
         toggle.textContent = r.is_enabled ? '有効' : '無効';
         toggle.dataset.action = 'toggle';
         toggle.dataset.id = r.id;
@@ -61,17 +61,17 @@ async function loadRules(page = 1) {
 
         const tdOps = row.insertCell();
         tdOps.className = 'action-cell';
-        tdOps.appendChild(makeBtn('✎', 'btn-secondary btn-xs', 'edit', r.id, '編集'));
-        tdOps.appendChild(makeBtn('⚡', 'btn-secondary btn-xs', 'test-notify', r.id, 'テスト通知'));
-        tdOps.appendChild(makeBtn('✕', 'btn-danger btn-xs', 'delete', r.id, '削除'));
+        tdOps.appendChild(makeBtn('✎', 'btn-secondary btn-xs', 'edit', r.id, '編集', 'role-admin-only'));
+        tdOps.appendChild(makeBtn('⚡', 'btn-secondary btn-xs', 'test-notify', r.id, 'テスト通知', 'role-admin-only'));
+        tdOps.appendChild(makeBtn('✕', 'btn-danger btn-xs', 'delete', r.id, '削除', 'role-admin-only'));
     }
 
     renderPagination('rules-pagination', data.page, data.pages, loadRules);
 }
 
-function makeBtn(label, classes, action, id, title) {
+function makeBtn(label, classes, action, id, title, roleClass) {
     const btn = document.createElement('button');
-    btn.className = `btn ${classes}`;
+    btn.className = `btn ${classes}` + (roleClass ? ` ${roleClass}` : '');
     btn.textContent = label;
     btn.title = title;
     btn.dataset.action = action;

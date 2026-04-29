@@ -50,14 +50,14 @@ async function loadUsers() {
                 const actionTd = document.createElement('td');
                 if (u.id !== currentUser.id) {
                     const editBtn = document.createElement('button');
-                    editBtn.className = 'btn btn-secondary';
+                    editBtn.className = 'btn btn-secondary role-admin-only';
                     editBtn.style.marginRight = '4px';
                     editBtn.textContent = '編集';
                     editBtn.addEventListener('click', () => openEditModal(u));
                     actionTd.appendChild(editBtn);
 
                     const delBtn = document.createElement('button');
-                    delBtn.className = 'btn btn-danger';
+                    delBtn.className = 'btn btn-danger role-admin-only';
                     delBtn.textContent = '削除';
                     delBtn.addEventListener('click', () => deleteUser(u.id, u.username));
                     actionTd.appendChild(delBtn);

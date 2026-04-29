@@ -49,7 +49,7 @@ async function loadTasks(page) {
                 <td>${t.created_by || '-'}</td>
                 <td>${formatTime(t.created_at)}</td>
                 <td>${formatTime(t.completed_at)}</td>
-                <td><button class="btn btn-danger" onclick="event.stopPropagation();deleteTask(${t.id})" style="padding:0.2rem 0.5rem;font-size:0.75rem;">削除</button></td>
+                <td><button class="btn btn-danger role-admin-only" onclick="event.stopPropagation();deleteTask(${t.id})" style="padding:0.2rem 0.5rem;font-size:0.75rem;">削除</button></td>
             </tr>
         `).join('') : '<tr><td colspan="9" class="text-center">タスクがありません</td></tr>';
 

@@ -236,7 +236,7 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 
 ### 🛡️ ロール権限マトリクス（RBAC / Issue #57）
 
-WebUI ユーザーは 3 種類のロールを持ち、API 側で `@require_role` デコレータにより強制されます。WebUI 側でも sidebar と一部ボタンの可視制御が連動します（個別ボタンの `role-*` クラス付与は段階的に展開中）。
+WebUI ユーザーは 3 種類のロールを持ち、API 側で `@require_role` デコレータにより強制されます。WebUI 側でも sidebar / 一次操作ボタン / テーブル行内ボタンの可視制御が連動します（CSS の `body.role-*` + `.role-admin-only` / `.role-operator-or-admin` ベース）。
 
 | 機能カテゴリ | 👑 admin | 🧑‍🔧 operator | 👁️ viewer |
 |---|:---:|:---:|:---:|
@@ -261,7 +261,7 @@ WebUI ユーザーは 3 種類のロールを持ち、API 側で `@require_role`
 
 > 🔒 **デフォルトロールは `viewer`**（最小権限の原則）。`POST /api/auth/users` で `role` を省略すると viewer として作成されます。
 > 🔧 既存の `admin_required` デコレータは `@require_role("admin")` のエイリアスとして後方互換維持されます。
-> 🚧 個別ページのボタン要素への `role-write` / `role-admin-only` クラス付与は段階的に展開中。API 側で 403 が返るためセキュリティは確保済みです。
+> 🎨 主要ページの操作ボタン（一次操作 + テーブル行内）に `role-admin-only` / `role-operator-or-admin` クラスを付与済み。viewer/operator では該当ボタンが非表示になります（API 側でも 403 を返却）。
 
 ### CORS 設定
 
