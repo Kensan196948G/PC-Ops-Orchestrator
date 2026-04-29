@@ -548,6 +548,150 @@ def test_template_role_classes_present(token):
     print("  [PASS] 各ページ (pc_detail 含む) に role-* クラスが含まれる")
 
 
+def test_notify_payload_builders():
+    """Pure-function payload builders should produce stable, channel-correct shapes."""
+    import notify
+
+    class FakeAlert:
+        id = 7
+        alert_type = "high_memory"
+        severity = "critical"
+        message = "PC-01 のメモリ使用率が 95.3% です"
+        pc_id = 42
+        source_key = "pc_42_high_memory"
+
+        class _Dt:
+            def isoformat(self):
+                return "2026-04-29T20:00:00+00:00"
+
+        created_at = _Dt()
+
+    a = FakeAlert()
+
+    slack = notify.build_slack_payload(a)
+    assert "text" in slack and "PC ID: 42" in slack["text"]
+    assert ":red_circle:" in slack["text"], "critical 用の絵文字が選ばれること"
+
+    teams = notify.build_teams_payload(a)
+    assert teams["@type"] == "MessageCard"
+    assert teams["themeColor"] == "FF0000"
+    facts = teams["sections"][0]["facts"]
+    assert any(f["name"] == "PC ID" and f["value"] == "42" for f in facts)
+
+    generic = notify.build_generic_payload(a)
+    assert generic["alert_type"] == "high_memory"
+    assert generic["pc_id"] == 42
+    assert generic["created_at"] == "2026-04-29T20:00:00+00:00"
+
+    subject, body = notify.build_email_message(a)
+    assert "[CRITICAL]" in subject
+    assert "high_memory" in subject
+    assert "PC-01 のメモリ使用率" in body
+
+    # Unknown channel_type は ValueError
+    try:
+        notify.build_payload_for_channel("xmpp", a)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("unknown channel_type は ValueError を投げるべき")
+    print("  [PASS] notify.build_*_payload が各チャネル仕様に従って生成される")
+
+
+def test_send_webhook_mocked(monkeypatch):
+    """send_webhook should retry transient failures and return True on 2xx."""
+    import notify
+
+    calls = []
+
+    class FakeResp:
+        def __init__(self, status):
+            self.status = status
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    # 1st attempt: 500, 2nd attempt: 200
+    statuses = iter([500, 200])
+
+    def fake_urlopen(req, timeout):
+        calls.append(req.full_url)
+        return FakeResp(next(statuses))
+
+    monkeypatch.setattr(notify.urllib.request, "urlopen", fake_urlopen)
+    # Speed up the retry sleep so the test stays fast.
+    monkeypatch.setattr(notify, "_RETRY_INTERVAL_SEC", 0)
+
+    ok = notify.send_webhook(
+        "https://example.test/hook", {"text": "hi"}, retries=3, timeout=1
+    )
+    assert ok is True, "2nd attempt が 200 のため True"
+    assert len(calls) == 2, "1 回目失敗 → 2 回目成功 → 早期 return"
+    print("  [PASS] send_webhook がリトライ後に True を返す")
+
+
+def test_send_webhook_all_failures(monkeypatch):
+    """send_webhook should return False after exhausting retries."""
+    import notify
+
+    def fake_urlopen(req, timeout):
+        raise OSError("connection refused")
+
+    monkeypatch.setattr(notify.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(notify, "_RETRY_INTERVAL_SEC", 0)
+
+    ok = notify.send_webhook(
+        "https://example.test/hook", {"text": "hi"}, retries=3, timeout=1
+    )
+    assert ok is False
+    print("  [PASS] send_webhook が全失敗時に False を返す")
+
+
+def test_alert_rule_channel_type_validation(token):
+    """channel_type の許容値以外は 400、許容値は 201/200 で受理される。"""
+    suffix = uuid.uuid4().hex[:6]
+
+    bad = request(
+        "POST",
+        "/api/alert-rules",
+        token=token,
+        data={
+            "name": f"rule_bad_{suffix}",
+            "metric": "cpu",
+            "operator": "gt",
+            "threshold": 80,
+            "channel_type": "xmpp",
+        },
+    )
+    assert bad.status_code == 400, (
+        f"unknown channel_type should be 400 got {bad.status_code}"
+    )
+
+    ok = request(
+        "POST",
+        "/api/alert-rules",
+        token=token,
+        data={
+            "name": f"rule_ok_{suffix}",
+            "metric": "cpu",
+            "operator": "gt",
+            "threshold": 80,
+            "channel_type": "teams",
+            "notify_teams_webhook": "https://example.test/teams",
+        },
+    )
+    assert ok.status_code == 201, f"valid teams rule should be 201 got {ok.status_code}"
+    rule_id = json.loads(ok.data)["alert_rule"]["id"]
+    assert json.loads(ok.data)["alert_rule"]["channel_type"] == "teams"
+
+    # 後始末
+    request("DELETE", f"/api/alert-rules/{rule_id}", token=token)
+    print("  [PASS] alert-rule の channel_type バリデーション")
+
+
 def test_swagger_disabled_returns_404():
     """Verify SWAGGER_ENABLED=false fully hides API docs and the OpenAPI spec."""
     original = os.environ.get("SWAGGER_ENABLED")
@@ -971,6 +1115,8 @@ def run_all():
     test_user_role_type_validation(token)
     test_webui_pages(token)
     test_template_role_classes_present(token)
+    test_notify_payload_builders()
+    test_alert_rule_channel_type_validation(token)
     test_openapi_yaml_not_under_static()
     test_swagger_disabled_returns_404()
     test_rbac_role_matrix(token)

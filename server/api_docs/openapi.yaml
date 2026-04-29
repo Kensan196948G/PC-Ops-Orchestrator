@@ -120,6 +120,15 @@ components:
         severity: { type: string, enum: [warning, critical] }
         notify_email: { type: string, nullable: true }
         notify_slack_webhook: { type: string, nullable: true }
+        notify_teams_webhook: { type: string, nullable: true }
+        notify_webhook_url: { type: string, nullable: true }
+        channel_type:
+          type: string
+          nullable: true
+          enum: [slack, teams, email, generic_webhook, null]
+          description: |
+            空 (null) のときは設定された notify_* すべてに送信する後方互換挙動。
+            値を指定すると、対応する notify_* カラムのみを使い他は無視する。
         is_enabled: { type: boolean }
         created_by: { type: string }
         created_at: { type: string, format: date-time }

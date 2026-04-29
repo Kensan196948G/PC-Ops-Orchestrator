@@ -1,6 +1,5 @@
 import json
 import logging
-import urllib.request
 from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
@@ -8,6 +7,7 @@ from flask import Blueprint, jsonify, request
 from auth import admin_required, log_operation, login_required
 from extensions import db
 from models import AlertRule
+from notify import ALLOWED_CHANNEL_TYPES, dispatch_via_rule
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,19 @@ def _validate_rule(data):
         if threshold < 0 or threshold > 100:
             return None, "threshold は 0〜100 の範囲で指定してください"
 
+    raw_channel = data.get("channel_type")
+    if raw_channel is not None and raw_channel != "":
+        if not isinstance(raw_channel, str):
+            return None, "channel_type は文字列で指定してください"
+        channel_type = raw_channel.strip()
+        if channel_type not in ALLOWED_CHANNEL_TYPES:
+            return (
+                None,
+                f"channel_type は {sorted(ALLOWED_CHANNEL_TYPES)} のいずれかで指定してください",
+            )
+    else:
+        channel_type = None
+
     return {
         "name": name,
         "metric": metric,
@@ -66,6 +79,10 @@ def _validate_rule(data):
         "notify_email": (data.get("notify_email") or "").strip() or None,
         "notify_slack_webhook": (data.get("notify_slack_webhook") or "").strip()
         or None,
+        "notify_teams_webhook": (data.get("notify_teams_webhook") or "").strip()
+        or None,
+        "notify_webhook_url": (data.get("notify_webhook_url") or "").strip() or None,
+        "channel_type": channel_type,
         "is_enabled": bool(data.get("is_enabled", True)),
     }, None
 
@@ -176,20 +193,17 @@ def toggle_alert_rule(rule_id):
     )
 
 
-def _send_slack(webhook_url: str, text: str) -> bool:
-    try:
-        payload = json.dumps({"text": text}).encode()
-        req = urllib.request.Request(
-            webhook_url,
-            data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            return resp.status == 200
-    except Exception as exc:
-        logger.warning("Slack notification failed: %s", exc)
-        return False
+class _TestAlert:
+    """Synthetic alert object passed to notify.dispatch_via_rule for /test-notify."""
+
+    def __init__(self, rule: AlertRule):
+        self.id = 0
+        self.alert_type = "test_notification"
+        self.severity = rule.severity or "warning"
+        self.message = f"[テスト通知] ルール「{rule.name}」の通知テストです"
+        self.pc_id = None
+        self.source_key = f"test:rule:{rule.id}"
+        self.created_at = datetime.now(timezone.utc)
 
 
 @alert_rules_bp.route("/alert-rules/<int:rule_id>/test-notify", methods=["POST"])
@@ -199,15 +213,28 @@ def test_notify(rule_id):
     if not rule:
         return jsonify({"error": f"アラートルール {rule_id} が見つかりません"}), 404
 
+    test_alert = _TestAlert(rule)
+    sent = dispatch_via_rule(test_alert, rule)
+
+    # Translate per-channel booleans into a UI-friendly status map for every
+    # known channel, so the front-end always knows what was attempted.
     results = {}
-    msg = f"[テスト通知] ルール「{rule.name}」の通知テストです"
+    rule_targets = {
+        "slack": rule.notify_slack_webhook,
+        "teams": rule.notify_teams_webhook,
+        "generic_webhook": rule.notify_webhook_url,
+        "email": rule.notify_email,
+    }
+    for channel, target in rule_targets.items():
+        if channel in sent:
+            results[channel] = "sent" if sent[channel] else "failed"
+        else:
+            results[channel] = "skipped" if not target else "not_configured"
 
-    if rule.notify_slack_webhook:
-        ok = _send_slack(rule.notify_slack_webhook, msg)
-        results["slack"] = "sent" if ok else "failed"
-    else:
-        results["slack"] = "skipped"
-
-    results["email"] = "skipped"
+    log_operation(
+        "test_notify_alert_rule",
+        f"rule:{rule_id}",
+        f"channel_type={rule.channel_type or 'auto'} results={results}",
+    )
 
     return jsonify({"message": "テスト通知を送信しました", "results": results})
