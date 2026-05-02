@@ -5,7 +5,7 @@
     "release_deadline": "2026-10-28"
   },
   "phase": {
-    "current": "verify",
+    "current": "improve",
     "week": 1
   },
   "kpi": {
@@ -16,35 +16,116 @@
   },
   "execution": {
     "max_duration_minutes": 300,
-    "loop_count": 3,
+    "loop_count": 2,
     "max_loops": 5,
     "ci_retry_limit": 5,
-    "same_error_limit": 2
+    "same_error_limit": 2,
+    "current_session_start_at": "2026-05-02T19:00:12+09:00",
+    "last_session_end_at": "2026-04-29T22:10:00+09:00",
+    "last_trigger": "cron",
+    "last_cron_session_id": "20260502-190012-PC-Ops-Orchestrator"
   },
   "status": {
-    "current_phase": "verify",
-    "stable": false,
-    "pending_prs": [38, 44],
-    "merged_prs": [36, 40, 43]
+    "current_phase": "improve",
+    "stable": true,
+    "pending_prs": [],
+    "merged_prs": [
+      36, 38, 40, 43, 44, 53, 54, 55, 56, 60, 61, 62, 63, 64
+    ]
   },
   "priority": {
     "score": 0
   },
-  "open_issues": {
-    "42": "CSV エクスポート機能 - PR #44 で実装、CI 待ち",
-    "37": "PC詳細ページ ソフトウェア一覧 - PR #38 で実装、CI 待ちマージ待ち"
+  "open_issues": {},
+  "milestones": {
+    "M1": {
+      "status": "completed",
+      "completed_at": "2026-04-28"
+    },
+    "M2": {
+      "status": "completed",
+      "completed_at": "2026-04-28"
+    },
+    "M3": {
+      "status": "completed",
+      "completed_at": "2026-04-29",
+      "issues_total": 4,
+      "issues_closed": 4
+    },
+    "M4": {
+      "status": "completed",
+      "completed_at": "2026-05-02",
+      "issues_total": 3,
+      "issues_closed": 3,
+      "completed_items": [
+        "M4-1 RBAC (admin/operator/viewer) - PR #60 + #61",
+        "M4-2 通知統合 (Slack/Teams/Generic Webhook/Email) - PR #62",
+        "M4-3 E2E テスト整備 (Playwright) - PR #64"
+      ]
+    },
+    "M5": {
+      "status": "planning",
+      "backlog_candidates": [
+        "レポート機能 (PDF/Excel 月次レポート)",
+        "監査ログ高度化 (検索・フィルタ・エクスポート)",
+        "ダークモード / アクセシビリティ",
+        "PC 一括タスク実行",
+        "ユーザー管理 WebUI 強化"
+      ]
+    }
+  },
+  "session_summary": {
+    "id": "20260502-190012-PC-Ops-Orchestrator",
+    "loop_phase": "Monitor → Build → Verify → Merge",
+    "duration_minutes": 35,
+    "prs_merged": [64],
+    "issues_closed": [59],
+    "completed": [
+      "PR #64 (Issue #59 M4-3 E2E テスト) squash merge — 全 27 CI PASS / CodeRabbit PASS",
+      "M4 完全完了 (M4-1 RBAC + M4-2 通知統合 + M4-3 E2E テスト)"
+    ],
+    "verification": {
+      "e2e_local": "20/20 passed",
+      "pytest_existing": "73/73 passed",
+      "ruff_check": "All checks passed",
+      "ruff_format": "All formatted",
+      "github_ci": "27/27 pass (PR #64)",
+      "coderabbit": "Review completed (Critical=0 High=0)"
+    }
   },
   "learning": {
     "failure_patterns": [
       "PyJWT 2.x requires 'sub' claim to be string, not int",
       "New SQLAlchemy objects need flush() before accessing auto-generated id",
-      "ruff check must target Python files only - passing JS files causes invalid-syntax error"
+      "ruff check must target Python files only - passing JS files causes invalid-syntax error",
+      "Flask Config クラスの env 値はクラス定義時に評価されるので、env 変更を反映するには create_app() 内で再評価する必要がある",
+      "Flask static_folder 配下のファイルは自動公開されるため、フィーチャーフラグで保護したいファイルは静的フォルダ外に置く必要がある",
+      "@limiter.limit が認可デコレータの内側にあると、未認証/権限不足のリクエストはレート制限を回避してしまう。Flask デコレータは下から上へ重なるので、保護したい層は外側に置く",
+      "RateLimitExceeded コンストラクタは Limit 型を要求し、文字列を渡すと AttributeError になる。テストでは MagicMock で Limit を偽装する",
+      "Werkzeug の Response(mimetype=...) は version=0.0.4 等の Content-Type パラメータを落とすことがあるため、Prometheus 形式は headers={'Content-Type': ...} で直接設定する",
+      "Flask jsonify は ensure_ascii=True がデフォルト。テストで非 ASCII 文字を assert するときは json.loads でデシリアライズする",
+      "test_api.py の request() ヘルパは data={} を「body 無し」と扱うため、`is not None` で明示判定が必要",
+      "pytest-django がインストールされていると DJANGO_SETTINGS_MODULE 未設定で全テストが skip される。pytest.ini に -p no:django を追加して回避する",
+      "pytest-playwright の page フィクスチャは conftest.py を自動認識するが、from conftest import X はできない（pytest が conftest をモジュールとして扱わないため）"
     ],
     "success_patterns": [
       "Flask Application Factory + Blueprint pattern works well for modular API",
       "JWT + API Key dual auth pattern successfully separates Agent and WebUI access",
       "apiFetchRaw() + Blob + URL.createObjectURL() pattern for authenticated CSV download",
-      "BOM (\\ufeff) prefix in CSV ensures Excel correctly renders Japanese characters"
+      "BOM (\\ufeff) prefix in CSV ensures Excel correctly renders Japanese characters",
+      "flask-swagger-ui + 静的 openapi.yaml で routes/ への侵襲なく API ドキュメント自動生成",
+      "SWAGGER_ENABLED ガードとファイル配置を分離することで本番安全性とドキュメント可視性を両立",
+      "OpenAPI 仕様と実装の一致を回帰テストで担保 (status_code チェック)",
+      "PR 作成 → CodeRabbit/Copilot 指摘 → 同 PR 内で修正 → 再 CI → merge の流れが繰り返し機能",
+      "@require_role(*roles) デコレータと既存 admin_required を alias で共存させると、後方互換を保ちつつ段階移行できる",
+      "ペイロード組立 (純粋関数) と HTTP/SMTP 送信 (副作用) を分離すると notify モジュールが unittest 容易になる",
+      "Prometheus exposition format は stdlib のみで生成可能 (prometheus_client 不要)。process-local counter + worker 毎スクレイプで IPC を回避できる",
+      "User.role default を viewer (最小権限) にすることで、新規ユーザーが意図せず特権を持つ事故を防げる",
+      "CSS の body.role-{admin,operator,viewer} クラス + .role-admin-only / .role-operator-or-admin / .role-write でテンプレートに侵襲せず段階展開できる UX 設計",
+      "makeBtn ヘルパに roleClass 引数を追加することで、JS 動的生成ボタンの段階適用を最小差分で実装可能",
+      "werkzeug make_server + daemon Thread + scope=session で Playwright E2E 用 Flask ライブサーバーを20テスト通じて1度だけ起動できる（速度最適化）",
+      "pytest.ini に -p no:django を追加することで pytest-django と Flask テストを同一環境で共存できる",
+      "Playwright の page.request.get() は UI ブラウザと API レイヤーを1フィクスチャで検証できる（RBAC テストに有効）"
     ]
   }
 }
