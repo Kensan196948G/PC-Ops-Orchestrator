@@ -380,3 +380,65 @@ def test_api_dashboard_stats_schema():
     # 実際のスキーマキー確認
     for key in ("total_pcs", "pending_tasks"):
         assert key in data, f"Missing key: {key}"
+
+
+# ── 131. 監査ログ 日付フィルタ ──────────────────────────────────────
+def test_audit_logs_from_date_filter():
+    r = req("GET", "/api/audit/logs?from_date=2000-01-01", token=_admin_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert "logs" in data
+
+
+def test_audit_logs_to_date_filter():
+    r = req("GET", "/api/audit/logs?to_date=2099-12-31", token=_admin_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert "logs" in data
+
+
+def test_audit_logs_date_range_no_results():
+    r = req(
+        "GET",
+        "/api/audit/logs?from_date=2099-01-01&to_date=2099-01-02",
+        token=_admin_token,
+    )
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert data["logs"] == []
+
+
+def test_audit_logs_invalid_date_ignored():
+    r = req("GET", "/api/audit/logs?from_date=invalid", token=_admin_token)
+    assert r.status_code == 200  # invalid date should be silently ignored
+
+
+# ── 132. 監査ログ CSV エクスポート ───────────────────────────────────
+def test_audit_export_csv_ok():
+    r = req("GET", "/api/audit/export.csv", token=_admin_token)
+    assert r.status_code == 200
+    assert "text/csv" in r.content_type or "csv" in r.content_type
+
+
+def test_audit_export_csv_has_bom():
+    r = req("GET", "/api/audit/export.csv", token=_admin_token)
+    assert r.status_code == 200
+    assert r.data[:3] == b"\xef\xbb\xbf"  # UTF-8 BOM
+
+
+def test_audit_export_csv_header_row():
+    r = req("GET", "/api/audit/export.csv", token=_admin_token)
+    assert r.status_code == 200
+    text = r.data.decode("utf-8-sig")
+    assert "日時" in text
+    assert "操作" in text
+
+
+def test_audit_export_csv_viewer_forbidden():
+    r = req("GET", "/api/audit/export.csv", token=_viewer_token)
+    assert r.status_code == 403
+
+
+def test_audit_export_csv_requires_auth():
+    r = req("GET", "/api/audit/export.csv")
+    assert r.status_code == 401

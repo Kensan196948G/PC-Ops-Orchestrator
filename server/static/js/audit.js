@@ -6,14 +6,22 @@ function debounceLoad() {
     _debounceTimer = setTimeout(() => loadLogs(1), 400);
 }
 
-async function loadLogs(page) {
-    _currentPage = page || _currentPage;
+function _buildParams(extra = {}) {
     const createdBy = document.getElementById('user-filter').value.trim();
     const action = document.getElementById('action-filter').value.trim();
-
-    const params = new URLSearchParams({ page: _currentPage, per_page: 50 });
+    const fromDate = document.getElementById('from-date')?.value || '';
+    const toDate = document.getElementById('to-date')?.value || '';
+    const params = new URLSearchParams(extra);
     if (createdBy) params.set('created_by', createdBy);
     if (action) params.set('action', action);
+    if (fromDate) params.set('from_date', fromDate);
+    if (toDate) params.set('to_date', toDate);
+    return params;
+}
+
+async function loadLogs(page) {
+    _currentPage = page || _currentPage;
+    const params = _buildParams({ page: _currentPage, per_page: 50 });
 
     const tbody = document.getElementById('audit-body');
     try {
@@ -85,6 +93,18 @@ function renderPagination(current, total) {
     addBtn('»', current + 1, current >= total);
 
     container.replaceChildren(fragment);
+}
+
+async function exportCsv() {
+    const params = _buildParams();
+    const res = await apiFetchRaw('/audit/export.csv?' + params.toString());
+    if (!res.ok) { showError('CSV エクスポートに失敗しました'); return; }
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'audit_logs.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
