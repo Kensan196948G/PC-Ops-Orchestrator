@@ -29,6 +29,16 @@ def create_app(config_name=None):
     limiter.init_app(app)
     cors.init_app(app, origins=app.config.get("CORS_ORIGINS", ["http://localhost"]))
 
+    @app.after_request
+    def _set_security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("X-XSS-Protection", "1; mode=block")
+        response.headers.setdefault(
+            "Referrer-Policy", "strict-origin-when-cross-origin"
+        )
+        return response
+
     from routes.auth_routes import auth_bp
     from routes.collect import collect_bp
     from routes.tasks import tasks_bp

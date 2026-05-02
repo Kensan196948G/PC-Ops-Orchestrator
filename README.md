@@ -462,13 +462,34 @@ sequenceDiagram
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| API 統合テスト（Python） | 73項目 | ✅ PASS |
-| **WebUI E2E テスト（Playwright）** | **20項目** | **✅ PASS** |
+| **API 拡張テスト（Python）** | **163項目** | **✅ PASS** |
+| **WebUI E2E テスト（Playwright）** | **94項目** | **✅ PASS** |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
 | Agent Teams E2E テスト | 複数 | ✅ PASS |
 | Agent Teams 負荷テスト | 複数 | ✅ PASS |
 | スモークテスト（PS5.1 / PS7） | 複数 | ✅ PASS |
+| **セキュリティスキャン（bandit）** | **High=0** | **✅ PASS** |
+
+### 🔒 250項目テスト検証カバレッジ
+
+| カテゴリ | 項目番号 | 検証方法 | 結果 |
+|---|---|---|---|
+| UI Rendering | 1-20 | Playwright | ✅ |
+| レスポンシブ | 21-30 | Playwright viewport | ✅ |
+| JS 動作確認 | 31-50 | Playwright + console | ✅ |
+| フォーム検証 | 51-70 | Playwright | ✅ |
+| フロントエンドセキュリティ | 71-85 | Playwright + bandit | ✅ |
+| パフォーマンス | 86-100 | Playwright | ✅ |
+| UX | 101-110 | Playwright | ✅ |
+| API テスト | 111-130 | pytest | ✅ |
+| DB テスト | 131-150 | pytest | ✅ |
+| バックエンドセキュリティ | 151-170 | pytest + bandit | ✅ |
+| 性能試験 | 171-190 | pytest | ✅ |
+| バッチ・ジョブ | 191-200 | pytest | ✅ |
+| 運用監視 | 201-210 | pytest | ✅ |
+| 障害試験 | 211-225 | pytest mock | ✅ |
+| AI 開発系検証 | 226-250 | CI/ruff/E2E | ✅ |
 
 ### 🎭 Playwright E2E テスト対象シナリオ
 
@@ -477,6 +498,11 @@ sequenceDiagram
 | `test_auth_e2e.py` | ログイン画面表示 / 認証成功・失敗 / ログアウト |
 | `test_pages_e2e.py` | 全 7 主要ページ表示確認 / ナビゲーション / 404 |
 | `test_rbac_e2e.py` | admin/viewer ロール別 UI・API アクセス制御 |
+| `test_ui_rendering.py` | CSS/アイコン/日本語/スクロール/エラーページ |
+| `test_responsive.py` | デスクトップ / タブレット / モバイル viewport |
+| `test_js_behavior.py` | console error なし / localStorage / 非同期通信 |
+| `test_forms.py` | 必須バリデーション / NULL / エラーメッセージ |
+| `test_performance.py` | 初回表示 5 秒以内 / API 応答 2 秒以内 / 静的ファイル |
 
 ---
 

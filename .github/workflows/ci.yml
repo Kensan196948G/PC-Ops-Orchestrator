@@ -430,14 +430,14 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r server/requirements.txt pytest
+          pip install -r server/requirements.txt pytest ruff
 
-      - name: Run Flask API tests
+      - name: Run Flask API tests (extended)
         working-directory: server
         env:
           FLASK_ENV: testing
         run: |
-          python -m pytest test_api.py -v --tb=short
+          python -m pytest test_api.py test_notify.py test_api_extended.py test_db.py test_resilience.py test_security_backend.py -v --tb=short
 
       - name: Upload test results on failure
         if: failure()
