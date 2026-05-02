@@ -16,7 +16,7 @@
   },
   "execution": {
     "max_duration_minutes": 300,
-    "loop_count": 2,
+    "loop_count": 3,
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
@@ -36,7 +36,9 @@
   "priority": {
     "score": 0
   },
-  "open_issues": {},
+  "open_issues": {
+    "note": "全 Issue クローズ済み。次は M5 計画・Issue 起票から"
+  },
   "milestones": {
     "M1": {
       "status": "completed",
