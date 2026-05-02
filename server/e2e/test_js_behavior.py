@@ -1,7 +1,5 @@
 """JavaScript behaviour tests — console errors, localStorage, login state (items 31-50)."""
 
-import pytest
-
 
 def test_no_js_pageerror_on_dashboard(page_with_login, live_server):
     """Dashboard must not throw any uncaught JS exceptions."""
@@ -25,6 +23,7 @@ def test_no_console_errors_on_dashboard(page_with_login, live_server):
     p.on("console", capture)
     p.goto(f"{live_server}/")
     p.wait_for_load_state("networkidle", timeout=10000)
+
     # Filter out known benign errors:
     # - Chart.js CDN failures in offline environments
     # - Network-level errors (net::ERR_*)
@@ -73,6 +72,7 @@ def test_user_info_stored_in_localstorage_after_login(page, live_server):
     user_raw = page.evaluate("localStorage.getItem('user')")
     assert user_raw, "user must be set in localStorage after login"
     import json
+
     user = json.loads(user_raw)
     assert user.get("username") == "admin"
 
@@ -114,7 +114,9 @@ def test_login_state_maintained_after_reload(page, live_server):
     # Reload and expect to stay on dashboard
     page.reload()
     page.wait_for_load_state("domcontentloaded", timeout=8000)
-    assert "/login" not in page.url, "Should remain on dashboard after reload when token present"
+    assert "/login" not in page.url, (
+        "Should remain on dashboard after reload when token present"
+    )
 
 
 def test_unauthenticated_redirect_to_login(page, live_server):

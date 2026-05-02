@@ -16,7 +16,9 @@ PAGES = [
 
 
 @pytest.mark.parametrize("path,expected_title_fragment", PAGES)
-def test_page_renders_with_sidebar(page_with_login, live_server, path, expected_title_fragment):
+def test_page_renders_with_sidebar(
+    page_with_login, live_server, path, expected_title_fragment
+):
     """Each authenticated page should render the sidebar and have a non-empty title."""
     p = page_with_login
     p.goto(f"{live_server}{path}")
@@ -101,7 +103,9 @@ def test_toast_container_in_dom(page_with_login, live_server):
     p = page_with_login
     p.goto(f"{live_server}/")
     p.wait_for_load_state("domcontentloaded", timeout=8000)
-    assert p.locator("#toast-container").count() == 1, "#toast-container must be present"
+    assert p.locator("#toast-container").count() == 1, (
+        "#toast-container must be present"
+    )
 
 
 def test_sidebar_title_text(page_with_login, live_server):
@@ -119,14 +123,17 @@ def test_main_content_area_exists(page_with_login, live_server):
     for path, _ in PAGES:
         p.goto(f"{live_server}{path}")
         p.wait_for_load_state("domcontentloaded", timeout=8000)
-        assert p.locator(".main-content").count() > 0, \
+        assert p.locator(".main-content").count() > 0, (
             f".main-content missing on {path}"
+        )
 
 
 def test_login_page_no_sidebar(page, live_server):
     """Login page must NOT render the sidebar."""
     page.goto(f"{live_server}/login")
-    assert page.locator(".sidebar").count() == 0, "Sidebar must not appear on login page"
+    assert page.locator(".sidebar").count() == 0, (
+        "Sidebar must not appear on login page"
+    )
 
 
 def test_static_css_loads(page, live_server):

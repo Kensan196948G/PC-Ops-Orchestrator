@@ -2,7 +2,6 @@
 
 import time
 import json
-import pytest
 
 
 def _get_admin_token(page, live_server):

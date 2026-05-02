@@ -1,12 +1,12 @@
 """Form validation tests — HTML5 constraints, API error responses (items 51-70)."""
 
 import json
-import pytest
 
 
 # ---------------------------------------------------------------------------
 # HTML5 built-in validation (client side)
 # ---------------------------------------------------------------------------
+
 
 def test_login_empty_username_blocked_by_html5(page, live_server):
     """Submitting with empty username must not navigate away (HTML5 required)."""
@@ -37,6 +37,7 @@ def test_login_both_empty_stays_on_page(page, live_server):
 # ---------------------------------------------------------------------------
 # Server-side API validation (via Playwright request context)
 # ---------------------------------------------------------------------------
+
 
 def test_api_login_empty_body_returns_400(page, live_server):
     """POST /api/auth/login with no body must return 400."""
@@ -91,8 +92,9 @@ def test_api_login_null_body_returns_4xx_or_5xx(page, live_server):
         data=json.dumps({"username": None, "password": None}),
         headers={"Content-Type": "application/json"},
     )
-    assert response.status >= 400, \
+    assert response.status >= 400, (
         f"Expected 4xx or 5xx for null values, got {response.status}"
+    )
 
 
 def test_api_login_error_response_has_error_field(page, live_server):
@@ -109,6 +111,7 @@ def test_api_login_error_response_has_error_field(page, live_server):
 # ---------------------------------------------------------------------------
 # UI-level error message rendering
 # ---------------------------------------------------------------------------
+
 
 def test_login_invalid_credentials_shows_error_message(page, live_server):
     """Invalid credentials must display an error in the #login-error element."""
@@ -178,5 +181,6 @@ def test_api_collect_without_auth_returns_401(page, live_server):
         headers={"Content-Type": "application/json"},
     )
     # Collect endpoint requires authentication
-    assert response.status in (401, 403, 422), \
+    assert response.status in (401, 403, 422), (
         f"Unauthenticated request must be rejected, got {response.status}"
+    )
