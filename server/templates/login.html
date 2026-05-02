@@ -6,43 +6,316 @@
     <title>PC-Ops Orchestrator - Login</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            background:
+                radial-gradient(1100px 700px at 85% -10%, rgba(37,99,235,0.08), transparent 60%),
+                radial-gradient(900px 600px at -10% 110%, rgba(167,139,250,0.08), transparent 60%),
+                var(--bg-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .grid-bg {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 56px 56px;
+            mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, #000 30%, transparent 75%);
+            -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, #000 30%, transparent 75%);
+            opacity: 0.55;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .login-shell {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1.05fr 1fr;
+            width: 100%;
+            max-width: 980px;
+            min-height: 580px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.8) inset,
+                0 24px 60px -20px rgba(20,24,43,0.15),
+                0 8px 20px -8px rgba(20,24,43,0.08);
+        }
+        .login-aside {
+            padding: 2.5rem 2.4rem;
+            background:
+                radial-gradient(600px 400px at 90% 10%, rgba(37,99,235,0.10), transparent 60%),
+                radial-gradient(500px 400px at 0% 100%, rgba(167,139,250,0.12), transparent 60%),
+                linear-gradient(160deg, #0f1330 0%, #1a1f47 60%, #2d2057 100%);
+            color: #e8eaf6;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            position: relative;
+        }
+        .login-aside::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 32px 32px;
+            mask-image: radial-gradient(ellipse 70% 70% at 30% 30%, #000 20%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse 70% 70% at 30% 30%, #000 20%, transparent 80%);
+            pointer-events: none;
+        }
+        .aside-brand { display:flex; align-items:center; gap:0.7rem; position:relative; }
+        .aside-logo {
+            width:38px; height:38px; border-radius:10px;
+            background: linear-gradient(135deg,#4f8cff,#18dcff);
+            display:grid; place-items:center;
+            box-shadow: 0 6px 18px rgba(79,140,255,0.45);
+        }
+        .aside-logo svg { width:20px; height:20px; color:#0f1330; }
+        .aside-brand-text { line-height:1.15; }
+        .aside-brand-name { font-size:1.05rem; font-weight:700; letter-spacing:-0.2px; }
+        .aside-brand-sub { font-size:0.7rem; letter-spacing:1.2px; text-transform:uppercase; opacity:0.65; margin-top:2px; }
+        .aside-headline { position:relative; max-width:360px; }
+        .aside-eyebrow {
+            display:inline-flex; align-items:center; gap:0.4rem;
+            padding:0.3rem 0.65rem;
+            background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+            border-radius:999px; font-size:0.7rem; font-weight:600; letter-spacing:0.4px;
+            margin-bottom:1rem; color:#cfd6ff;
+        }
+        .aside-eyebrow .dot {
+            width:6px; height:6px; border-radius:50%; background:#2ed573;
+            box-shadow:0 0 0 0 rgba(46,213,115,0.7);
+            animation: pulseG 2s infinite;
+        }
+        @keyframes pulseG {
+            0%{box-shadow:0 0 0 0 rgba(46,213,115,0.7);}
+            70%{box-shadow:0 0 0 6px rgba(46,213,115,0);}
+            100%{box-shadow:0 0 0 0 rgba(46,213,115,0);}
+        }
+        .aside-h1 { font-size:1.7rem; font-weight:700; letter-spacing:-0.5px; line-height:1.25; }
+        .aside-h1 em {
+            font-style:normal;
+            background:linear-gradient(135deg,#6ba5ff,#a78bfa);
+            -webkit-background-clip:text; background-clip:text; color:transparent;
+        }
+        .aside-sub { margin-top:0.7rem; color:rgba(232,234,246,0.72); font-size:0.86rem; line-height:1.6; }
+        .aside-bullets { list-style:none; padding:0; margin:1.4rem 0 0; display:flex; flex-direction:column; gap:0.6rem; }
+        .aside-bullets li { display:flex; align-items:center; gap:0.55rem; font-size:0.82rem; color:rgba(232,234,246,0.85); }
+        .check-pill {
+            width:20px; height:20px; border-radius:50%;
+            background:rgba(46,213,115,0.18); color:#5af291;
+            display:grid; place-items:center; flex-shrink:0;
+        }
+        .check-pill svg { width:12px; height:12px; }
+        .aside-footer { position:relative; display:flex; align-items:center; justify-content:space-between; font-size:0.74rem; color:rgba(232,234,246,0.55); }
+        .aside-stats { display:flex; gap:1.4rem; }
+        .aside-stat-num { font-size:1.05rem; font-weight:700; color:#fff; line-height:1.1; }
+        .aside-stat-lbl { font-size:0.68rem; letter-spacing:0.6px; text-transform:uppercase; opacity:0.6; }
+
+        .login-form-wrap { padding:3rem 2.6rem; display:flex; flex-direction:column; justify-content:center; }
+        .form-head { margin-bottom:1.6rem; }
+        .form-head h2 { font-size:1.45rem; font-weight:700; letter-spacing:-0.4px; color:var(--text-primary); }
+        .form-head p { color:var(--text-secondary); font-size:0.86rem; margin-top:0.4rem; }
+        .form-field { margin-bottom:1rem; }
+        .form-field label { display:flex; align-items:center; justify-content:space-between; font-size:0.78rem; font-weight:500; color:var(--text-secondary); margin-bottom:0.4rem; }
+        .field { position:relative; display:flex; align-items:center; }
+        .field svg.field-ico { position:absolute; left:0.85rem; width:16px; height:16px; color:var(--text-muted); pointer-events:none; }
+        .field input {
+            width:100%; height:44px; padding:0 2.6rem 0 2.5rem;
+            background:var(--bg-secondary); border:1px solid var(--border);
+            border-radius:10px; color:var(--text-primary); font-size:0.92rem;
+            outline:none; transition:border-color 0.15s, box-shadow 0.15s;
+            font-family:inherit;
+        }
+        .field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+        .field input::placeholder { color:var(--text-muted); }
+        .toggle-pwd {
+            position:absolute; right:0.6rem; width:28px; height:28px;
+            border:none; background:transparent; color:var(--text-muted);
+            border-radius:6px; cursor:pointer; display:grid; place-items:center;
+            transition:background 0.12s, color 0.12s;
+        }
+        .toggle-pwd:hover { background:var(--bg-hover); color:var(--text-primary); }
+        .toggle-pwd svg { width:16px; height:16px; }
+        .form-row-flex { display:flex; align-items:center; justify-content:space-between; margin:0.4rem 0 1.2rem; }
+        .checkbox { display:inline-flex; align-items:center; gap:0.45rem; font-size:0.82rem; color:var(--text-secondary); cursor:pointer; user-select:none; }
+        .checkbox input { display:none; }
+        .checkbox-box {
+            width:16px; height:16px; border:1.5px solid var(--border-strong);
+            border-radius:4px; display:grid; place-items:center;
+            transition:all 0.15s; background:var(--bg-secondary);
+        }
+        .checkbox input:checked + .checkbox-box { background:var(--accent); border-color:var(--accent); }
+        .checkbox-box svg { width:11px; height:11px; color:#fff; opacity:0; transition:opacity 0.1s; }
+        .checkbox input:checked + .checkbox-box svg { opacity:1; }
+
+        #login-error-box {
+            display:none; align-items:center; gap:0.5rem;
+            padding:0.55rem 0.75rem;
+            background:var(--danger-soft); border:1px solid rgba(220,38,38,0.25);
+            border-radius:8px; color:var(--danger); font-size:0.8rem; margin-bottom:1rem;
+        }
+        #login-error-box.show { display:flex; }
+        #login-error-box svg { width:14px; height:14px; flex-shrink:0; }
+
+        .login-submit-btn {
+            width:100%; height:46px; border:none; border-radius:10px;
+            background:var(--accent); color:#fff; font-size:0.92rem; font-weight:600;
+            cursor:pointer; display:flex; align-items:center; justify-content:center;
+            gap:0.45rem; transition:background 0.15s, transform 0.05s;
+            box-shadow:0 4px 14px rgba(37,99,235,0.28); font-family:inherit;
+        }
+        .login-submit-btn:hover { background:var(--accent-hover,#1d4ed8); }
+        .login-submit-btn:active { transform:translateY(1px); }
+        .login-submit-btn:disabled { opacity:0.7; cursor:wait; }
+        .login-submit-btn svg { width:16px; height:16px; }
+
+        .meta-strip {
+            position:absolute; top:1rem; right:1.25rem;
+            display:flex; align-items:center; gap:0.5rem;
+            font-size:0.72rem; color:var(--text-muted);
+        }
+        .meta-pill {
+            display:inline-flex; align-items:center; gap:0.35rem;
+            padding:0.22rem 0.5rem;
+            background:var(--success-soft); color:var(--success);
+            border:1px solid rgba(22,163,74,0.25); border-radius:999px; font-weight:600;
+        }
+        .meta-pill .dot { width:5px; height:5px; border-radius:50%; background:var(--success); }
+
+        @media (max-width: 820px) {
+            .login-shell { grid-template-columns:1fr; max-width:460px; min-height:auto; }
+            .login-aside { padding:1.8rem; }
+            .aside-bullets { display:none; }
+            .login-form-wrap { padding:2rem 1.6rem; }
+            .meta-strip { display:none; }
+        }
+    </style>
 </head>
-<body class="login-body">
-    <div class="login-container">
-        <div class="login-box">
-            <div class="login-logo">
-                <svg viewBox="0 0 18 18" fill="currentColor"><rect x="2" y="2" width="6" height="6" rx="1.5"/><rect x="10" y="2" width="6" height="6" rx="1.5"/><rect x="2" y="10" width="6" height="6" rx="1.5"/><rect x="10" y="10" width="6" height="6" rx="1.5"/></svg>
+<body>
+    <div class="grid-bg"></div>
+    <div class="login-shell">
+        <!-- Brand panel -->
+        <aside class="login-aside">
+            <div>
+                <div class="aside-brand">
+                    <div class="aside-logo">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="12" rx="2"></rect>
+                            <path d="M8 20h8M12 16v4"></path>
+                            <circle cx="12" cy="10" r="2.5" fill="currentColor" stroke="none"></circle>
+                        </svg>
+                    </div>
+                    <div class="aside-brand-text">
+                        <div class="aside-brand-name">PC-Ops</div>
+                        <div class="aside-brand-sub">Orchestrator</div>
+                    </div>
+                </div>
             </div>
-            <h1 class="login-title">PC-Ops Orchestrator</h1>
-            <p class="login-subtitle">PC運用管理システム</p>
-            <form id="login-form" class="login-form">
-                <div class="form-group">
+            <div class="aside-headline">
+                <span class="aside-eyebrow"><span class="dot"></span>System healthy · API online</span>
+                <h1 class="aside-h1">PC運用を、<em>もっとスマートに。</em></h1>
+                <p class="aside-sub">HTTPSのみで安全に情報を収集し、WebUIから一元管理・遠隔操作するPC運用基盤。</p>
+                <ul class="aside-bullets">
+                    <li><span class="check-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg></span>250項目テスト検証カバレッジ済み</li>
+                    <li><span class="check-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg></span>RBAC: admin / operator / viewer</li>
+                    <li><span class="check-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg></span>Slack / Teams / Email / Webhook 通知統合</li>
+                </ul>
+            </div>
+            <div class="aside-footer">
+                <div class="aside-stats">
+                    <div><div class="aside-stat-num">v4.0</div><div class="aside-stat-lbl">Release</div></div>
+                    <div><div class="aside-stat-num">M5</div><div class="aside-stat-lbl">Phase</div></div>
+                    <div><div class="aside-stat-num">153</div><div class="aside-stat-lbl">Tests</div></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Form -->
+        <main class="login-form-wrap" style="position:relative;">
+            <div class="meta-strip">
+                <span>http://192.168.0.185:5300</span>
+                <span class="meta-pill"><span class="dot"></span>稼働中</span>
+            </div>
+            <div class="form-head">
+                <h2>サインイン</h2>
+                <p>ユーザー名とパスワードを入力してください。</p>
+            </div>
+            <form id="login-form" autocomplete="on">
+                <div id="login-error-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.41 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+                    <span id="login-error-msg">ユーザー名またはパスワードが違います。</span>
+                </div>
+                <div class="form-field">
                     <label for="username">ユーザー名</label>
-                    <input type="text" id="username" class="form-input" placeholder="admin" autocomplete="username" required>
+                    <div class="field">
+                        <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
+                        <input type="text" id="username" name="username" placeholder="admin" autocomplete="username" required>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="password">パスワード</label>
-                    <input type="password" id="password" class="form-input" placeholder="admin" autocomplete="current-password" required>
+                <div class="form-field">
+                    <label for="password">
+                        <span>パスワード</span>
+                    </label>
+                    <div class="field">
+                        <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+                        <button type="button" class="toggle-pwd" id="toggle-pwd" aria-label="パスワードを表示">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
                 </div>
-                <div id="login-error" class="login-error"></div>
-                <button type="submit" class="btn btn-primary login-btn">ログイン</button>
+                <div class="form-row-flex">
+                    <label class="checkbox">
+                        <input type="checkbox" id="remember">
+                        <span class="checkbox-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+                        </span>
+                        <span>このデバイスを記憶する</span>
+                    </label>
+                </div>
+                <button type="submit" class="login-submit-btn" id="login-btn">
+                    <span>ログイン</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                </button>
             </form>
-        </div>
+        </main>
     </div>
 
     <script>
         const API_BASE = '/api';
+        const toggle = document.getElementById('toggle-pwd');
+        const pwd = document.getElementById('password');
+
+        toggle.addEventListener('click', () => {
+            const show = pwd.type === 'password';
+            pwd.type = show ? 'text' : 'password';
+            toggle.style.color = show ? 'var(--accent)' : '';
+        });
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-            const errorEl = document.getElementById('login-error');
-            const btn = e.target.querySelector('button');
+            const password = pwd.value;
+            const errBox = document.getElementById('login-error-box');
+            const errMsg = document.getElementById('login-error-msg');
+            const btn = document.getElementById('login-btn');
 
-            errorEl.textContent = '';
+            errBox.classList.remove('show');
             btn.disabled = true;
-            btn.textContent = 'ログイン中...';
+            btn.querySelector('span').textContent = 'ログイン中...';
 
             try {
                 const res = await fetch(API_BASE + '/auth/login', {
@@ -53,9 +326,10 @@
                 const data = await res.json();
 
                 if (!res.ok) {
-                    errorEl.textContent = data.error || 'ログインに失敗しました';
+                    errMsg.textContent = data.error || 'ログインに失敗しました';
+                    errBox.classList.add('show');
                     btn.disabled = false;
-                    btn.textContent = 'ログイン';
+                    btn.querySelector('span').textContent = 'ログイン';
                     return;
                 }
 
@@ -63,9 +337,10 @@
                 localStorage.setItem('user', JSON.stringify(data.user));
                 window.location.href = '/';
             } catch (err) {
-                errorEl.textContent = 'サーバーに接続できません';
+                errMsg.textContent = 'サーバーに接続できません';
+                errBox.classList.add('show');
                 btn.disabled = false;
-                btn.textContent = 'ログイン';
+                btn.querySelector('span').textContent = 'ログイン';
             }
         });
     </script>
