@@ -24,9 +24,9 @@ def test_login_invalid_credentials_shows_error(page, live_server):
     page.fill("#username", "admin")
     page.fill("#password", "wrongpassword")
     page.click("button[type=submit]")
-    # Error element should become visible
-    page.wait_for_selector("#login-error:not(:empty)", timeout=5000)
-    error_text = page.text_content("#login-error")
+    # Error box becomes visible with .show class
+    page.wait_for_selector("#login-error-box.show", timeout=5000)
+    error_text = page.text_content("#login-error-msg")
     assert error_text, "Expected an error message"
 
 

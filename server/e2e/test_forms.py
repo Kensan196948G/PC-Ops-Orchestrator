@@ -114,22 +114,23 @@ def test_api_login_error_response_has_error_field(page, live_server):
 
 
 def test_login_invalid_credentials_shows_error_message(page, live_server):
-    """Invalid credentials must display an error in the #login-error element."""
+    """Invalid credentials must display an error in the #login-error-box element."""
     page.goto(f"{live_server}/login")
     page.fill("#username", "admin")
     page.fill("#password", "completely_wrong_password")
     page.click("button[type=submit]")
-    # Wait until the error element has text content
-    page.wait_for_selector("#login-error:not(:empty)", timeout=5000)
-    error_text = page.text_content("#login-error")
+    # Wait until the error box becomes visible with .show class
+    page.wait_for_selector("#login-error-box.show", timeout=5000)
+    error_text = page.text_content("#login-error-msg")
     assert error_text.strip(), "Error message must be visible after invalid login"
 
 
 def test_login_error_element_empty_on_page_load(page, live_server):
-    """#login-error must be empty when the page first loads."""
+    """#login-error-box must not have .show class when the page first loads."""
     page.goto(f"{live_server}/login")
-    error_text = page.text_content("#login-error")
-    assert not error_text.strip(), "#login-error must be empty on initial load"
+    assert page.locator("#login-error-box.show").count() == 0, (
+        "#login-error-box must not be visible on initial load"
+    )
 
 
 def test_login_button_disabled_during_submission(page, live_server):
@@ -165,8 +166,8 @@ def test_login_button_re_enabled_after_error(page, live_server):
     page.fill("#username", "admin")
     page.fill("#password", "wrong")
     page.click("button[type=submit]")
-    # Wait for error to appear
-    page.wait_for_selector("#login-error:not(:empty)", timeout=5000)
+    # Wait for error box to appear
+    page.wait_for_selector("#login-error-box.show", timeout=5000)
     # Button should be enabled again
     btn = page.locator("button[type=submit]")
     disabled = btn.get_attribute("disabled")

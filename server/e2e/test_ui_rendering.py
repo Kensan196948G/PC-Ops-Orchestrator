@@ -41,7 +41,7 @@ def test_login_page_form_elements(page, live_server):
     assert page.locator("#username").count() == 1
     assert page.locator("#password").count() == 1
     assert page.locator("button[type=submit]").count() == 1
-    assert page.locator("#login-error").count() == 1
+    assert page.locator("#login-error-box").count() == 1
 
 
 def test_login_page_japanese_text(page, live_server):
@@ -49,7 +49,7 @@ def test_login_page_japanese_text(page, live_server):
     page.goto(f"{live_server}/login")
     body_text = page.text_content("body")
     assert "PC-Ops Orchestrator" in body_text
-    assert "PC運用管理システム" in body_text
+    assert "PC運用を、" in body_text
 
 
 def test_404_page_status_and_content(page, live_server):
@@ -85,9 +85,9 @@ def test_nav_icon_html_entities_rendered(page_with_login, live_server):
     p.wait_for_load_state("domcontentloaded", timeout=8000)
     icons = p.locator(".nav-icon").all()
     assert len(icons) > 0, "At least one .nav-icon element must exist"
-    # Each icon element must have non-empty text
+    # Each icon must contain an SVG (not text anymore — SVG icons used)
     for icon in icons:
-        assert icon.text_content().strip(), "nav-icon must have non-empty text content"
+        assert icon.locator("svg").count() > 0, "nav-icon must contain an SVG element"
 
 
 def test_dashboard_has_table(page_with_login, live_server):
@@ -113,7 +113,7 @@ def test_sidebar_title_text(page_with_login, live_server):
     p = page_with_login
     p.goto(f"{live_server}/")
     p.wait_for_load_state("domcontentloaded", timeout=8000)
-    title_text = p.locator(".sidebar-title").text_content()
+    title_text = p.locator(".brand-name").text_content()
     assert "PC-Ops" in title_text
 
 
