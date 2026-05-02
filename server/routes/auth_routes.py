@@ -21,8 +21,8 @@ def login():
     if not data:
         return jsonify({"error": "リクエストボディが必要です"}), 400
 
-    username = data.get("username", "").strip()
-    password = data.get("password", "")
+    username = str(data.get("username") or "").strip()
+    password = str(data.get("password") or "")
 
     if not username or not password:
         return jsonify({"error": "ユーザー名とパスワードが必要です"}), 400
