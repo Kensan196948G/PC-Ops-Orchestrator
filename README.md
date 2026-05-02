@@ -439,7 +439,9 @@ sequenceDiagram
 │   ├── templates/                Jinja2テンプレート（dashboard/pc_list/tasks/alerts/scheduled_tasks/groups/alert_rules/audit/users）
 │   ├── static/                   CSS + JS + openapi.yaml（OpenAPI 3.0 仕様）
 │   ├── requirements.txt          Python依存関係
-│   └── test_api.py               統合テスト（57項目）
+│   ├── requirements-e2e.txt      E2E テスト用依存関係（pytest-playwright）
+│   ├── test_api.py               統合テスト（73項目）
+│   └── e2e/                      Playwright E2E テスト（20項目）
 │
 ├── 📡 agent/                     ← Agent（PowerShell）
 │   ├── PCOpsAgent.ps1            情報収集＋タスク実行
@@ -460,12 +462,21 @@ sequenceDiagram
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| API 統合テスト（Python） | 60項目 | ✅ PASS |
+| API 統合テスト（Python） | 73項目 | ✅ PASS |
+| **WebUI E2E テスト（Playwright）** | **20項目** | **✅ PASS** |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
 | Agent Teams E2E テスト | 複数 | ✅ PASS |
 | Agent Teams 負荷テスト | 複数 | ✅ PASS |
 | スモークテスト（PS5.1 / PS7） | 複数 | ✅ PASS |
+
+### 🎭 Playwright E2E テスト対象シナリオ
+
+| テストファイル | シナリオ |
+|---|---|
+| `test_auth_e2e.py` | ログイン画面表示 / 認証成功・失敗 / ログアウト |
+| `test_pages_e2e.py` | 全 7 主要ページ表示確認 / ナビゲーション / 404 |
+| `test_rbac_e2e.py` | admin/viewer ロール別 UI・API アクセス制御 |
 
 ---
 
