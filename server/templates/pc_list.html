@@ -21,6 +21,10 @@
             <option value="macOS">macOS</option>
         </select>
         <button class="btn btn-secondary" onclick="exportPCsCSV()">&#8595; CSV</button>
+        <button id="bulk-task-btn" class="btn btn-primary role-operator-or-admin"
+                onclick="openBulkModal()" style="display:none;">
+            &#9654; 一括タスク実行 (<span id="bulk-count">0</span>台)
+        </button>
     </div>
 </div>
 
@@ -28,6 +32,10 @@
     <table class="table" id="pc-table">
         <thead>
             <tr>
+                <th style="width:40px;">
+                    <input type="checkbox" id="select-all-cb" onchange="toggleSelectAll(this.checked)"
+                           title="全選択/全解除">
+                </th>
                 <th>PC名</th>
                 <th>IPアドレス</th>
                 <th>OS</th>
@@ -41,10 +49,59 @@
             </tr>
         </thead>
         <tbody id="pc-table-body">
-            <tr><td colspan="10" class="text-center">読み込み中...</td></tr>
+            <tr><td colspan="11" class="text-center">読み込み中...</td></tr>
         </tbody>
     </table>
     <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- 一括タスク実行モーダル -->
+<div id="bulk-modal" class="modal-overlay">
+    <div class="modal-container" style="max-width:480px;">
+        <div class="modal-header">
+            <h3 class="modal-title">一括タスク実行</h3>
+            <button class="modal-close" onclick="closeBulkModal()">&#215;</button>
+        </div>
+        <div class="modal-body">
+            <p id="bulk-target-info" style="margin-bottom:1rem;color:var(--text-secondary);"></p>
+            <form id="bulk-form" onsubmit="submitBulkTask(); return false;">
+                <div class="form-group">
+                    <label>タスク種別 <span style="color:var(--danger);">*</span></label>
+                    <select id="bulk-task-type" class="form-input" required>
+                        <option value="">選択してください</option>
+                        <option value="cleanup">cleanup（一時ファイル削除）</option>
+                        <option value="update">update（Windows Update）</option>
+                        <option value="diagnose">diagnose（診断）</option>
+                        <option value="collect">collect（情報収集）</option>
+                        <option value="custom">custom（カスタムコマンド）</option>
+                    </select>
+                </div>
+                <div class="form-group" id="bulk-command-group" style="display:none;">
+                    <label>コマンド</label>
+                    <input type="text" id="bulk-command" class="form-input"
+                           placeholder="実行するコマンドを入力" maxlength="512">
+                </div>
+                <div class="modal-footer" style="padding:0;margin-top:1rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeBulkModal()">キャンセル</button>
+                    <button type="submit" class="btn btn-primary" id="bulk-submit-btn">実行</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 一括実行結果モーダル -->
+<div id="bulk-result-modal" class="modal-overlay">
+    <div class="modal-container" style="max-width:480px;">
+        <div class="modal-header">
+            <h3 class="modal-title">実行結果</h3>
+            <button class="modal-close" onclick="closeBulkResultModal()">&#215;</button>
+        </div>
+        <div class="modal-body" id="bulk-result-body"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeBulkResultModal()">閉じる</button>
+        </div>
+    </div>
 </div>
 {% endblock %}
 

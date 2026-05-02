@@ -100,6 +100,95 @@ def create_task():
     return jsonify({"message": "タスクを作成しました", "task": task.to_dict()}), 201
 
 
+@tasks_bp.route("/tasks/bulk", methods=["POST"])
+@limiter.limit("20 per minute")
+@require_role("admin", "operator")
+def bulk_create_tasks():
+    """Create the same task for multiple PCs at once.
+
+    Request body:
+        task_type: str (required)
+        pc_names: list[str] (required, 1-50 items)
+        command: str (optional, for custom tasks)
+        priority: int (optional)
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "リクエストボディが必要です"}), 400
+
+    task_type = data.get("task_type", "").strip()
+    if not task_type:
+        return jsonify({"error": "task_type は必須です"}), 400
+    if task_type not in _ALLOWED_TASK_TYPES:
+        allowed = sorted(_ALLOWED_TASK_TYPES)
+        return (
+            jsonify({"error": f"task_type は {allowed} のいずれかで指定してください"}),
+            400,
+        )
+
+    pc_names = data.get("pc_names", [])
+    if not isinstance(pc_names, list) or not pc_names:
+        return jsonify({"error": "pc_names は空でないリストで指定してください"}), 400
+    if len(pc_names) > 50:
+        return jsonify({"error": "一括実行は最大 50 台までです"}), 400
+
+    command = data.get("command")
+    if command is not None:
+        if not isinstance(command, str):
+            return jsonify({"error": "command は文字列で指定してください"}), 400
+        if len(command) > _MAX_COMMAND_LEN:
+            msg = f"command は {_MAX_COMMAND_LEN} 文字以内にしてください"
+            return jsonify({"error": msg}), 400
+
+    priority = data.get("priority", 0)
+    successes = []
+    failures = []
+
+    for pc_name in pc_names:
+        pc_name = str(pc_name).strip()
+        pc = PC.query.filter_by(pc_name=pc_name).first()
+        if not pc:
+            failures.append({"pc_name": pc_name, "error": "PC が見つかりません"})
+            continue
+        task = Task(
+            pc_id=pc.id,
+            task_type=task_type,
+            command=command,
+            parameters=json.dumps(data.get("parameters", {}), ensure_ascii=False),
+            status="pending",
+            priority=priority,
+            created_by=request.current_user.username,
+        )
+        db.session.add(task)
+        db.session.flush()
+        successes.append({"pc_name": pc_name, "task_id": task.id})
+
+    if successes:
+        db.session.commit()
+        log_operation(
+            "bulk_create_task",
+            f"count:{len(successes)} type:{task_type}",
+            json.dumps(
+                {"pc_names": [s["pc_name"] for s in successes], "task_type": task_type},
+                ensure_ascii=False,
+            ),
+        )
+    else:
+        db.session.rollback()
+
+    status_code = 201 if successes else 400
+    return (
+        jsonify(
+            {
+                "message": f"{len(successes)} 件のタスクを作成しました",
+                "successes": successes,
+                "failures": failures,
+            }
+        ),
+        status_code,
+    )
+
+
 @tasks_bp.route("/result", methods=["POST"])
 @agent_auth_required
 def submit_result():

@@ -442,3 +442,67 @@ def test_audit_export_csv_viewer_forbidden():
 def test_audit_export_csv_requires_auth():
     r = req("GET", "/api/audit/export.csv")
     assert r.status_code == 401
+
+
+# ── 133. PC 一括タスク実行 ────────────────────────────────────────────
+def test_bulk_task_no_pcs_returns_400():
+    r = req(
+        "POST",
+        "/api/tasks/bulk",
+        data={"task_type": "diagnose", "pc_names": []},
+        token=_admin_token,
+    )
+    assert r.status_code == 400
+
+
+def test_bulk_task_invalid_task_type():
+    r = req(
+        "POST",
+        "/api/tasks/bulk",
+        data={"task_type": "invalid_type", "pc_names": ["PC-001"]},
+        token=_admin_token,
+    )
+    assert r.status_code == 400
+
+
+def test_bulk_task_unknown_pc_returns_failure():
+    r = req(
+        "POST",
+        "/api/tasks/bulk",
+        data={"task_type": "diagnose", "pc_names": ["NON_EXISTENT_PC"]},
+        token=_admin_token,
+    )
+    assert r.status_code == 400
+    data = json.loads(r.data)
+    assert len(data["failures"]) == 1
+    assert data["failures"][0]["pc_name"] == "NON_EXISTENT_PC"
+
+
+def test_bulk_task_requires_auth():
+    r = req(
+        "POST",
+        "/api/tasks/bulk",
+        data={"task_type": "diagnose", "pc_names": ["PC-001"]},
+    )
+    assert r.status_code == 401
+
+
+def test_bulk_task_viewer_forbidden():
+    r = req(
+        "POST",
+        "/api/tasks/bulk",
+        data={"task_type": "diagnose", "pc_names": ["PC-001"]},
+        token=_viewer_token,
+    )
+    assert r.status_code == 403
+
+
+def test_bulk_task_too_many_pcs():
+    names = [f"PC-{i:03d}" for i in range(51)]
+    r = req(
+        "POST",
+        "/api/tasks/bulk",
+        data={"task_type": "diagnose", "pc_names": names},
+        token=_admin_token,
+    )
+    assert r.status_code == 400
