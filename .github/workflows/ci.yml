@@ -430,7 +430,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r server/requirements.txt pytest
+          pip install -r server/requirements.txt pytest ruff
 
       - name: Run Flask API tests (extended)
         working-directory: server

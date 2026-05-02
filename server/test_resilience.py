@@ -263,11 +263,12 @@ def test_notify_webhook_timeout_handled():
 # ── 226-250 AI 開発系検証（CI/lint/E2E で確認済みの項目）──────────────
 def test_generated_code_passes_ruff():
     import subprocess
+    import sys
 
-    # app.py, auth.py, models.py, routes/ を対象（テストファイル自身は除外）
+    # python -m ruff で呼び出すことで CI 環境の PATH に依存しない
     targets = ["app.py", "auth.py", "models.py", "notify.py", "routes/"]
     result = subprocess.run(
-        ["ruff", "check", *targets],
+        [sys.executable, "-m", "ruff", "check", *targets],
         cwd=os.path.dirname(__file__),
         capture_output=True,
         text=True,
@@ -277,10 +278,11 @@ def test_generated_code_passes_ruff():
 
 def test_generated_code_format_ruff():
     import subprocess
+    import sys
 
     targets = ["app.py", "auth.py", "models.py", "notify.py", "routes/"]
     result = subprocess.run(
-        ["ruff", "format", "--check", *targets],
+        [sys.executable, "-m", "ruff", "format", "--check", *targets],
         cwd=os.path.dirname(__file__),
         capture_output=True,
         text=True,
