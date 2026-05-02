@@ -6,6 +6,12 @@ import threading
 
 import pytest
 
+
+@pytest.fixture(autouse=True)
+def set_playwright_timeout(page):
+    """Increase Playwright default timeout to 60s for slower CI environments."""
+    page.set_default_timeout(60000)
+
 # Ensure server/ is importable regardless of cwd
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
