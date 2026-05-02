@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PC-Ops Orchestrator - {% block title %}Dashboard{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     {% block head %}{% endblock %}
@@ -18,51 +19,51 @@
             <nav class="sidebar-nav">
                 <a href="/" class="nav-item" data-page="dashboard">
                     <span class="nav-icon">&#9632;</span>
-                    Dashboard
+                    <span class="nav-label">Dashboard</span>
                 </a>
                 <a href="/pcs" class="nav-item" data-page="pcs">
                     <span class="nav-icon">&#9644;</span>
-                    PC一覧
+                    <span class="nav-label">PC一覧</span>
                 </a>
                 <a href="/tasks" class="nav-item" data-page="tasks">
                     <span class="nav-icon">&#9679;</span>
-                    タスク管理
+                    <span class="nav-label">タスク管理</span>
                 </a>
                 <a href="/alerts" class="nav-item" data-page="alerts">
                     <span class="nav-icon">&#9888;</span>
-                    アラート
+                    <span class="nav-label">アラート</span>
                     <span id="alerts-badge" class="nav-badge" style="display:none;">0</span>
                 </a>
                 <a href="/scheduled-tasks" class="nav-item" data-page="scheduled-tasks">
                     <span class="nav-icon">&#9201;</span>
-                    スケジュール
+                    <span class="nav-label">スケジュール</span>
                 </a>
                 <a href="/groups" class="nav-item" data-page="groups">
                     <span class="nav-icon">&#9671;</span>
-                    PCグループ
+                    <span class="nav-label">PCグループ</span>
                 </a>
                 <a href="/alert-rules" class="nav-item" data-page="alert-rules">
                     <span class="nav-icon">&#9881;</span>
-                    アラートルール
+                    <span class="nav-label">アラートルール</span>
                 </a>
                 <a href="/users" class="nav-item" data-page="users" id="nav-users" style="display:none;">
                     <span class="nav-icon">&#9786;</span>
-                    ユーザー管理
+                    <span class="nav-label">ユーザー管理</span>
                 </a>
                 <a href="/audit" class="nav-item" data-page="audit" id="nav-audit" style="display:none;">
                     <span class="nav-icon">&#9998;</span>
-                    操作ログ
+                    <span class="nav-label">操作ログ</span>
                 </a>
                 {% if swagger_enabled %}
                 <a href="/api/docs/" class="nav-item" data-page="api-docs" id="nav-api-docs" target="_blank" rel="noopener">
                     <span class="nav-icon">&#9776;</span>
-                    API ドキュメント
+                    <span class="nav-label">API ドキュメント</span>
                 </a>
                 {% endif %}
                 <div class="nav-divider"></div>
                 <a href="#" class="nav-item" id="logout-btn">
                     <span class="nav-icon">&#9660;</span>
-                    ログアウト
+                    <span class="nav-label">ログアウト</span>
                 </a>
             </nav>
             <div class="sidebar-footer">
