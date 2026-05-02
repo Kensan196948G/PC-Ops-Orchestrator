@@ -13,8 +13,13 @@
     <div class="layout">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h1 class="sidebar-title">PC-Ops</h1>
-                <span class="sidebar-subtitle">Orchestrator</span>
+                <div class="brand-logo">
+                    <svg viewBox="0 0 18 18" fill="currentColor"><rect x="2" y="2" width="6" height="6" rx="1.5"/><rect x="10" y="2" width="6" height="6" rx="1.5"/><rect x="2" y="10" width="6" height="6" rx="1.5"/><rect x="10" y="10" width="6" height="6" rx="1.5"/></svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">PC-Ops</span>
+                    <span class="brand-sub">Orchestrator</span>
+                </div>
             </div>
             <nav class="sidebar-nav">
                 <a href="/" class="nav-item" data-page="dashboard">
@@ -61,13 +66,19 @@
                 </a>
                 {% endif %}
                 <div class="nav-divider"></div>
-                <a href="#" class="nav-item" id="logout-btn">
-                    <span class="nav-icon">&#9660;</span>
-                    <span class="nav-label">ログアウト</span>
-                </a>
             </nav>
             <div class="sidebar-footer">
-                <span id="user-info">---</span>
+                <div class="avatar" id="user-avatar">--</div>
+                <div class="user-meta">
+                    <div class="user-name">
+                        <span id="user-info">---</span>
+                        <span class="role-pill admin" id="role-pill" style="display:none;"></span>
+                    </div>
+                    <div class="user-role" id="user-role-text"></div>
+                </div>
+                <button class="icon-btn" id="logout-btn" title="ログアウト">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </button>
             </div>
         </aside>
         <main class="main-content">
@@ -169,8 +180,24 @@
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 const info = document.getElementById('user-info');
                 if (info) {
-                    const roleLabel = user.role ? ` [${user.role}]` : '';
-                    info.textContent = (user.username || '---') + roleLabel;
+                    info.textContent = user.username || '---';
+                }
+                // Update avatar initials
+                const avatarEl = document.getElementById('user-avatar');
+                if (avatarEl && user.username) {
+                    avatarEl.textContent = user.username.slice(0, 2).toUpperCase();
+                }
+                // Update role pill
+                const rolePill = document.getElementById('role-pill');
+                const roleText = document.getElementById('user-role-text');
+                const roleLabels = { admin: '管理者', operator: 'オペレーター', viewer: '閲覧者' };
+                if (rolePill && user.role) {
+                    rolePill.textContent = user.role;
+                    rolePill.className = 'role-pill ' + user.role;
+                    rolePill.style.display = '';
+                }
+                if (roleText && user.role) {
+                    roleText.textContent = roleLabels[user.role] || user.role;
                 }
                 window.CURRENT_USER_ROLE = user.role || null;
                 const navUsers = document.getElementById('nav-users');
