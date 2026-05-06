@@ -1,7 +1,7 @@
 openapi: "3.0.3"
 info:
   title: PC-Ops Orchestrator API
-  version: "1.0.0"
+  version: "1.1.0"
   description: |
     PC管理・監視・タスク自動化プラットフォーム REST API。
 
@@ -212,7 +212,7 @@ paths:
     post:
       tags: [認証]
       summary: ユーザー作成（管理者のみ）
-      description: 必要ロール `admin`。`role` は admin/operator/viewer のいずれか（既定: viewer）。
+      description: "必要ロール `admin`。`role` は admin/operator/viewer のいずれか（既定: viewer）。パスワードは大小英字+数字+記号+8文字以上が必須。"
       security:
         - BearerAuth: []
       requestBody:
@@ -234,10 +234,140 @@ paths:
         '201':
           description: 作成成功
         '400':
-          description: バリデーションエラー
+          description: パスワードポリシー違反またはバリデーションエラー（8文字以上・大小英字+数字+記号）
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/users/{user_id}/unlock:
+    post:
+      tags: [認証]
+      summary: アカウントロック解除（管理者のみ）
+      description: ログイン失敗 5 回でロックされたアカウントを解除する。失敗カウントもリセット。必要ロール `admin`。
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: ロック解除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  user: { type: object }
+        '404':
+          description: ユーザーが見つかりません
+
+  /reports/monthly:
+    get:
+      tags: [レポート]
+      summary: 月次レポート KPI 集計
+      description: 指定月の PC 稼働・タスク・アラート・SLA 集計を返す。必要ロール `viewer` 以上。
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: year
+          schema: { type: integer, example: 2026 }
+        - in: query
+          name: month
+          schema: { type: integer, minimum: 1, maximum: 12, example: 5 }
+      responses:
+        '200':
+          description: 月次集計 JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period: { type: string, example: '2026-05' }
+                  pc:
+                    type: object
+                    properties:
+                      total: { type: integer }
+                      online: { type: integer }
+                      offline: { type: integer }
+                      health_rate: { type: number }
+                  tasks:
+                    type: object
+                    properties:
+                      total: { type: integer }
+                      completed: { type: integer }
+                      failed: { type: integer }
+                      success_rate: { type: number }
+                  alerts:
+                    type: object
+                    properties:
+                      total: { type: integer }
+                      critical: { type: integer }
+                      high: { type: integer }
+                      medium: { type: integer }
+                      low: { type: integer }
+                  sla: { type: number }
+        '400':
+          description: パラメータエラー
+
+  /reports/monthly/list:
+    get:
+      tags: [レポート]
+      summary: 月次レポートアーカイブ一覧
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: months
+          schema: { type: integer, default: 12, maximum: 36 }
+      responses:
+        '200':
+          description: 過去 N ヶ月の月次集計リスト
+
+  /reports/monthly/export.csv:
+    get:
+      tags: [レポート]
+      summary: 月次レポート CSV ダウンロード
+      description: UTF-8 BOM CSV。必要ロール `operator` 以上。
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: year
+          schema: { type: integer }
+        - in: query
+          name: month
+          schema: { type: integer }
+      responses:
+        '200':
+          description: CSV ファイル
+          content:
+            text/csv:
+              schema: { type: string }
+
+  /reports/monthly/export.pdf:
+    get:
+      tags: [レポート]
+      summary: 月次レポート PDF ダウンロード
+      description: IPA Gothic 日本語 PDF (reportlab)。必要ロール `operator` 以上。
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: year
+          schema: { type: integer }
+        - in: query
+          name: month
+          schema: { type: integer }
+      responses:
+        '200':
+          description: PDF ファイル
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
 
   /collect:
     post:
