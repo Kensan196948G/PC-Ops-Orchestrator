@@ -74,7 +74,8 @@
       105,
       107,
       109,
-      111
+      111,
+      114
     ]
   },
   "priority": {
@@ -132,9 +133,8 @@
         "Security Headers (#101/PR #103) - CSP/HSTS/Permissions-Policy 追加"
       ],
       "remaining": [
-        "M5-3 月次レポート PDF/CSV (Issue #76) - 未着手",
-        "M5-5 ユーザー管理 WebUI 強化 (Issue #78) - 未着手",
-        "innerHTML XSS Defense (Issue #102) - P2"
+        "M5-3 月次レポート PDF/CSV (Issue #76) - 進行中",
+        "M5-5 ユーザー管理 WebUI 強化 (Issue #78) - 未着手"
       ]
     }
   },
