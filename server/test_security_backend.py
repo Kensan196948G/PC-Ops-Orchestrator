@@ -624,6 +624,26 @@ class TestSecurityHeaders:
         )
         print("  [PASS] 170: Content-Security-Policy present and well-formed")
 
+    def test_csp_script_src_includes_nonce(self):
+        """CSP script-src must include a per-request nonce (Phase 1 of CSP hardening).
+
+        Phase 2 will remove 'unsafe-inline' after migrating inline event
+        handlers (onclick/oninput) to addEventListener in external JS files.
+        """
+        r = client.get("/health")
+        val = r.headers.get("Content-Security-Policy", "")
+        script_src = ""
+        for directive in val.split(";"):
+            directive = directive.strip()
+            if directive.startswith("script-src"):
+                script_src = directive
+                break
+        assert script_src, f"No script-src directive in CSP: {val!r}"
+        assert "nonce-" in script_src, (
+            f"CSP script-src must contain nonce-<token>: {script_src!r}"
+        )
+        print("  [PASS] CSP script-src includes nonce (Phase 1 CSP hardening)")
+
     def test_permissions_policy_present(self):
         """Permissions-Policy should disable unused powerful features."""
         r = client.get("/health")

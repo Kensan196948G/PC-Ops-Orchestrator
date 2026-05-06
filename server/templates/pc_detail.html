@@ -164,7 +164,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
     const PC_ID = {{ pc_id }};
 </script>
 <script src="/static/js/pc_detail.js"></script>

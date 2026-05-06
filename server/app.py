@@ -1,5 +1,6 @@
 import os
-from flask import Flask, render_template, jsonify, send_from_directory
+import secrets
+from flask import Flask, render_template, jsonify, send_from_directory, g
 from werkzeug.middleware.proxy_fix import ProxyFix
 from config import SWAGGER_DEFAULT_BY_CONFIG, config, env_bool
 from extensions import db, migrate, limiter, cors
@@ -20,20 +21,28 @@ def create_app(config_name=None):
 
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
+    @app.before_request
+    def _generate_csp_nonce():
+        g.csp_nonce = secrets.token_urlsafe(16)
+
     @app.context_processor
     def inject_feature_flags():
-        return {"swagger_enabled": bool(app.config.get("SWAGGER_ENABLED"))}
+        return {
+            "swagger_enabled": bool(app.config.get("SWAGGER_ENABLED")),
+            "csp_nonce": g.get("csp_nonce", ""),
+        }
 
     db.init_app(app)
     migrate.init_app(app, db)
     limiter.init_app(app)
     cors.init_app(app, origins=app.config.get("CORS_ORIGINS", ["http://localhost"]))
 
-    # CSP allows Chart.js from cdn.jsdelivr.net (used by base.html); 'unsafe-inline'
-    # is required for the inline <style> blocks present in templates.
-    CSP_DEFAULT = (
+    # CSP uses per-request nonce for inline <script> blocks.
+    # 'unsafe-inline' is kept because onclick/oninput event handlers in templates
+    # still require it (Phase 2 will remove them by migrating to addEventListener).
+    _CSP_SCRIPT_TMPL = (
         "default-src 'self'; "
-        "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+        "script-src 'self' https://cdn.jsdelivr.net 'nonce-{nonce}' 'unsafe-inline'; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data:; "
         "font-src 'self' data:; "
@@ -55,10 +64,10 @@ def create_app(config_name=None):
             "Permissions-Policy",
             "geolocation=(), camera=(), microphone=(), payment=()",
         )
-        response.headers.setdefault(
-            "Content-Security-Policy",
-            app.config.get("CONTENT_SECURITY_POLICY", CSP_DEFAULT),
-        )
+        custom_csp = app.config.get("CONTENT_SECURITY_POLICY")
+        nonce = g.get("csp_nonce", "")
+        csp = custom_csp if custom_csp else _CSP_SCRIPT_TMPL.format(nonce=nonce)
+        response.headers.setdefault("Content-Security-Policy", csp)
         # HSTS only makes sense over HTTPS — apply only in production where the
         # reverse proxy terminates TLS. Avoid sending it in dev/test (HTTP).
         if config_name == "production":
