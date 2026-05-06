@@ -3,20 +3,94 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">バックアップ管理</h2>
-    <p class="page-description">DB / 設定ファイルのバックアップスケジュールと履歴を管理し、リストア操作を提供します。</p>
+    <p class="page-description">DB / 設定ファイルのバックアップスケジュール・履歴・リストア（ダミーデータ）。</p>
+    <div style="display:flex;gap:0.5rem;">
+        <button class="btn btn-secondary" type="button" onclick="alert('整合性チェック（次マイルストーン実装予定）')">🩺 整合性チェック</button>
+        <button class="btn btn-primary" type="button" onclick="alert('即時バックアップ（次マイルストーン実装予定）')">▶ 即時バックアップ</button>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card stat-online">
+        <div class="stat-value">7</div>
+        <div class="stat-label">直近 7 日成功</div>
+    </div>
+    <div class="stat-card stat-task">
+        <div class="stat-value">14.2 GB</div>
+        <div class="stat-label">合計サイズ</div>
+    </div>
+    <div class="stat-card stat-warning">
+        <div class="stat-value">0</div>
+        <div class="stat-label">直近 7 日失敗</div>
+    </div>
+    <div class="stat-card stat-total">
+        <div class="stat-value">2026-05-06 03:00</div>
+        <div class="stat-label">最後の成功</div>
+    </div>
 </div>
 
 <div class="card">
-    <div class="empty-state">
-        <h3>準備中</h3>
-        <p>このページは将来のマイルストーンで実装予定です。</p>
-        <ul>
-            <li>バックアップ履歴 (full / incremental)</li>
-            <li>スケジュール設定 (cron 式)</li>
-            <li>保管先設定 (local / S3 / Azure Blob)</li>
-            <li>リストア操作 (point-in-time recovery)</li>
-            <li>整合性チェック</li>
-        </ul>
+    <h3 class="card-title">バックアップ履歴 (直近 14 日)</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>実行日時</th>
+                <th>種別</th>
+                <th>対象</th>
+                <th>サイズ</th>
+                <th>所要時間</th>
+                <th>保管先</th>
+                <th>状態</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>2026-05-06 03:00</td><td>full</td><td>DB + config</td><td>2.1 GB</td><td>4 分 21 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary" style="font-size:0.75rem;">リストア</button></td></tr>
+            <tr><td>2026-05-05 03:00</td><td>incremental</td><td>DB</td><td>148 MB</td><td>1 分 02 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary" style="font-size:0.75rem;">リストア</button></td></tr>
+            <tr><td>2026-05-04 03:00</td><td>incremental</td><td>DB</td><td>132 MB</td><td>0 分 58 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary" style="font-size:0.75rem;">リストア</button></td></tr>
+            <tr><td>2026-05-03 03:00</td><td>incremental</td><td>DB</td><td>119 MB</td><td>0 分 51 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary" style="font-size:0.75rem;">リストア</button></td></tr>
+            <tr><td>2026-05-02 03:00</td><td>full</td><td>DB + config</td><td>2.0 GB</td><td>4 分 18 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary" style="font-size:0.75rem;">リストア</button></td></tr>
+            <tr><td>2026-05-01 03:00</td><td>incremental</td><td>DB</td><td>104 MB</td><td>0 分 47 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary" style="font-size:0.75rem;">リストア</button></td></tr>
+            <tr><td>2026-04-30 03:00</td><td>incremental</td><td>DB</td><td>121 MB</td><td>0 分 53 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary" style="font-size:0.75rem;">リストア</button></td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="charts-grid">
+    <div class="card">
+        <h3 class="card-title">⏰ スケジュール設定</h3>
+        <table class="table">
+            <thead><tr><th>名前</th><th>cron 式</th><th>種別</th><th>状態</th></tr></thead>
+            <tbody>
+                <tr><td>毎日 03:00 増分</td><td>0 3 * * 1-6</td><td>incremental</td><td><span class="badge badge-success">有効</span></td></tr>
+                <tr><td>毎週日曜 03:00 フル</td><td>0 3 * * 0</td><td>full</td><td><span class="badge badge-success">有効</span></td></tr>
+                <tr><td>毎月 1 日 02:00 フル + 保管</td><td>0 2 1 * *</td><td>full + glacier</td><td><span class="badge badge-success">有効</span></td></tr>
+            </tbody>
+        </table>
+        <div style="margin-top:0.75rem;text-align:right;">
+            <button class="btn btn-primary" style="font-size:0.8rem;" onclick="alert('スケジュール追加（次マイルストーン実装予定）')">+ スケジュール追加</button>
+        </div>
+    </div>
+    <div class="card">
+        <h3 class="card-title">🗄️ 保管先設定</h3>
+        <table class="table">
+            <thead><tr><th>名前</th><th>種別</th><th>容量</th><th>状態</th></tr></thead>
+            <tbody>
+                <tr><td>s3://pc-ops-backups/</td><td>S3</td><td>14.2 GB / 100 GB</td><td><span class="badge badge-success">使用中</span></td></tr>
+                <tr><td>azure://pc-ops-backups-archive</td><td>Azure Blob (archive)</td><td>48.7 GB / 200 GB</td><td><span class="badge badge-success">アーカイブ</span></td></tr>
+                <tr><td>/mnt/local-backup</td><td>local</td><td>2.1 GB / 50 GB</td><td><span class="badge badge-info">セカンダリ</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h3 class="card-title">🔄 リストア (point-in-time recovery)</h3>
+    <p style="color:var(--text-secondary);margin-bottom:0.75rem;">指定時点へ DB を復元します。実行は admin ロールのみ可能。</p>
+    <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;">
+        <label>復元日時<br><input type="datetime-local" disabled value="2026-05-06T03:00"></label>
+        <label>復元先<br><select disabled><option>staging-restore</option><option>production (要確認)</option></select></label>
+        <button class="btn btn-warning" type="button" onclick="alert('リストア（admin 確認モーダル → 次マイルストーン実装予定）')">▶ リストア実行</button>
     </div>
 </div>
 {% endblock %}

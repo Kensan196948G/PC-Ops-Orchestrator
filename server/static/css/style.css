@@ -810,6 +810,23 @@ body.login-body {
 .status-completed { background: var(--success-soft); color: var(--success); }
 .status-failed    { background: var(--danger-soft);  color: var(--danger); }
 
+/* ── Inline badges (used by admin pages: agents/certs/backups/licenses/notifications/reports) ── */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+.badge-success   { background: var(--success-soft); color: var(--success); }
+.badge-info      { background: var(--info-soft);    color: var(--info); }
+.badge-warning   { background: var(--warning-soft); color: var(--warning); }
+.badge-danger    { background: var(--danger-soft);  color: var(--danger); }
+.badge-secondary { background: var(--bg-tertiary);  color: var(--text-muted); border: 1px solid var(--border); }
+
 /* ── Buttons ── */
 .btn {
     display: inline-flex;
@@ -846,6 +863,15 @@ body.login-body {
 .btn-secondary:hover {
     background: var(--bg-elevated);
     border-color: var(--border-strong);
+}
+
+.btn-warning {
+    background: var(--warning);
+    color: #fff;
+}
+.btn-warning:hover {
+    background: var(--warning);
+    filter: brightness(0.92);
 }
 
 .btn-danger {
