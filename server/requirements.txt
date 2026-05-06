@@ -9,3 +9,4 @@ gunicorn==23.0.0
 python-dotenv==1.2.2
 APScheduler==3.10.4
 flask-swagger-ui==5.32.4
+reportlab==4.2.5
