@@ -3,20 +3,128 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">レポート・分析</h2>
-    <p class="page-description">健全性トレンド・タスク分析・アラート分析・月次レポートの可視化を提供します。</p>
+    <p class="page-description">健全性トレンド・タスク分析・アラート分析・月次レポートの可視化（ダミーデータ）。M5-3 (#76) で API バックエンド実装予定。</p>
+    <div style="display:flex;gap:0.5rem;">
+        <button class="btn btn-secondary" type="button" onclick="alert('CSV ダウンロード（M5-3 実装予定）')">📊 CSV エクスポート</button>
+        <button class="btn btn-primary" type="button" onclick="alert('PDF ダウンロード（M5-3 実装予定）')">📄 月次 PDF レポート</button>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card stat-healthy">
+        <div class="stat-value">96.4%</div>
+        <div class="stat-label">健全率（直近 30 日）</div>
+    </div>
+    <div class="stat-card stat-task">
+        <div class="stat-value">98.1%</div>
+        <div class="stat-label">タスク成功率</div>
+    </div>
+    <div class="stat-card stat-warning">
+        <div class="stat-value">12</div>
+        <div class="stat-label">直近 7 日のアラート</div>
+    </div>
+    <div class="stat-card stat-online">
+        <div class="stat-value">142 ms</div>
+        <div class="stat-label">API 平均応答 (p50)</div>
+    </div>
+</div>
+
+<div class="charts-grid">
+    <div class="card">
+        <h3 class="card-title">健全性トレンド (直近 7 日)</h3>
+        <div class="chart-container">
+            <canvas id="reportHealthTrendChart"></canvas>
+        </div>
+    </div>
+    <div class="card">
+        <h3 class="card-title">タスク成功率 (直近 30 日)</h3>
+        <div class="chart-container">
+            <canvas id="reportTaskRateChart"></canvas>
+        </div>
+    </div>
 </div>
 
 <div class="card">
-    <div class="empty-state">
-        <h3>準備中</h3>
-        <p>このページは M5-3 マイルストーン (Issue #76) で実装予定です。</p>
-        <ul>
-            <li>概要 KPI ダッシュボード</li>
-            <li>健全性トレンド (24h / 7d / 30d)</li>
-            <li>タスク成功率分析</li>
-            <li>アラート傾向分析</li>
-            <li>月次レポート PDF / CSV エクスポート</li>
-        </ul>
-    </div>
+    <h3 class="card-title">アラート傾向（重大度別）</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>重大度</th>
+                <th>直近 24h</th>
+                <th>直近 7d</th>
+                <th>直近 30d</th>
+                <th>傾向</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td><span class="badge badge-danger">Critical</span></td><td>0</td><td>2</td><td>5</td><td>↘ 改善</td></tr>
+            <tr><td><span class="badge badge-warning">High</span></td><td>1</td><td>4</td><td>12</td><td>→ 横ばい</td></tr>
+            <tr><td><span class="badge badge-info">Medium</span></td><td>3</td><td>9</td><td>28</td><td>↗ 増加</td></tr>
+            <tr><td><span class="badge badge-secondary">Low</span></td><td>6</td><td>18</td><td>54</td><td>→ 横ばい</td></tr>
+        </tbody>
+    </table>
 </div>
+
+<div class="card">
+    <h3 class="card-title">月次レポート アーカイブ</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>対象月</th>
+                <th>稼働 PC 数</th>
+                <th>タスク件数</th>
+                <th>アラート件数</th>
+                <th>SLA</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>2026-04</td><td>148</td><td>1,247</td><td>32</td><td>99.2%</td><td><a href="#" class="btn btn-secondary" style="font-size:0.8rem;">PDF</a> <a href="#" class="btn btn-secondary" style="font-size:0.8rem;">CSV</a></td></tr>
+            <tr><td>2026-03</td><td>146</td><td>1,189</td><td>41</td><td>98.7%</td><td><a href="#" class="btn btn-secondary" style="font-size:0.8rem;">PDF</a> <a href="#" class="btn btn-secondary" style="font-size:0.8rem;">CSV</a></td></tr>
+            <tr><td>2026-02</td><td>142</td><td>1,054</td><td>27</td><td>99.4%</td><td><a href="#" class="btn btn-secondary" style="font-size:0.8rem;">PDF</a> <a href="#" class="btn btn-secondary" style="font-size:0.8rem;">CSV</a></td></tr>
+            <tr><td>2026-01</td><td>140</td><td>987</td><td>35</td><td>98.9%</td><td><a href="#" class="btn btn-secondary" style="font-size:0.8rem;">PDF</a> <a href="#" class="btn btn-secondary" style="font-size:0.8rem;">CSV</a></td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Dummy data charts — will be replaced with /api/reports/* in M5-3 (#76).
+    document.addEventListener('DOMContentLoaded', () => {
+        const trendEl = document.getElementById('reportHealthTrendChart');
+        if (trendEl && window.Chart) {
+            new Chart(trendEl, {
+                type: 'line',
+                data: {
+                    labels: ['月','火','水','木','金','土','日'],
+                    datasets: [{
+                        label: '健全率(%)',
+                        data: [97.2, 96.8, 96.4, 95.9, 96.1, 96.7, 96.4],
+                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#2563eb',
+                        backgroundColor: 'rgba(37,99,235,0.10)',
+                        tension: 0.35,
+                        fill: true,
+                    }],
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 90, suggestedMax: 100 } } },
+            });
+        }
+        const taskEl = document.getElementById('reportTaskRateChart');
+        if (taskEl && window.Chart) {
+            new Chart(taskEl, {
+                type: 'bar',
+                data: {
+                    labels: ['Wk1','Wk2','Wk3','Wk4'],
+                    datasets: [{
+                        label: '成功率(%)',
+                        data: [97.8, 98.4, 97.9, 98.1],
+                        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--success') || '#16a34a',
+                    }],
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 90, suggestedMax: 100 } } },
+            });
+        }
+    });
+</script>
 {% endblock %}

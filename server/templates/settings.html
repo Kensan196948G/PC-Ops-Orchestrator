@@ -3,21 +3,76 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">システム設定</h2>
-    <p class="page-description">サーバー全体の設定 (CORS / JWT 有効期限 / Agent 通信間隔 / DB 接続先) を画面上で変更できます。</p>
+    <p class="page-description">サーバー全体の設定（CORS / JWT 有効期限 / Agent 通信間隔 / DB 接続先 等）。値はダミー表示。実保存は次マイルストーンで実装予定。</p>
+    <button class="btn btn-primary" type="button" onclick="alert('保存（次マイルストーン実装予定）')">💾 全設定を保存</button>
 </div>
 
-<div class="card">
-    <div class="empty-state">
-        <h3>準備中</h3>
-        <p>このページは将来のマイルストーンで実装予定です。</p>
-        <ul>
-            <li>全般設定 (タイムゾーン / 言語 / ログレベル)</li>
-            <li>認証設定 (JWT 有効期限 / リフレッシュトークン)</li>
-            <li>Agent 通信設定 (heartbeat interval / timeout)</li>
-            <li>DB 接続設定 (read replica / backup target)</li>
-            <li>CORS 許可オリジン</li>
-            <li>レート制限設定</li>
-        </ul>
+<div class="charts-grid">
+    <div class="card">
+        <h3 class="card-title">⚙️ 全般設定</h3>
+        <div style="display:grid;gap:0.75rem;">
+            <label>タイムゾーン<br><select disabled><option>Asia/Tokyo (UTC+9)</option><option>UTC</option><option>America/Los_Angeles</option></select></label>
+            <label>表示言語<br><select disabled><option>日本語</option><option>English</option></select></label>
+            <label>ログレベル<br><select disabled><option>INFO</option><option>WARNING</option><option>ERROR</option><option>DEBUG</option></select></label>
+            <label>セッションタイムアウト (分)<br><input type="number" value="30" disabled></label>
+        </div>
+    </div>
+    <div class="card">
+        <h3 class="card-title">🔐 認証設定</h3>
+        <div style="display:grid;gap:0.75rem;">
+            <label>JWT 有効期限 (時間)<br><input type="number" value="8" disabled></label>
+            <label>リフレッシュトークン (日)<br><input type="number" value="30" disabled></label>
+            <label>パスワード最小長<br><input type="number" value="8" disabled></label>
+            <label>ログイン試行ロック (失敗回数)<br><input type="number" value="5" disabled></label>
+            <label>多要素認証 (MFA)<br><select disabled><option>無効</option><option>必須</option><option>任意</option></select></label>
+        </div>
+    </div>
+</div>
+
+<div class="charts-grid">
+    <div class="card">
+        <h3 class="card-title">📡 Agent 通信設定</h3>
+        <div style="display:grid;gap:0.75rem;">
+            <label>heartbeat 間隔 (秒)<br><input type="number" value="60" disabled></label>
+            <label>通信タイムアウト (秒)<br><input type="number" value="30" disabled></label>
+            <label>収集間隔 (分)<br><input type="number" value="5" disabled></label>
+            <label>未承認 Agent 自動承認<br><select disabled><option>無効 (admin 手動承認)</option><option>有効</option></select></label>
+        </div>
+    </div>
+    <div class="card">
+        <h3 class="card-title">🗄️ DB 接続設定</h3>
+        <div style="display:grid;gap:0.75rem;">
+            <label>プライマリ DB<br><input type="text" value="postgresql://pc-ops-db:5432/pcops" disabled></label>
+            <label>read replica<br><input type="text" value="postgresql://pc-ops-db-replica:5432/pcops" disabled></label>
+            <label>バックアップ保存先<br><input type="text" value="s3://pc-ops-backups/" disabled></label>
+            <label>接続プールサイズ<br><input type="number" value="20" disabled></label>
+        </div>
+    </div>
+</div>
+
+<div class="charts-grid">
+    <div class="card">
+        <h3 class="card-title">🌐 CORS 許可オリジン</h3>
+        <table class="table">
+            <thead><tr><th>Origin</th><th>用途</th><th>有効</th></tr></thead>
+            <tbody>
+                <tr><td>http://localhost:5300</td><td>開発サーバー</td><td><span class="badge badge-success">✓</span></td></tr>
+                <tr><td>https://pc-ops.example.com</td><td>本番 WebUI</td><td><span class="badge badge-success">✓</span></td></tr>
+                <tr><td>https://pc-ops-stg.example.com</td><td>ステージング</td><td><span class="badge badge-success">✓</span></td></tr>
+            </tbody>
+        </table>
+        <div style="margin-top:0.75rem;text-align:right;">
+            <button class="btn btn-primary" style="font-size:0.8rem;" onclick="alert('オリジン追加（次マイルストーン実装予定）')">+ オリジン追加</button>
+        </div>
+    </div>
+    <div class="card">
+        <h3 class="card-title">⚡ レート制限設定</h3>
+        <div style="display:grid;gap:0.75rem;">
+            <label>WebUI / 分<br><input type="number" value="200" disabled></label>
+            <label>Agent API / 分<br><input type="number" value="600" disabled></label>
+            <label>auth /login / 分<br><input type="number" value="10" disabled></label>
+            <label>burst (短期上限)<br><input type="number" value="50" disabled></label>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -3,20 +3,89 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">通知設定</h2>
-    <p class="page-description">Slack / Teams / Email / Webhook の通知チャネルとイベントルーティングを設定します。</p>
+    <p class="page-description">Slack / Teams / Email / Webhook の通知チャネルとイベントルーティング（ダミーデータ）。</p>
+    <button class="btn btn-primary" type="button" onclick="alert('チャネル追加（次マイルストーン実装予定）')">+ チャネル追加</button>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card stat-online">
+        <div class="stat-value">5</div>
+        <div class="stat-label">有効チャネル</div>
+    </div>
+    <div class="stat-card stat-task">
+        <div class="stat-value">128</div>
+        <div class="stat-label">直近 7 日送信</div>
+    </div>
+    <div class="stat-card stat-warning">
+        <div class="stat-value">2</div>
+        <div class="stat-label">送信失敗 (再試行待ち)</div>
+    </div>
+    <div class="stat-card stat-total">
+        <div class="stat-value">99.7%</div>
+        <div class="stat-label">配信成功率</div>
+    </div>
 </div>
 
 <div class="card">
-    <div class="empty-state">
-        <h3>準備中</h3>
-        <p>このページは将来のマイルストーンで実装予定です。</p>
-        <ul>
-            <li>チャネル管理 (Slack / Teams / Email / Webhook)</li>
-            <li>イベントルーティング (severity → channel)</li>
-            <li>ユーザー別受信設定 (on / off / 時間帯)</li>
-            <li>SMTP 設定</li>
-            <li>テスト送信</li>
-        </ul>
+    <h3 class="card-title">📬 通知チャネル一覧</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>名前</th>
+                <th>種別</th>
+                <th>送信先</th>
+                <th>直近 7 日</th>
+                <th>状態</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>#pc-ops-critical</td><td>Slack</td><td>hooks.slack.com/services/T0***/B0***/***</td><td>12 / 0 fail</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-secondary" style="font-size:0.75rem;">テスト送信</button></td></tr>
+            <tr><td>#pc-ops-warnings</td><td>Slack</td><td>hooks.slack.com/services/T0***/B0***/***</td><td>34 / 0 fail</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-secondary" style="font-size:0.75rem;">テスト送信</button></td></tr>
+            <tr><td>Ops Teams</td><td>Microsoft Teams</td><td>***.webhook.office.com/...</td><td>22 / 1 fail</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-secondary" style="font-size:0.75rem;">テスト送信</button></td></tr>
+            <tr><td>oncall-mail</td><td>Email</td><td>oncall@example.com</td><td>56 / 1 fail</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-secondary" style="font-size:0.75rem;">テスト送信</button></td></tr>
+            <tr><td>SIEM Webhook</td><td>Webhook</td><td>https://siem.example.com/ingest</td><td>4 / 0 fail</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-secondary" style="font-size:0.75rem;">テスト送信</button></td></tr>
+            <tr><td>legacy-pagerduty</td><td>Webhook</td><td>events.pagerduty.com (旧)</td><td>0 / 0</td><td><span class="badge badge-secondary">無効</span></td><td><button class="btn btn-danger" style="font-size:0.75rem;">削除</button></td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="charts-grid">
+    <div class="card">
+        <h3 class="card-title">🚦 イベントルーティング (severity → channel)</h3>
+        <table class="table">
+            <thead><tr><th>severity</th><th>送信先チャネル</th><th>遅延</th></tr></thead>
+            <tbody>
+                <tr><td><span class="badge badge-danger">Critical</span></td><td>#pc-ops-critical + Ops Teams + oncall-mail + SIEM</td><td>即時</td></tr>
+                <tr><td><span class="badge badge-warning">High</span></td><td>#pc-ops-warnings + Ops Teams</td><td>5 分集約</td></tr>
+                <tr><td><span class="badge badge-info">Medium</span></td><td>#pc-ops-warnings</td><td>15 分集約</td></tr>
+                <tr><td><span class="badge badge-secondary">Low</span></td><td>#pc-ops-warnings (ダイジェスト)</td><td>1 時間集約</td></tr>
+            </tbody>
+        </table>
     </div>
+    <div class="card">
+        <h3 class="card-title">📨 SMTP 設定</h3>
+        <div style="display:grid;gap:0.75rem;">
+            <label>SMTP サーバー<br><input type="text" value="smtp.example.com" disabled></label>
+            <label>ポート<br><input type="number" value="587" disabled></label>
+            <label>暗号化<br><select disabled><option>STARTTLS</option><option>SSL/TLS</option></select></label>
+            <label>送信者<br><input type="email" value="pc-ops-noreply@example.com" disabled></label>
+            <label>認証ユーザー<br><input type="text" value="pc-ops-smtp" disabled></label>
+            <button class="btn btn-secondary" type="button" onclick="alert('テスト送信（次マイルストーン実装予定）')" style="margin-top:0.5rem;">📧 テスト送信</button>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3 class="card-title">👤 ユーザー別受信設定</h3>
+    <table class="table">
+        <thead><tr><th>ユーザー</th><th>Critical</th><th>High</th><th>Medium</th><th>静音時間帯</th></tr></thead>
+        <tbody>
+            <tr><td>admin</td><td>email + Slack DM</td><td>email</td><td>—</td><td>—</td></tr>
+            <tr><td>operator-a</td><td>email + Teams DM</td><td>Teams DM</td><td>—</td><td>22:00 - 07:00</td></tr>
+            <tr><td>operator-b</td><td>email</td><td>—</td><td>—</td><td>—</td></tr>
+            <tr><td>viewer-c</td><td>—</td><td>—</td><td>—</td><td>常時静音</td></tr>
+        </tbody>
+    </table>
 </div>
 {% endblock %}
