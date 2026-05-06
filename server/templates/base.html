@@ -391,15 +391,20 @@
 
             const syncBtn = document.getElementById('topbar-sync-btn');
             if (syncBtn) {
-                syncBtn.addEventListener('click', () => {
+                syncBtn.addEventListener('click', async () => {
                     syncBtn.classList.add('is-syncing');
-                    updateEnvPill();
-                    if (TOKEN) {
-                        updateAlertsBadge();
-                        updateSidebarCounts();
+                    try {
+                        const jobs = [updateEnvPill()];
+                        if (TOKEN) {
+                            jobs.push(updateAlertsBadge(), updateSidebarCounts());
+                        }
+                        await Promise.all(jobs);
+                        showToast('同期しました', 'success');
+                    } catch (err) {
+                        showToast('同期に失敗しました', 'error');
+                    } finally {
+                        syncBtn.classList.remove('is-syncing');
                     }
-                    showToast('同期しました', 'success');
-                    setTimeout(() => syncBtn.classList.remove('is-syncing'), 600);
                 });
             }
 

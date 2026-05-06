@@ -1247,9 +1247,12 @@ body.role-operator .role-admin-only {
         margin: 0;
     }
 
-    .main-content {
+    .main {
         margin-left: 60px;
         max-width: calc(100vw - 60px);
+    }
+
+    .main-content {
         padding: 1rem;
     }
 
