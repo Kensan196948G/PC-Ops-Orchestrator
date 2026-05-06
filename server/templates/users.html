@@ -4,7 +4,7 @@
 <div class="page-header">
     <h2 class="page-title">ユーザー管理</h2>
     <div class="page-actions">
-        <button class="btn btn-primary role-admin-only" onclick="openCreateModal()">+ ユーザー追加</button>
+        <button class="btn btn-primary role-admin-only" id="btn-open-create-user">+ ユーザー追加</button>
     </div>
 </div>
 
@@ -30,17 +30,17 @@
 </div>
 
 <div id="create-modal" class="modal" style="display:none;">
-    <div class="modal-backdrop" onclick="closeCreateModal()"></div>
+    <div class="modal-backdrop" id="btn-backdrop-close-create"></div>
     <div class="modal-box">
         <h3>ユーザー追加</h3>
-        <form id="create-form" onsubmit="submitCreate(); return false;" autocomplete="off">
+        <form id="create-form" autocomplete="off">
         <div class="form-group">
             <label>ユーザー名</label>
             <input type="text" id="new-username" class="form-input" placeholder="username" autocomplete="username">
         </div>
         <div class="form-group">
             <label>パスワード（8文字以上・大小英字+数字+記号）</label>
-            <input type="password" id="new-password" class="form-input" placeholder="例: MyPass1!" autocomplete="new-password" oninput="updateStrength('new-password', 'new-strength')">
+            <input type="password" id="new-password" class="form-input" placeholder="例: MyPass1!" autocomplete="new-password">
             <div id="new-strength" class="password-strength" style="margin-top:4px;"></div>
         </div>
         <div class="form-group">
@@ -51,7 +51,7 @@
             </select>
         </div>
         <div class="modal-actions">
-            <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">キャンセル</button>
+            <button type="button" class="btn btn-secondary" id="btn-cancel-create-user">キャンセル</button>
             <button type="submit" class="btn btn-primary">作成</button>
         </div>
         </form>
@@ -59,10 +59,10 @@
 </div>
 
 <div id="edit-modal" class="modal" style="display:none;">
-    <div class="modal-backdrop" onclick="closeEditModal()"></div>
+    <div class="modal-backdrop" id="btn-backdrop-close-edit"></div>
     <div class="modal-box">
         <h3>ユーザー編集</h3>
-        <form id="edit-form" onsubmit="submitEdit(); return false;" autocomplete="off">
+        <form id="edit-form" autocomplete="off">
         <input type="hidden" id="edit-user-id">
         <input type="text" id="edit-username-hidden" autocomplete="username" style="display:none;" aria-hidden="true">
         <div class="form-group">
@@ -81,11 +81,11 @@
         </div>
         <div class="form-group">
             <label>新しいパスワード（変更する場合のみ）</label>
-            <input type="password" id="edit-password" class="form-input" placeholder="（変更しない場合は空欄）" autocomplete="new-password" oninput="updateStrength('edit-password', 'edit-strength')">
+            <input type="password" id="edit-password" class="form-input" placeholder="（変更しない場合は空欄）" autocomplete="new-password">
             <div id="edit-strength" class="password-strength" style="margin-top:4px;"></div>
         </div>
         <div class="modal-actions">
-            <button type="button" class="btn btn-secondary" onclick="closeEditModal()">キャンセル</button>
+            <button type="button" class="btn btn-secondary" id="btn-cancel-edit-user">キャンセル</button>
             <button type="submit" class="btn btn-primary">保存</button>
         </div>
         </form>

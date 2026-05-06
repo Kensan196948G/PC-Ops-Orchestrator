@@ -264,4 +264,48 @@ function renderPagination(containerId, page, pages, callback) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => loadGroups(1));
+document.addEventListener('DOMContentLoaded', () => {
+    const createGroupBtn = document.getElementById('btn-create-group');
+    if (createGroupBtn) createGroupBtn.addEventListener('click', showCreateModal);
+
+    // Group modal
+    const groupModal = document.getElementById('group-modal');
+    if (groupModal) groupModal.addEventListener('click', closeGroupModal);
+
+    const closeGroupModalBtn = document.getElementById('btn-close-group-modal');
+    if (closeGroupModalBtn) closeGroupModalBtn.addEventListener('click', closeGroupModalDirect);
+
+    const cancelGroupModalBtn = document.getElementById('btn-cancel-group-modal');
+    if (cancelGroupModalBtn) cancelGroupModalBtn.addEventListener('click', closeGroupModalDirect);
+
+    const groupForm = document.getElementById('group-form');
+    if (groupForm) groupForm.addEventListener('submit', submitGroupForm);
+
+    // Group task modal
+    const groupTaskModal = document.getElementById('group-task-modal');
+    if (groupTaskModal) groupTaskModal.addEventListener('click', closeGroupTaskModal);
+
+    const closeGroupTaskModalBtn = document.getElementById('btn-close-group-task-modal');
+    if (closeGroupTaskModalBtn) closeGroupTaskModalBtn.addEventListener('click', closeGroupTaskModalDirect);
+
+    const cancelGroupTaskModalBtn = document.getElementById('btn-cancel-group-task-modal');
+    if (cancelGroupTaskModalBtn) cancelGroupTaskModalBtn.addEventListener('click', closeGroupTaskModalDirect);
+
+    const groupTaskType = document.getElementById('group-task-type');
+    if (groupTaskType) groupTaskType.addEventListener('change', toggleGroupTaskCommand);
+
+    const groupTaskForm = document.getElementById('group-task-form');
+    if (groupTaskForm) groupTaskForm.addEventListener('submit', submitGroupTask);
+
+    // Members modal
+    const membersModal = document.getElementById('members-modal');
+    if (membersModal) membersModal.addEventListener('click', closeMembersModal);
+
+    const closeMembersModalBtn = document.getElementById('btn-close-members-modal');
+    if (closeMembersModalBtn) closeMembersModalBtn.addEventListener('click', closeMembersModalDirect);
+
+    const addPcBtn = document.getElementById('btn-add-pc-to-group');
+    if (addPcBtn) addPcBtn.addEventListener('click', addPcToGroup);
+
+    loadGroups(1);
+});

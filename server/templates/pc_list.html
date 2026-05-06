@@ -4,15 +4,15 @@
 <div class="page-header">
     <h2 class="page-title">PC 一覧</h2>
     <div class="page-actions">
-        <input type="text" id="search-input" class="form-input" placeholder="PC名・IPで検索..." oninput="searchPCs()">
-        <select id="status-filter" class="form-input" onchange="searchPCs()">
+        <input type="text" id="search-input" class="form-input" placeholder="PC名・IPで検索...">
+        <select id="status-filter" class="form-input">
             <option value="">すべて</option>
             <option value="healthy">正常</option>
             <option value="warning">要注意</option>
             <option value="critical">危険</option>
             <option value="unknown">不明</option>
         </select>
-        <select id="os-filter" class="form-input" onchange="searchPCs()">
+        <select id="os-filter" class="form-input">
             <option value="">OS: すべて</option>
             <option value="Windows 11">Windows 11</option>
             <option value="Windows 10">Windows 10</option>
@@ -20,9 +20,9 @@
             <option value="Ubuntu">Ubuntu</option>
             <option value="macOS">macOS</option>
         </select>
-        <button class="btn btn-secondary" onclick="exportPCsCSV()">&#8595; CSV</button>
+        <button class="btn btn-secondary" id="btn-export-pcs-csv">&#8595; CSV</button>
         <button id="bulk-task-btn" class="btn btn-primary role-operator-or-admin"
-                onclick="openBulkModal()" style="display:none;">
+                style="display:none;">
             &#9654; 一括タスク実行 (<span id="bulk-count">0</span>台)
         </button>
     </div>
@@ -33,7 +33,7 @@
         <thead>
             <tr>
                 <th style="width:40px;">
-                    <input type="checkbox" id="select-all-cb" onchange="toggleSelectAll(this.checked)"
+                    <input type="checkbox" id="select-all-cb"
                            title="全選択/全解除">
                 </th>
                 <th>PC名</th>
@@ -60,11 +60,11 @@
     <div class="modal-container" style="max-width:480px;">
         <div class="modal-header">
             <h3 class="modal-title">一括タスク実行</h3>
-            <button class="modal-close" onclick="closeBulkModal()">&#215;</button>
+            <button class="modal-close" id="btn-close-bulk-modal">&#215;</button>
         </div>
         <div class="modal-body">
             <p id="bulk-target-info" style="margin-bottom:1rem;color:var(--text-secondary);"></p>
-            <form id="bulk-form" onsubmit="submitBulkTask(); return false;">
+            <form id="bulk-form">
                 <div class="form-group">
                     <label>タスク種別 <span style="color:var(--danger);">*</span></label>
                     <select id="bulk-task-type" class="form-input" required>
@@ -82,7 +82,7 @@
                            placeholder="実行するコマンドを入力" maxlength="512">
                 </div>
                 <div class="modal-footer" style="padding:0;margin-top:1rem;">
-                    <button type="button" class="btn btn-secondary" onclick="closeBulkModal()">キャンセル</button>
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-bulk-modal">キャンセル</button>
                     <button type="submit" class="btn btn-primary" id="bulk-submit-btn">実行</button>
                 </div>
             </form>
@@ -95,11 +95,11 @@
     <div class="modal-container" style="max-width:480px;">
         <div class="modal-header">
             <h3 class="modal-title">実行結果</h3>
-            <button class="modal-close" onclick="closeBulkResultModal()">&#215;</button>
+            <button class="modal-close" id="btn-close-bulk-result-modal">&#215;</button>
         </div>
         <div class="modal-body" id="bulk-result-body"></div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeBulkResultModal()">閉じる</button>
+            <button class="btn btn-secondary" id="btn-close-bulk-result">閉じる</button>
         </div>
     </div>
 </div>

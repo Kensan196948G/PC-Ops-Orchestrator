@@ -235,4 +235,27 @@ function renderPagination(containerId, page, pages, callback) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => loadRules(1));
+document.addEventListener('DOMContentLoaded', () => {
+    const showCreateBtn = document.getElementById('btn-show-create-rule');
+    if (showCreateBtn) showCreateBtn.addEventListener('click', showCreateModal);
+
+    const ruleModal = document.getElementById('rule-modal');
+    if (ruleModal) ruleModal.addEventListener('click', closeRuleModal);
+
+    const closeRuleModalBtn = document.getElementById('btn-close-rule-modal');
+    if (closeRuleModalBtn) closeRuleModalBtn.addEventListener('click', closeRuleModalDirect);
+
+    const cancelRuleModalBtn = document.getElementById('btn-cancel-rule-modal');
+    if (cancelRuleModalBtn) cancelRuleModalBtn.addEventListener('click', closeRuleModalDirect);
+
+    const ruleMetric = document.getElementById('rule-metric');
+    if (ruleMetric) ruleMetric.addEventListener('change', toggleThreshold);
+
+    const ruleChannelType = document.getElementById('rule-channel-type');
+    if (ruleChannelType) ruleChannelType.addEventListener('change', toggleChannelInputs);
+
+    const ruleForm = document.getElementById('rule-form');
+    if (ruleForm) ruleForm.addEventListener('submit', submitRuleForm);
+
+    loadRules(1);
+});

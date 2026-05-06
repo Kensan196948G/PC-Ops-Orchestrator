@@ -4,19 +4,19 @@
 <div class="page-header">
     <h2 class="page-title">アラート管理</h2>
     <div class="page-actions">
-        <select id="severity-filter" class="form-input" onchange="loadAlerts(1)">
+        <select id="severity-filter" class="form-input">
             <option value="">すべての重大度</option>
             <option value="critical">危険</option>
             <option value="high">高</option>
             <option value="medium">中</option>
             <option value="low">低</option>
         </select>
-        <select id="resolved-filter" class="form-input" onchange="loadAlerts(1)">
+        <select id="resolved-filter" class="form-input">
             <option value="false">未解決</option>
             <option value="true">解決済み</option>
         </select>
-        <button class="btn btn-secondary role-operator-or-admin" onclick="syncAlerts()">&#8635; 同期</button>
-        <button class="btn btn-secondary" onclick="exportAlertsCSV()">&#8595; CSV</button>
+        <button class="btn btn-secondary role-operator-or-admin" id="btn-sync-alerts">&#8635; 同期</button>
+        <button class="btn btn-secondary" id="btn-export-alerts-csv">&#8595; CSV</button>
     </div>
 </div>
 

@@ -4,11 +4,11 @@
 <div class="page-header">
     <h2 class="page-title">Dashboard</h2>
     <p class="page-description" id="last-update">---</p>
-    <button class="btn btn-secondary" onclick="refreshDashboard()">&#x21bb; 更新</button>
+    <button class="btn btn-secondary" id="btn-refresh-dashboard">&#x21bb; 更新</button>
 </div>
 
 <div class="stats-grid" id="stats-grid">
-    <div class="stat-card stat-total" onclick="location.href='/pcs'">
+    <div class="stat-card stat-total" id="stat-total-card" style="cursor:pointer;">
         <div class="stat-value" id="stat-total">-</div>
         <div class="stat-label">総PC数</div>
     </div>

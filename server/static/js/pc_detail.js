@@ -298,6 +298,9 @@ async function loadSoftware() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const executeBtn = document.getElementById('btn-execute-task');
+    if (executeBtn) executeBtn.addEventListener('click', executeTask);
+
     loadPCDetail();
     loadUpdates();
     loadSoftware();

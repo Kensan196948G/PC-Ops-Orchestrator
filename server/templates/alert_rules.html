@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">アラートルール設定</h2>
-    <button class="btn btn-primary role-admin-only" onclick="showCreateModal()">+ 新規ルール</button>
+    <button class="btn btn-primary role-admin-only" id="btn-show-create-rule">+ 新規ルール</button>
 </div>
 
 <div class="card">
@@ -27,14 +27,14 @@
 </div>
 
 <!-- Create/Edit Modal -->
-<div id="rule-modal" class="modal-overlay" onclick="closeRuleModal(event)">
+<div id="rule-modal" class="modal-overlay">
     <div class="modal-container" style="max-width:560px;">
         <div class="modal-header">
             <h3 class="modal-title" id="rule-modal-title">ルールの作成</h3>
-            <button class="modal-close" onclick="closeRuleModalDirect()" aria-label="閉じる">×</button>
+            <button class="modal-close" id="btn-close-rule-modal" aria-label="閉じる">×</button>
         </div>
         <div class="modal-body">
-            <form id="rule-form" onsubmit="submitRuleForm(event)">
+            <form id="rule-form">
                 <input type="hidden" id="rule-id">
                 <div class="form-group">
                     <label class="form-label">ルール名 <span class="required">*</span></label>
@@ -42,7 +42,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">メトリクス <span class="required">*</span></label>
-                    <select id="rule-metric" class="form-input" onchange="toggleThreshold()">
+                    <select id="rule-metric" class="form-input">
                         <option value="cpu">CPU 使用率 (%)</option>
                         <option value="memory">メモリ使用率 (%)</option>
                         <option value="disk">ディスク使用率 (%)</option>
@@ -73,7 +73,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">通知チャネル (任意)</label>
-                    <select id="rule-channel-type" class="form-input" onchange="toggleChannelInputs()">
+                    <select id="rule-channel-type" class="form-input">
                         <option value="">自動（設定された通知先すべて）</option>
                         <option value="slack">Slack のみ</option>
                         <option value="teams">Microsoft Teams のみ</option>
@@ -104,7 +104,7 @@
                 </div>
                 <div class="task-form-actions">
                     <button type="submit" class="btn btn-primary">保存</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeRuleModalDirect()">キャンセル</button>
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-rule-modal">キャンセル</button>
                 </div>
             </form>
         </div>

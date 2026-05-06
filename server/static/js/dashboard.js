@@ -154,6 +154,12 @@ async function refreshDashboard() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const refreshBtn = document.getElementById('btn-refresh-dashboard');
+    if (refreshBtn) refreshBtn.addEventListener('click', refreshDashboard);
+
+    const totalCard = document.getElementById('stat-total-card');
+    if (totalCard) totalCard.addEventListener('click', () => { location.href = '/pcs'; });
+
     refreshDashboard();
     setInterval(refreshDashboard, 30000);
 });
