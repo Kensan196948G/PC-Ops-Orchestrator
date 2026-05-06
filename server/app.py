@@ -37,11 +37,12 @@ def create_app(config_name=None):
     limiter.init_app(app)
     cors.init_app(app, origins=app.config.get("CORS_ORIGINS", ["http://localhost"]))
 
-    # CSP uses per-request nonce for script-src; 'unsafe-inline' is removed.
-    # style-src keeps 'unsafe-inline' for CSS-in-template patterns.
+    # CSP uses per-request nonce for inline <script> blocks.
+    # 'unsafe-inline' is kept because onclick/oninput event handlers in templates
+    # still require it (Phase 2 will remove them by migrating to addEventListener).
     _CSP_SCRIPT_TMPL = (
         "default-src 'self'; "
-        "script-src 'self' https://cdn.jsdelivr.net 'nonce-{nonce}'; "
+        "script-src 'self' https://cdn.jsdelivr.net 'nonce-{nonce}' 'unsafe-inline'; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data:; "
         "font-src 'self' data:; "
