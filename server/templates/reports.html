@@ -76,7 +76,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
     let pcChart = null, taskChart = null;
 
     function formatMonth(date) {

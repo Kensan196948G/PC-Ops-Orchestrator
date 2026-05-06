@@ -6,7 +6,7 @@
     <title>PC-Ops Orchestrator - Login</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="stylesheet" href="/static/css/style.css">
-    <script>
+    <script nonce="{{ csp_nonce }}">
         (function () {
             try {
                 var saved = localStorage.getItem('theme');
@@ -303,7 +303,7 @@
         </main>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
         const API_BASE = '/api';
         const toggle = document.getElementById('toggle-pwd');
         const pwd = document.getElementById('password');

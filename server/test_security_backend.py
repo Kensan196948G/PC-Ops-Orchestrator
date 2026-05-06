@@ -624,6 +624,26 @@ class TestSecurityHeaders:
         )
         print("  [PASS] 170: Content-Security-Policy present and well-formed")
 
+    def test_csp_script_src_uses_nonce_not_unsafe_inline(self):
+        """CSP script-src must use nonce instead of 'unsafe-inline'."""
+        r = client.get("/health")
+        val = r.headers.get("Content-Security-Policy", "")
+        # Extract script-src directive value only
+        script_src = ""
+        for directive in val.split(";"):
+            directive = directive.strip()
+            if directive.startswith("script-src"):
+                script_src = directive
+                break
+        assert script_src, f"No script-src directive in CSP: {val!r}"
+        assert "'unsafe-inline'" not in script_src, (
+            f"CSP script-src must not contain 'unsafe-inline': {script_src!r}"
+        )
+        assert "nonce-" in script_src, (
+            f"CSP script-src must contain nonce-<token>: {script_src!r}"
+        )
+        print("  [PASS] CSP script-src uses nonce (no 'unsafe-inline')")
+
     def test_permissions_policy_present(self):
         """Permissions-Policy should disable unused powerful features."""
         r = client.get("/health")
