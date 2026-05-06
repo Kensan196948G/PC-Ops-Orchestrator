@@ -27,7 +27,7 @@
     }
   },
   "phase": {
-    "current": "verify",
+    "current": "improve",
     "week": 2
   },
   "kpi": {
@@ -48,7 +48,7 @@
     "last_cron_session_id": "20260506-190001-PC-Ops-Orchestrator"
   },
   "status": {
-    "current_phase": "verify",
+    "current_phase": "improve",
     "stable": true,
     "pending_prs": [],
     "merged_prs": [
@@ -75,7 +75,9 @@
       107,
       109,
       111,
-      114
+      114,
+      116,
+      117
     ]
   },
   "priority": {
