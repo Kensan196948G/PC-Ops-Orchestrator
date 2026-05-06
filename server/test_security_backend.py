@@ -646,7 +646,9 @@ class TestSecurityHeaders:
         assert "'unsafe-inline'" not in script_src, (
             f"CSP script-src must NOT contain 'unsafe-inline' (Phase 2 complete): {script_src!r}"
         )
-        print("  [PASS] CSP script-src uses nonce, no 'unsafe-inline' (Phase 2 CSP hardening)")
+        print(
+            "  [PASS] CSP script-src uses nonce, no 'unsafe-inline' (Phase 2 CSP hardening)"
+        )
 
     def test_permissions_policy_present(self):
         """Permissions-Policy should disable unused powerful features."""
