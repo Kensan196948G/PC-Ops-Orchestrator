@@ -595,6 +595,60 @@ class TestSecurityHeaders:
         assert val.upper() in ("DENY", "SAMEORIGIN")
         print("  [PASS] 170: X-Frame-Options present")
 
+    def test_referrer_policy_present(self):
+        """Referrer-Policy should restrict cross-origin referrer leakage."""
+        r = client.get("/health")
+        val = r.headers.get("Referrer-Policy", "")
+        assert val, "Referrer-Policy header missing"
+        assert "strict-origin" in val or "no-referrer" in val, (
+            f"weak Referrer-Policy: {val!r}"
+        )
+        print(f"  [PASS] 170: Referrer-Policy: {val}")
+
+    def test_x_xss_protection_present(self):
+        """X-XSS-Protection should be set for legacy browsers."""
+        r = client.get("/health")
+        val = r.headers.get("X-XSS-Protection", "")
+        assert val, "X-XSS-Protection header missing"
+        print(f"  [PASS] 170: X-XSS-Protection: {val}")
+
+    def test_content_security_policy_present(self):
+        """CSP must be present and restrict default-src."""
+        r = client.get("/health")
+        val = r.headers.get("Content-Security-Policy", "")
+        assert val, "Content-Security-Policy header missing"
+        assert "default-src" in val, f"CSP without default-src: {val!r}"
+        # Chart.js CDN must remain allowed for the dashboard to render.
+        assert "cdn.jsdelivr.net" in val, (
+            f"CSP must allow Chart.js from cdn.jsdelivr.net: {val!r}"
+        )
+        print("  [PASS] 170: Content-Security-Policy present and well-formed")
+
+    def test_permissions_policy_present(self):
+        """Permissions-Policy should disable unused powerful features."""
+        r = client.get("/health")
+        val = r.headers.get("Permissions-Policy", "")
+        assert val, "Permissions-Policy header missing"
+        # Geolocation/camera/microphone should be disabled by default.
+        assert "geolocation=()" in val, (
+            f"Permissions-Policy must disable geolocation: {val!r}"
+        )
+        print(f"  [PASS] 170: Permissions-Policy: {val}")
+
+    def test_hsts_present_in_production_only(self):
+        """HSTS should only be set when running with FLASK_CONFIG=production.
+
+        For the default 'testing' app (HTTP), HSTS should be absent so we don't
+        teach browsers to remember an http://localhost upgrade.
+        """
+        r = client.get("/health")
+        # The default test app uses 'testing' config, so HSTS must be absent.
+        val = r.headers.get("Strict-Transport-Security", "")
+        assert not val, (
+            f"HSTS should NOT be set under non-production config, got {val!r}"
+        )
+        print("  [PASS] 170: HSTS correctly absent under non-production config")
+
 
 # ---------------------------------------------------------------------------
 # Item 141 - SQL injection

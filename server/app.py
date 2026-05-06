@@ -29,6 +29,20 @@ def create_app(config_name=None):
     limiter.init_app(app)
     cors.init_app(app, origins=app.config.get("CORS_ORIGINS", ["http://localhost"]))
 
+    # CSP allows Chart.js from cdn.jsdelivr.net (used by base.html); 'unsafe-inline'
+    # is required for the inline <style> blocks present in templates.
+    CSP_DEFAULT = (
+        "default-src 'self'; "
+        "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "font-src 'self' data:; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'"
+    )
+
     @app.after_request
     def _set_security_headers(response):
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
@@ -37,6 +51,21 @@ def create_app(config_name=None):
         response.headers.setdefault(
             "Referrer-Policy", "strict-origin-when-cross-origin"
         )
+        response.headers.setdefault(
+            "Permissions-Policy",
+            "geolocation=(), camera=(), microphone=(), payment=()",
+        )
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            app.config.get("CONTENT_SECURITY_POLICY", CSP_DEFAULT),
+        )
+        # HSTS only makes sense over HTTPS — apply only in production where the
+        # reverse proxy terminates TLS. Avoid sending it in dev/test (HTTP).
+        if config_name == "production":
+            response.headers.setdefault(
+                "Strict-Transport-Security",
+                "max-age=31536000; includeSubDomains",
+            )
         return response
 
     from routes.auth_routes import auth_bp
