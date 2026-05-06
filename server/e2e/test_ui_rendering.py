@@ -183,3 +183,48 @@ def test_alerts_page_renders(page_with_login, live_server):
     p.goto(f"{live_server}/alerts")
     p.wait_for_load_state("networkidle", timeout=10000)
     assert not errors, f"JS errors on /alerts: {errors}"
+
+
+# ── Issue #93: Topbar + Sidebar Badge regression tests ──
+
+
+def test_topbar_renders_on_dashboard(page_with_login, live_server):
+    """Dashboard must render the new topbar with search, env-pill, bell, sync, create-task."""
+    p = page_with_login
+    p.goto(f"{live_server}/")
+    p.wait_for_load_state("domcontentloaded", timeout=8000)
+    assert p.locator(".topbar").count() == 1
+    assert p.locator("#topbar-search").count() == 1
+    assert p.locator("#env-pill").count() == 1
+    assert p.locator("#topbar-bell").count() == 1
+    assert p.locator("#topbar-sync-btn").count() == 1
+    assert p.locator("#topbar-create-task").count() == 1
+
+
+def test_topbar_search_kbd_shortcut_displayed(page_with_login, live_server):
+    """⌘K hint must be visible inside the topbar search."""
+    p = page_with_login
+    p.goto(f"{live_server}/")
+    p.wait_for_load_state("domcontentloaded", timeout=8000)
+    kbd = p.locator(".topbar .kbd")
+    assert kbd.count() >= 1
+    assert "K" in (kbd.first.text_content() or "")
+
+
+def test_sidebar_badges_exist(page_with_login, live_server):
+    """Sidebar must contain the muted count badges for PC / Tasks / Agents."""
+    p = page_with_login
+    p.goto(f"{live_server}/")
+    p.wait_for_load_state("domcontentloaded", timeout=8000)
+    assert p.locator("#pcs-badge").count() == 1
+    assert p.locator("#tasks-badge").count() == 1
+    assert p.locator("#agents-badge").count() == 1
+
+
+def test_main_wrapper_present(page_with_login, live_server):
+    """The .main wrapper must exist between sidebar and main-content."""
+    p = page_with_login
+    p.goto(f"{live_server}/")
+    p.wait_for_load_state("domcontentloaded", timeout=8000)
+    assert p.locator(".main > .topbar").count() == 1
+    assert p.locator(".main > .main-content").count() == 1
