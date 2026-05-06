@@ -512,15 +512,46 @@ class TestSecurityHeaders:
     def test_cors_header_present_on_api(self):
         """API responses should include CORS-related headers (Access-Control-*)."""
         token = _admin_token()
-        r = self._check_headers("/api/dashboard/stats", token=token)
+        # Flask-Cors only emits Access-Control-* when an Origin header is sent.
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Origin": "http://localhost",
+        }
+        r = client.get("/api/dashboard/stats", headers=headers)
         cors_present = any(
             k.lower().startswith("access-control") for k in r.headers.keys()
         )
         assert cors_present, (
-            "No Access-Control-* header found on /api/dashboard/stats. "
-            "CORS may be misconfigured."
+            "No Access-Control-* header found on /api/dashboard/stats with "
+            "Origin: http://localhost. Flask-Cors may be misconfigured."
         )
         print("  [PASS] 170: CORS header present on API response")
+
+    def test_cors_preflight_allowed_origin(self):
+        """Item 124: OPTIONS preflight from an allowed origin must succeed.
+
+        Required for Flask-Cors 6.x compatibility (preflight matching is
+        stricter than 5.x).
+        """
+        r = client.open(
+            "/api/auth/login",
+            method="OPTIONS",
+            headers={
+                "Origin": "http://localhost",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "Content-Type",
+            },
+        )
+        # Preflight should succeed (200 or 204)
+        assert r.status_code in (200, 204), (
+            f"preflight returned {r.status_code} for allowed origin"
+        )
+        # ACAO header must echo the allowed origin or be '*'
+        acao = r.headers.get("Access-Control-Allow-Origin", "")
+        assert acao in ("http://localhost", "*"), (
+            f"unexpected Access-Control-Allow-Origin: {acao!r}"
+        )
+        print(f"  [PASS] 124: CORS preflight allows http://localhost (ACAO={acao})")
 
     def test_content_type_header_on_json_api(self):
         """JSON API responses must have Content-Type: application/json."""
