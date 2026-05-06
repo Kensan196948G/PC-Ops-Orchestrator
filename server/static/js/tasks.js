@@ -39,17 +39,20 @@ async function loadTasks(page) {
         params.set('per_page', '30');
 
         const data = await apiFetch('/tasks?' + params.toString());
+        // escapeHTML wraps every API-returned scalar so an injection vector via
+        // task_type / pc_id / created_by cannot break out of attribute or text
+        // context. statusBadge/formatTime emit known-safe HTML/strings.
         tbody.innerHTML = data.tasks && data.tasks.length > 0 ? data.tasks.map(t => `
             <tr onclick="showTaskDetail(${JSON.stringify(t).replace(/"/g, '&quot;')})" style="cursor:pointer;">
-                <td>#${t.id}</td>
-                <td>${t.task_type}</td>
-                <td>${t.pc_id || '全PC'}</td>
+                <td>#${escapeHTML(t.id)}</td>
+                <td>${escapeHTML(t.task_type)}</td>
+                <td>${escapeHTML(t.pc_id || '全PC')}</td>
                 <td>${statusBadge(t.status)}</td>
-                <td>${t.priority || 0}</td>
-                <td>${t.created_by || '-'}</td>
-                <td>${formatTime(t.created_at)}</td>
-                <td>${formatTime(t.completed_at)}</td>
-                <td><button class="btn btn-danger role-admin-only" onclick="event.stopPropagation();deleteTask(${t.id})" style="padding:0.2rem 0.5rem;font-size:0.75rem;">削除</button></td>
+                <td>${escapeHTML(t.priority || 0)}</td>
+                <td>${escapeHTML(t.created_by || '-')}</td>
+                <td>${escapeHTML(formatTime(t.created_at))}</td>
+                <td>${escapeHTML(formatTime(t.completed_at))}</td>
+                <td><button class="btn btn-danger role-admin-only" onclick="event.stopPropagation();deleteTask(${Number(t.id)})" style="padding:0.2rem 0.5rem;font-size:0.75rem;">削除</button></td>
             </tr>
         `).join('') : '<tr><td colspan="9" class="text-center">タスクがありません</td></tr>';
 

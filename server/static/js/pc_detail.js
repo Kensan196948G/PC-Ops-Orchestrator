@@ -32,13 +32,15 @@ async function loadPCDetail() {
         if (data.recent_tasks) {
             const tbody = document.getElementById('recent-tasks-body');
             if (data.recent_tasks.length > 0) {
+                // escapeHTML wraps every API-returned scalar to neutralize XSS
+                // payloads in task_type / status / result / error_message.
                 tbody.innerHTML = data.recent_tasks.map(t => `
                     <tr>
-                        <td>#${t.id}</td>
-                        <td>${t.task_type}</td>
-                        <td><span class="status-badge status-${t.status}">${t.status}</span></td>
-                        <td>${t.created_at ? new Date(t.created_at).toLocaleString('ja-JP') : '-'}</td>
-                        <td>${t.result ? t.result.substring(0, 50) : t.error_message || '-'}</td>
+                        <td>#${escapeHTML(t.id)}</td>
+                        <td>${escapeHTML(t.task_type)}</td>
+                        <td><span class="status-badge status-${escapeHTML(t.status)}">${escapeHTML(t.status)}</span></td>
+                        <td>${escapeHTML(t.created_at ? new Date(t.created_at).toLocaleString('ja-JP') : '-')}</td>
+                        <td>${escapeHTML(t.result ? t.result.substring(0, 50) : t.error_message || '-')}</td>
                     </tr>
                 `).join('');
             } else {
