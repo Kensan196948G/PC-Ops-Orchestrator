@@ -77,7 +77,10 @@
       111,
       114,
       116,
-      117
+      117,
+      120,
+      124,
+      125
     ]
   },
   "priority": {
@@ -190,7 +193,7 @@
       "pip_audit": "9 CVE 全件解消済み (前セッション)"
     },
     "resume_point": {
-      "next_action": "M6 Issue #121 — CHANGELOG 改善 / CSP nonce 方式検討 / パフォーマンス最適化 / GitHub Release v1.0.0 準備",
+      "next_action": "M6 Issue #121 — CSP Phase 2 (onclick を addEventListener に移行して 'unsafe-inline' 除去) / パフォーマンス最適化 / GitHub Release v1.0.0 準備",
       "blocker": "なし",
       "notes": "本セッション全 7 PR merged で main stable。Issue #77/#87/#97/#98/#101/#95/#96/#104/#106/#108 close。Admin ページ 7 種 (reports/agents/settings/certs/backups/notifications-config/licenses) はダミーデータ UI 実装済み・API 接続が次マイルストーン。M5 残課題は #76 月次 API / #78 ユーザー管理 / #102 innerHTML XSS Step2。"
     }
