@@ -50,7 +50,9 @@
       100,
       103,
       105,
-      107
+      107,
+      109,
+      111
     ]
   },
   "priority": {
@@ -123,7 +125,9 @@
       100,
       103,
       105,
-      107
+      107,
+      109,
+      111
     ],
     "prs_pending": [],
     "issues_closed": [
@@ -143,14 +147,18 @@
       102
     ],
     "completed": [
-      "PR #99 (Issues #98 + #97): main CI 失敗修復 - Flask E2E goto wait_until=domcontentloaded 統一 + syncBtn throwOnError オプションで失敗トースト修正",
+      "PR #99 (Issues #98 + #97 close): main CI 失敗修復 - Flask E2E goto wait_until=domcontentloaded 統一 + syncBtn throwOnError オプションで失敗トースト修正",
       "PR #100 (Issue #87 Phase 1): Flask 3.1.3 / PyJWT 2.12.0 / Werkzeug 3.1.6 / python-dotenv 1.2.2 → 8 CVE 解消",
-      "PR #105 (Issue #87 Phase 2): flask-cors 5.0.1 → 6.0.0 → 残り 1 CVE 解消、CORS preflight テスト追加 → Issue #87 完全クローズ",
-      "PR #103 (Issue #101): Security Headers 強化 - CSP / HSTS (production) / Permissions-Policy 追加 + 5 新規アサーション (CI 待ち)",
-      "PR #107 (Issue #77 / M5-4): ダークモード切替 + WCAG 2.1 AA フォーカスリング - data-theme トークン + Topbar トグル + FOUC 防止 + E2E 6 件 (CI 待ち)",
-      "WebUI 全テスト検証 250 項目 - bandit / ruff / pytest / 静的セキュリティ検査 → Issue #101 (Security Headers) #102 (innerHTML XSS) 起票"
+      "PR #105 (Issue #87 Phase 2 close): flask-cors 5.0.1 → 6.0.0 → 残り 1 CVE 解消、CORS preflight テスト追加 → Issue #87 完全クローズ",
+      "PR #103 (Issue #101 close): Security Headers 強化 - CSP / HSTS (production) / Permissions-Policy 追加 + 5 新規アサーション",
+      "PR #107 (Issue #77 / M5-4 close): ダークモード切替 + WCAG 2.1 AA フォーカスリング - data-theme トークン + Topbar トグル + FOUC 防止 + E2E 6 件",
+      "PR #109 (Issue #102 Step 1): escapeHTML ヘルパを base.html に追加 + window 公開 + E2E 4 件。innerHTML 14 箇所の置換は次セッションへ (Step 2)",
+      "PR #111: 7 Admin ページ (reports/agents/settings/certs/backups/notifications-config/licenses) にダミーデータで完全実装 + Gunicorn graceful reload で適用確認 (HTTP 200 全件)",
+      "WebUI 全テスト検証 250 項目 - bandit / ruff / pytest / 静的セキュリティ検査 → Issue #101 (Security Headers) #102 (innerHTML XSS) 起票",
+      "stale Auto-Fix Issue #95 #96 #104 #106 #108 を close (後続コミットで全て解消済)",
+      "test_ui_rendering.py 全 22 箇所の goto を wait_until=domcontentloaded に統一 (PR #111 内修正)"
     ],
-    "ci_status": "GREEN — 5 PR (#99 #100 #103 #105 #107) all merged, main stable",
+    "ci_status": "GREEN — 7 PR (#99 #100 #103 #105 #107 #109 #111) all merged, main stable",
     "verification": {
       "pytest_unit": "183 passed (Phase 1 ブランチ ベース) / 178 passed (Phase 2 / M5-4 ブランチ ベース)",
       "ruff_check": "All checks passed",
@@ -160,9 +168,9 @@
       "pip_audit": "Phase 1+2 で 9 CVE 全件解消の見込み (CI 待ち)"
     },
     "resume_point": {
-      "next_action": "M5-3 月次レポート PDF/CSV (Issue #76) 着手 — reportlab 等の依存追加・/api/reports/monthly エンドポイント・WebUI 設定画面",
+      "next_action": "M5-3 月次レポート API バックエンド実装 (#76 — /api/reports/monthly エンドポイント + reportlab PDF + 既存ダミー UI を実 API 接続) / Issue #102 Step 2 (innerHTML 14 箇所を escapeHTML wrap)",
       "blocker": "なし",
-      "notes": "本セッション全 5 PR merged で main stable。Issue #87 (9 CVE) #77 (M5-4) #101 (Security Headers) 完全クローズ。M5 残課題は #76 (月次レポート) #78 (ユーザー管理) #102 (innerHTML XSS Defense)。リリース期限 2026-10-28 に向けて余裕あり。"
+      "notes": "本セッション全 7 PR merged で main stable。Issue #77/#87/#97/#98/#101/#95/#96/#104/#106/#108 close。Admin ページ 7 種 (reports/agents/settings/certs/backups/notifications-config/licenses) はダミーデータ UI 実装済み・API 接続が次マイルストーン。M5 残課題は #76 月次 API / #78 ユーザー管理 / #102 innerHTML XSS Step2。"
     }
   },
   "learning": {
