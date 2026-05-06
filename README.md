@@ -490,7 +490,7 @@ gantt
 | 📊 **M2** | PC・タスク・アラート CRUD | ✅ 完了 | PC一覧/詳細・タスク管理・CSV エクスポート |
 | 🗓️ **M3** | スケジュール・グループ・Swagger | ✅ 完了 | APScheduler / PCグループ / OpenAPI 3.0 |
 | 🔐 **M4** | RBAC・通知・E2E | ✅ 完了 | admin/operator/viewer / Slack/Teams/Email / Playwright 94 tests |
-| 🚧 **M5** | M5-1 監査ログ✅ / M5-2 一括実行✅ / Topbar+Badge✅ / 月次レポート⏳ #76 / ダーク⏳ #77 / ユーザー強化⏳ #78 | 🟡 進行中 | Issue #74/#75/#88/#93 ✅・残 3 件 |
+| 🚧 **M5** | M5-1 監査ログ✅ / M5-2 一括実行✅ / Topbar+Badge✅ / M5-4 ダーク+a11y✅(PR#107) / 月次レポート⏳ #76 / ユーザー強化⏳ #78 | 🟡 進行中 | Issue #74/#75/#77/#87/#88/#93/#101 ✅ |
 | 🚀 **M6** | リリース準備・本番移行 | 🔜 計画中 | CHANGELOG・タグ付け・本番デプロイ |
 
 ### 🆕 M5 直近完了 (2026-05-06)
@@ -499,7 +499,11 @@ gantt
 |---|---|---|
 | 🎨 **#88 / PR #89** | Claude Design 同期: 監査ログ + 7 新規ページ | base.html / style.css / 7 templates |
 | ✨ **#93 / PR #94** | Topbar (検索⌘K/環境/通知/同期/タスク作成) + Sidebar カウントバッジ | base.html (handler / kbd) + style.css (responsive) + E2E 5 件追加 |
-| 📌 **#97 (open)** | PR #94 後続: 手動同期エラートースト誤表示 (CodeRabbit Major Duplicate) | P3 / `throwOnError` フラグ案 |
+| 🛠️ **#98 + #97 / PR #99** | CI 失敗 (Flask E2E 60s timeout) 修復 + syncBtn 失敗トースト修正 | `wait_until="domcontentloaded"` 統一 + `throwOnError` フラグ |
+| 🔒 **#87 / PR #100 + #105** | pip-audit **9 CVE 全件解消** (Phase 1: Flask/PyJWT/Werkzeug/python-dotenv + Phase 2: flask-cors 5→6) | requirements.txt (5 パッケージ更新) + CORS preflight テスト追加 |
+| 🛡️ **#101 / PR #103** | Security Headers 強化: CSP / HSTS / Permissions-Policy 追加 | app.py `_set_security_headers` + 5 新規アサーション |
+| 🌓 **#77 / PR #107** | M5-4 ダークモード切替 + WCAG 2.1 AA フォーカスリング | CSS `[data-theme="dark"]` トークン + Topbar トグル + FOUC 防止 + E2E 6 件 |
+| 📋 **#102 (open)** | innerHTML 14 箇所の textContent / escapeHTML 化 (P2 Defense in Depth) | CSP `'unsafe-inline'` 削減への前提作業 |
 
 ---
 

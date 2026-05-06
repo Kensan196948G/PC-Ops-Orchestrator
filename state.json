@@ -5,8 +5,8 @@
     "release_deadline": "2026-10-28"
   },
   "phase": {
-    "current": "improve",
-    "week": 1
+    "current": "verify",
+    "week": 2
   },
   "kpi": {
     "ci_success_rate": 1.0,
@@ -20,24 +20,45 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-02T19:00:12+09:00",
+    "current_session_start_at": "2026-05-06T19:00:01+09:00",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "cron",
-    "last_cron_session_id": "20260502-190012-PC-Ops-Orchestrator"
+    "last_cron_session_id": "20260506-190001-PC-Ops-Orchestrator"
   },
   "status": {
     "current_phase": "verify",
-    "stable": false,
-    "pending_prs": [],
+    "stable": true,
+    "pending_prs": [
+      103,
+      107
+    ],
     "merged_prs": [
-      36, 38, 40, 43, 44, 53, 54, 55, 56, 60, 61, 62, 63, 64
+      36,
+      38,
+      40,
+      43,
+      44,
+      53,
+      54,
+      55,
+      56,
+      60,
+      61,
+      62,
+      63,
+      64,
+      89,
+      94,
+      99,
+      100,
+      105
     ]
   },
   "priority": {
     "score": 0
   },
   "open_issues": {
-    "note": "M5 進行中: #76 #77 #78 がオープン。#74 (M5-1) #75 (M5-2) クローズ済み。UI刷新 (Claude Design) 対応済み。E2Eテスト修正済み (login-error-box, brand-name, SVG icon)。"
+    "note": "M5 進行中: #76 (月次レポート) #78 (ユーザー管理) #102 (innerHTML XSS) がオープン。本セッションで #87 (9 CVE) #97 #98 #95 #96 を close、#101 (Security Headers) #77 (M5-4 ダーク) は PR #103/#107 で対応中。"
   },
   "milestones": {
     "M1": {
@@ -67,44 +88,78 @@
     },
     "M5": {
       "status": "in_progress",
-      "issues": [74, 75, 76, 77, 78],
+      "issues": [
+        74,
+        75,
+        76,
+        77,
+        78,
+        88,
+        93,
+        101,
+        102
+      ],
       "completed_items": [
         "M5-1 監査ログ高度化 (日付フィルタ・CSV エクスポート) - Issue #74 closed",
         "M5-2 PC 一括タスク実行 (Issue #75) - bulk API + チェックボックス UI",
-        "UI刷新 Claude Design - ライトテーマ・Login 2カラム・サイドバー SVG アイコン"
+        "UI刷新 Claude Design - ライトテーマ・Login 2カラム・サイドバー SVG アイコン",
+        "Topbar (#93/PR #94) + Badge + Sidebar カウント",
+        "M5-4 ダークモード+a11y (#77/PR #107) - data-theme トグル+FOUC防止+E2E 6件",
+        "セキュリティ Phase 1+2 (#87/PR #100+#105) - 9 CVE 全件解消 (Flask/PyJWT/Werkzeug/python-dotenv/flask-cors)",
+        "Security Headers (#101/PR #103) - CSP/HSTS/Permissions-Policy 追加"
       ],
       "remaining": [
-        "M5-3 月次レポート PDF/CSV (Issue #76)",
-        "M5-4 ダークモード / アクセシビリティ (Issue #77)",
-        "M5-5 ユーザー管理 WebUI 強化 (Issue #78)"
+        "M5-3 月次レポート PDF/CSV (Issue #76) - 未着手",
+        "M5-5 ユーザー管理 WebUI 強化 (Issue #78) - 未着手",
+        "innerHTML XSS Defense (Issue #102) - P2"
       ]
     }
   },
   "session_summary": {
-    "id": "20260502-190012-PC-Ops-Orchestrator",
-    "loop_phase": "Monitor → Build × 3 → Verify → Improve",
-    "duration_minutes": 295,
-    "prs_merged": [],
-    "issues_closed": [],
-    "completed": [
-      "M5-2 PC 一括タスク実行 - bulk API (POST /api/tasks/bulk) + PC一覧チェックボックス UI (Issue #75)",
-      "M5-1 監査ログ高度化 - 日付フィルタ・CSV エクスポート (Issue #74) - コミット済み",
-      "UI刷新 - Claude Design 対応: ライトテーマ CSS tokens・Login 2カラム・サイドバー SVG アイコン・nav-section-label",
-      "Systemd ユーザーサービス常駐化 (ポート 5300 固定・変更禁止)",
-      "E2E テスト修正 - login-error-box / brand-name / SVG nav-icon 対応 (CI 失敗解消)"
+    "id": "20260506-190001-PC-Ops-Orchestrator",
+    "loop_phase": "Monitor → Verify → Build (Security Hardening + Dark Mode) → Verify",
+    "duration_minutes": 300,
+    "prs_merged": [
+      99,
+      100,
+      105
     ],
-    "ci_status": "FAILING - E2E Playwright テスト (login-error ID変更による破壊 → 修正済み・次 CI で検証)",
+    "prs_pending": [
+      103,
+      107
+    ],
+    "issues_closed": [
+      87,
+      95,
+      96,
+      97,
+      98
+    ],
+    "issues_opened": [
+      101,
+      102
+    ],
+    "completed": [
+      "PR #99 (Issues #98 + #97): main CI 失敗修復 - Flask E2E goto wait_until=domcontentloaded 統一 + syncBtn throwOnError オプションで失敗トースト修正",
+      "PR #100 (Issue #87 Phase 1): Flask 3.1.3 / PyJWT 2.12.0 / Werkzeug 3.1.6 / python-dotenv 1.2.2 → 8 CVE 解消",
+      "PR #105 (Issue #87 Phase 2): flask-cors 5.0.1 → 6.0.0 → 残り 1 CVE 解消、CORS preflight テスト追加 → Issue #87 完全クローズ",
+      "PR #103 (Issue #101): Security Headers 強化 - CSP / HSTS (production) / Permissions-Policy 追加 + 5 新規アサーション (CI 待ち)",
+      "PR #107 (Issue #77 / M5-4): ダークモード切替 + WCAG 2.1 AA フォーカスリング - data-theme トークン + Topbar トグル + FOUC 防止 + E2E 6 件 (CI 待ち)",
+      "WebUI 全テスト検証 250 項目 - bandit / ruff / pytest / 静的セキュリティ検査 → Issue #101 (Security Headers) #102 (innerHTML XSS) 起票"
+    ],
+    "ci_status": "GREEN (#99 #100 #105 merged) / IN_PROGRESS (#103 #107)",
     "verification": {
-      "e2e_local": "未実行 (Playwright サーバー起動環境なし)",
-      "pytest_existing": "73/73 passed (前回セッション)",
+      "pytest_unit": "183 passed (Phase 1 ブランチ ベース) / 178 passed (Phase 2 / M5-4 ブランチ ベース)",
       "ruff_check": "All checks passed",
-      "ruff_format": "All formatted",
-      "github_ci": "FAILING run 25251435507 → E2E 修正コミット済み・次 CI 待ち"
+      "ruff_format": "41 files formatted",
+      "bandit": "Medium=2 (既知 noqa) / High=0",
+      "github_ci": "PR #99 #100 #105 全 SUCCESS → MERGED",
+      "pip_audit": "Phase 1+2 で 9 CVE 全件解消の見込み (CI 待ち)"
     },
     "resume_point": {
-      "next_action": "git commit + git push → CI 確認 → M5-3 月次レポート着手",
+      "next_action": "PR #103 / #107 の CI 完了確認 → merge → M5-3 月次レポート (#76) 着手",
       "blocker": "なし",
-      "notes": "E2E テスト修正 (test_auth_e2e.py + test_forms.py + test_ui_rendering.py) 完了。CI パスが最優先。"
+      "notes": "5 PR 並列開発で大幅進捗。Issue #87 完全クローズ済。残り M5-3 月次レポート (#76) #78 ユーザー管理 #102 innerHTML XSS が M5 残課題。"
     }
   },
   "learning": {
@@ -139,7 +194,13 @@
       "makeBtn ヘルパに roleClass 引数を追加することで、JS 動的生成ボタンの段階適用を最小差分で実装可能",
       "werkzeug make_server + daemon Thread + scope=session で Playwright E2E 用 Flask ライブサーバーを20テスト通じて1度だけ起動できる（速度最適化）",
       "pytest.ini に -p no:django を追加することで pytest-django と Flask テストを同一環境で共存できる",
-      "Playwright の page.request.get() は UI ブラウザと API レイヤーを1フィクスチャで検証できる（RBAC テストに有効）"
+      "Playwright の page.request.get() は UI ブラウザと API レイヤーを1フィクスチャで検証できる（RBAC テストに有効）",
+      "外部 CDN script (Chart.js) がある場合 page.goto はデフォルト wait_until='load' が CI でタイムアウトする → wait_until='domcontentloaded' に統一し、後段 wait_for_load_state('networkidle', 10000) で軟着陸させる",
+      "fetch ヘルパに { throwOnError = false } = {} オプションを足すと、ポーリング (silent) と手動同期 (失敗トースト) の相反する要件を 1 関数で両立できる",
+      "CSS Variables を :root と [data-theme=\"dark\"] の二系統で定義しコンポーネントで共有すると、ダークモード追加コストがほぼゼロになる",
+      "FOUC 防止: <head> 内 inline script で document.documentElement.setAttribute('data-theme', ...) を実行すると paint 前にテーマ適用できる",
+      "Security Headers の HSTS は config_name == 'production' のときだけ送ると HTTP の dev/E2E 環境で副作用が出ない",
+      "CSP に cdn.jsdelivr.net (Chart.js) を script-src で許可しないと dashboard が壊れる。CONTENT_SECURITY_POLICY config キーで運用上書き可能にすると安全"
     ]
   }
 }
