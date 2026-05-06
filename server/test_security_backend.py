@@ -624,11 +624,12 @@ class TestSecurityHeaders:
         )
         print("  [PASS] 170: Content-Security-Policy present and well-formed")
 
-    def test_csp_script_src_includes_nonce(self):
-        """CSP script-src must include a per-request nonce (Phase 1 of CSP hardening).
+    def test_csp_script_src_uses_nonce_not_unsafe_inline(self):
+        """CSP script-src must use nonce and must NOT contain 'unsafe-inline' (Phase 2).
 
-        Phase 2 will remove 'unsafe-inline' after migrating inline event
-        handlers (onclick/oninput) to addEventListener in external JS files.
+        All inline event handlers (onclick/oninput/onchange/onsubmit) have been
+        migrated to addEventListener in external JS files, so 'unsafe-inline' can
+        and must be absent from script-src.
         """
         r = client.get("/health")
         val = r.headers.get("Content-Security-Policy", "")
@@ -642,7 +643,10 @@ class TestSecurityHeaders:
         assert "nonce-" in script_src, (
             f"CSP script-src must contain nonce-<token>: {script_src!r}"
         )
-        print("  [PASS] CSP script-src includes nonce (Phase 1 CSP hardening)")
+        assert "'unsafe-inline'" not in script_src, (
+            f"CSP script-src must NOT contain 'unsafe-inline' (Phase 2 complete): {script_src!r}"
+        )
+        print("  [PASS] CSP script-src uses nonce, no 'unsafe-inline' (Phase 2 CSP hardening)")
 
     def test_permissions_policy_present(self):
         """Permissions-Policy should disable unused powerful features."""
