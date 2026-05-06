@@ -45,10 +45,17 @@ def test_login_page_form_elements(page, live_server):
 
 
 def test_login_page_japanese_text(page, live_server):
-    """Login page must render Japanese text correctly."""
+    """Login page must render Japanese text correctly.
+
+    Note: the brand wordmark is split into two stacked elements
+    (`.aside-brand-name` = "PC-Ops", `.aside-brand-sub` = "Orchestrator")
+    in the Claude Design 2-column layout, so we cannot assert the
+    concatenated string in body text.
+    """
     page.goto(f"{live_server}/login")
     body_text = page.text_content("body")
-    assert "PC-Ops Orchestrator" in body_text
+    assert "PC-Ops" in body_text
+    assert "Orchestrator" in body_text
     assert "PC運用を、" in body_text
 
 
