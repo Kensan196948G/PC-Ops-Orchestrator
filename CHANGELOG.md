@@ -9,11 +9,21 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased] — M6 リリース準備中
 
+### Added (M6 進行中)
+- **CSP Phase 2** (Issue #121, PR #129)
+  - 全 16 テンプレートのインラインハンドラ (`onclick/oninput/onchange/onsubmit`) を外部 JS の `addEventListener` に完全移行
+  - `stub-actions.js` 新規作成 — `data-stub-alert` 属性でアラートスタブを共通管理
+  - `script-src` から `'unsafe-inline'` を除去 (Phase 1 → Phase 2 完了)
+  - `test_csp_script_src_uses_nonce_not_unsafe_inline` — strict 版テスト追加
+
+### Fixed
+- **N+1 クエリ解消** (Issue #121, PR #130)
+  - `alerts.py` / `tasks.py` CSV エクスポートで `joinedload(*.pc)` 追加
+  - 最大 5000 行エクスポート時のクエリ数: 5001 → 2 に削減
+
 ### Planned
 - CHANGELOG / GitHub Release v1.0.0 タグ
-- 本番デプロイ手順書 (`docs/deployment.md`)
-- pip-audit スケジュール CI
-- CSP `'unsafe-inline'` 削除 (nonce 方式)
+- パフォーマンス詳細最適化 (groups.py N+1, lazy="dynamic" 見直し)
 
 ---
 
