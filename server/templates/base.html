@@ -194,6 +194,21 @@
             return API_BASE + path;
         }
 
+        // Escape user-supplied / API-returned values before injecting them into
+        // an HTML template literal. Use this whenever building HTML with
+        // innerHTML; do NOT use it on values that should remain text in
+        // textContent/setAttribute (those auto-escape).
+        function escapeHTML(value) {
+            if (value == null) return '';
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+        window.escapeHTML = escapeHTML;
+
         async function apiFetch(path, options = {}) {
             const headers = options.headers || {};
             if (TOKEN) {
