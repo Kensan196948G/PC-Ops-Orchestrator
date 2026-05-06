@@ -103,13 +103,15 @@ async function refreshDashboard() {
         const tbody = document.getElementById('recent-ops-body');
 
         if (recent.operations && recent.operations.length > 0) {
+            // escHtml protects each API-returned scalar from breaking out of
+            // text context — defense in depth alongside server-side validation.
             tbody.innerHTML = recent.operations.slice(0, 20).map(op => {
                 const time = op.created_at ? new Date(op.created_at).toLocaleString('ja-JP') : '-';
                 return `<tr>
-                    <td>${time}</td>
-                    <td>${op.action || '-'}</td>
-                    <td>${op.target || '-'}</td>
-                    <td>${op.created_by || '-'}</td>
+                    <td>${escHtml(time)}</td>
+                    <td>${escHtml(op.action)}</td>
+                    <td>${escHtml(op.target)}</td>
+                    <td>${escHtml(op.created_by)}</td>
                 </tr>`;
             }).join('');
         } else {
