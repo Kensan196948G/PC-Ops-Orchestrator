@@ -3,6 +3,7 @@ import io
 import json
 from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify, make_response
+from sqlalchemy.orm import joinedload
 from extensions import db, limiter
 from models import Task, PC
 from auth import (
@@ -241,7 +242,12 @@ def export_tasks_csv():
     if task_type_filter:
         query = query.filter(Task.task_type == task_type_filter)
 
-    tasks = query.order_by(Task.created_at.desc()).limit(5000).all()
+    tasks = (
+        query.options(joinedload(Task.pc))
+        .order_by(Task.created_at.desc())
+        .limit(5000)
+        .all()
+    )
 
     buf = io.StringIO()
     buf.write("﻿")  # BOM for Excel

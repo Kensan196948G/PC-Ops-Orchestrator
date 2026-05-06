@@ -2,6 +2,7 @@ import csv
 import io
 from datetime import datetime, timezone, timedelta
 from flask import Blueprint, request, jsonify, make_response
+from sqlalchemy.orm import joinedload
 from extensions import db, limiter
 from models import PC, Alert
 from auth import login_required, require_role
@@ -68,7 +69,12 @@ def export_alerts_csv():
         (Alert.severity == "medium", 2),
         else_=3,
     )
-    alerts = query.order_by(severity_order, Alert.created_at.desc()).limit(5000).all()
+    alerts = (
+        query.options(joinedload(Alert.pc))
+        .order_by(severity_order, Alert.created_at.desc())
+        .limit(5000)
+        .all()
+    )
 
     buf = io.StringIO()
     buf.write("﻿")  # BOM for Excel
