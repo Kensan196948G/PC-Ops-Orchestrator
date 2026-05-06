@@ -437,7 +437,7 @@ jobs:
         env:
           FLASK_ENV: testing
         run: |
-          python -m pytest test_api.py test_notify.py test_api_extended.py test_db.py test_resilience.py test_security_backend.py -v --tb=short
+          python -m pytest test_api.py test_notify.py test_api_extended.py test_db.py test_resilience.py test_security_backend.py test_reports.py test_user_security.py -v --tb=short
 
       - name: Upload test results on failure
         if: failure()
