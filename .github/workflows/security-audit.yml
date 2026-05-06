@@ -1,0 +1,50 @@
+name: Security Audit (pip-audit)
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+jobs:
+  pip-audit:
+    name: pip-audit CVE Scan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Run pip-audit
+        run: pip-audit -r requirements.txt --format json --output pip-audit-results.json || true
+
+      - name: Check CVE count
+        run: |
+          python3 -c "
+          import json, sys
+          with open('pip-audit-results.json') as f:
+              data = json.load(f)
+          deps = data.get('dependencies', [])
+          total = sum(len(d.get('vulns', [])) for d in deps)
+          if total:
+              print(f'CVE count: {total}')
+              sys.exit(1)
+          print('No CVEs found.')
+          "
+
+      - name: Upload audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-results
+          path: server/pip-audit-results.json
+          retention-days: 30
