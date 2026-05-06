@@ -513,6 +513,16 @@ gantt
 
 ---
 
+### 🔐 M6 進行中サマリー (2026-05-06〜)
+
+| Issue / PR | 内容 | 主な変更 |
+|---|---|---|
+| 🔑 **#121 / PR #125** | **CSP Phase 1** — nonce 方式導入 | `g.csp_nonce` + 全 `<script>` に `nonce="{{ csp_nonce }}"` |
+| 🔑 **#121 / PR #129** | **CSP Phase 2** — `'unsafe-inline'` 完全除去 | 16 テンプレートの全インラインハンドラ → `addEventListener`、`stub-actions.js` 新規 |
+| ⚡ **#121 / PR #130** | **N+1 クエリ修正** — CSV エクスポート高速化 | `joinedload(Alert.pc)` / `joinedload(Task.pc)` (5001→2 クエリ) |
+
+---
+
 ## 🧪 品質・テスト状況
 
 | テストスイート | 件数 | 状態 |
