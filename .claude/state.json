@@ -9,54 +9,84 @@
     "lint_errors_target": 0,
     "lint_errors_current": 0,
     "open_issues_target": 0,
-    "open_issues_current": 1,
+    "open_issues_current": 4,
     "ci_success": true
   },
   "project": {
     "registered_at": "2026-04-28",
     "release_deadline": "2026-10-28",
-    "phase": "Verify",
-    "month": 2
+    "phase": "M5 進行中 (Verify / Improve)",
+    "month": 5
   },
   "execution": {
     "max_duration_minutes": 300,
-    "session_started_at": "2026-04-28T11:00:00Z"
+    "session_started_at": "2026-05-06T15:33:00+09:00"
   },
   "automation": {
     "auto_issue_generation": true,
     "self_evolution": true
   },
-  "completed_issues": [2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 25, 26, 31, 32],
-  "merged_prs": [1, 6, 15, 17, 20, 21, 28, 29],
-  "open_prs": [30, 33, 34],
-  "open_issues": [27],
+  "completed_issues": [
+    2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 25, 26, 27, 31, 32, 37, 39, 41, 42,
+    45, 46, 47, 48, 57, 58, 59, 65, 74, 75, 86
+  ],
+  "merged_prs": [
+    1, 6, 15, 17, 20, 21, 28, 29, 30, 33, 35, 36, 38, 40, 43, 44,
+    53, 54, 55, 56, 60, 61, 62, 63, 64, 66
+  ],
+  "open_prs": [],
+  "open_issues": [76, 77, 78, 87],
+  "milestones": {
+    "M1": "完了 (Flask管理サーバー基盤・Agent・JWT/API Key 認証)",
+    "M2": "完了 (PC一覧/詳細・タスク管理・アラート管理・CSV エクスポート)",
+    "M3": "完了 (M3-1 スケジュールタスク / M3-2 PCグループ / M3-3 アラートルール / M3-4 OpenAPI Swagger UI)",
+    "M4": "完了 (M4-1 RBAC / M4-2 通知統合 / M4-3 Playwright E2E / Improve: /api/metrics + rate limit)",
+    "M5": "進行中 (M5-1 監査ログ高度化✅ / M5-2 PC一括タスク実行✅ / M5-3 月次レポート⏳ #76 / M5-4 ダークモード⏳ #77 / M5-5 ユーザー管理強化⏳ #78)",
+    "Security": "P1 #87 - 9 CVE (flask/flask-cors/pyjwt/werkzeug/python-dotenv) 依存更新待ち"
+  },
   "features_implemented": [
-    "Flask管理サーバー (app.py, models.py, routes/)",
-    "JWT + API Key 認証",
+    "Flask管理サーバー (app.py, models.py, routes/ 9 Blueprint)",
+    "JWT + API Key 認証 + admin/operator/viewer RBAC (M4-1)",
     "Agent PowerShell (PCOpsAgent.ps1)",
-    "WebUI (Dashboard, PC一覧, PC詳細, タスク管理, アラート管理)",
+    "WebUI (Dashboard, PC一覧, PC詳細, タスク管理, アラート管理, ユーザー管理, スケジュール, グループ, アラートルール, 監査ログ)",
     "30秒リアルタイムポーリング (全WebUIページ)",
     "アラート API (/api/alerts + sync/acknowledge/resolve)",
     "Docker Compose 対応 (nginx + Flask + PostgreSQL)",
-    "ruff lint CI ジョブ",
-    "Flask API pytest CI ジョブ (20テスト)",
-    "/health エンドポイント",
-    "セキュリティ修正: デフォルトシークレット検証・hmac.compare_digest・XSS(pc_list.js)修正",
-    "品質修正: N+1クエリ解消・per_page上限・status バリデーション",
-    "task_type allowlist バリデーション (frozenset O(1))",
-    "command 長さ・型バリデーション (512文字制限)",
-    "flask-cors CORS サポート (CORS_ORIGINS 環境変数)",
-    "ProxyFix middleware (nginx リバースプロキシ対応)",
-    "アラート通知 notify.py (best-effort, flush前通知)",
-    "PC名・IPアドレス複合検索 + OS フィルタ (ilike + db.or_)",
-    "IPアドレス列をPC一覧テーブルに追加",
-    "ユーザー管理 API (GET/POST/PATCH/DELETE /api/auth/users, admin_required)",
-    "ユーザー管理 WebUI (users.html + users.js + modal スタイル)",
-    "admin 専用ナビリンク (localStorage role チェック)",
-    "PC ヘルス履歴グラフ強化 (CPU使用率追加・デュアルY軸・ASC順修正)",
-    "スナップショットローリング削除 (_trim_snapshots, keep=720件)",
-    "タスク詳細モーダル (DOM API実装・ESCクローズ・XSS対策)"
+    "ruff lint + format CI ジョブ",
+    "Flask API pytest CI ジョブ + Flask E2E Playwright CI ジョブ",
+    "PowerShell Pester / Smoke / Agent Teams Load+E2E (PS5.1/PS7) CI ジョブ",
+    "/health エンドポイント + /api/metrics (Prometheus 互換)",
+    "セキュリティ: デフォルトシークレット検証・hmac.compare_digest・XSS 対策・ProxyFix middleware",
+    "task_type allowlist + command 長さ制限 + status バリデーション",
+    "CORS サポート (CORS_ORIGINS 環境変数)",
+    "アラート通知 notify.py (Slack/Teams/Generic Webhook/Email - M4-2)",
+    "PC名・IPアドレス複合検索 + OS フィルタ + IPアドレス列表示",
+    "ユーザー管理 API + WebUI (admin_required + role チェック)",
+    "PC ヘルス履歴グラフ強化 (CPU/Mem/Disk デュアルY軸・720件ローリング保持)",
+    "タスク詳細モーダル (DOM API + ESC クローズ + XSS 対策)",
+    "CSV エクスポート (PC/タスク/アラート/監査ログ)",
+    "スケジュールタスク機能 (APScheduler + CRUD API + WebUI / M3-1)",
+    "PCグループ管理機能 (M3-2)",
+    "アラートルール設定 WebUI (M3-3)",
+    "OpenAPI 3.0 仕様 + Swagger UI (M3-4)",
+    "RBAC: UI ボタンへ role-* クラス段階適用 (M4-1)",
+    "Playwright E2E テスト (94 テスト / chromium - M4-3)",
+    "/api/metrics + 書き込み系 rate limit (M4 Improve)",
+    "監査ログ高度化: 日付範囲フィルタ・CSV エクスポート (M5-1 / Issue #74)",
+    "PC 一括タスク実行: チェックボックス選択・bulk API (M5-2 / Issue #75)",
+    "Claude Design 対応 UI 全面刷新 (ライトテーマ・サイドバー SVG アイコン・Login 2カラム)"
   ],
-  "last_updated": "2026-04-28T12:00:00Z",
-  "session_notes": "PR #33 (pc-history Issue #31) created. PR #34 (task-detail-modal Issue #32) created. PR #30 (user-management Issue #27) open, CI passing. Next: merge PRs after CI green, then plan remaining Month 2 features."
+  "verification_results": {
+    "session_2026_05_06": {
+      "issue_86_e2e_fix": "✅ commit 406beaf でログイン日本語テスト修正・CI で確実動作確認",
+      "backend_pytest_local": "✅ 178/178 PASS (test_api/extended/db/notify/resilience/security_backend) in 8.78s",
+      "ruff_lint_format": "✅ 40 files clean (CI: success)",
+      "flask_e2e_playwright_ci": "✅ run 25420370542 SUCCESS",
+      "bandit_security": "⚠️ 0 High / 2 Medium (1 既 noqa) / 484 Low",
+      "pip_audit": "❌ 9 CVE / 5 packages → P1 Issue #87 起票済み",
+      "ci_run": "25420370542 - Flask + ruff + Pester + Agent Teams すべて green、PS Test 進行中"
+    }
+  },
+  "last_updated": "2026-05-06T15:43:00Z",
+  "session_notes": "2026-05-06 セッション: Issue #86 (CI E2E ログイン文字列アサーション破壊) を修正し commit 406beaf を push、Issue 自動 close。バックエンド検証 (pytest 178/178)・ruff・bandit・pip-audit を実行し、9 CVE を P1 Issue #87 として起票。Claude Design UI 刷新済み・M5-1/M5-2 完了。次セッション: M5-3 月次レポート (#76) 実装、または P1 #87 依存更新（Phase1: flask/pyjwt/werkzeug/python-dotenv マイナーアップデート）から着手。"
 }
