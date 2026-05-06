@@ -252,7 +252,7 @@ def test_user_management(token):
         "POST",
         "/api/auth/users",
         token=token,
-        data={"username": "testop", "password": "testpass1", "role": "operator"},
+        data={"username": "testop", "password": "TestPass1!", "role": "operator"},
     )
     assert r2.status_code == 201, f"User create failed: {r2.status_code} {r2.data}"
     created = json.loads(r2.data)
@@ -362,9 +362,9 @@ def test_rbac_role_matrix(token):
     """
     suffix = uuid.uuid4().hex[:8]
     op_username = f"rbac_op_{suffix}"
-    op_password = "operator-pass-1"
+    op_password = "Operator-Pass1!"
     viewer_username = f"rbac_viewer_{suffix}"
-    viewer_password = "viewer-pass-1"
+    viewer_password = "Viewer-Pass1!"
 
     try:
         # admin が両ロールのユーザーを作成
