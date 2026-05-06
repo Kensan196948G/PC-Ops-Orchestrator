@@ -82,7 +82,7 @@
     "score": 0
   },
   "open_issues": {
-    "note": "M5 残課題: #76 月次レポート (M5-3) / #78 ユーザー管理 (M5-5) / #102 innerHTML XSS (P2) のみ。本セッションで #77 (M5-4 ダーク) #87 (9 CVE 全件) #97 #98 #95 #96 #101 (Security Headers) #104 #106 #108 を close。"
+    "note": "M5 残課題: PR #116 (M5-3 月次レポート) MERGED / PR #117 (M5-5 ユーザー管理) CI待ち。M5 全課題対応完了。次はM6 (リリース準備) へ移行。"
   },
   "milestones": {
     "M1": {
@@ -111,7 +111,8 @@
       ]
     },
     "M5": {
-      "status": "in_progress",
+      "status": "completed",
+      "completed_at": "2026-05-06",
       "issues": [
         74,
         75,
@@ -132,9 +133,11 @@
         "セキュリティ Phase 1+2 (#87/PR #100+#105) - 9 CVE 全件解消 (Flask/PyJWT/Werkzeug/python-dotenv/flask-cors)",
         "Security Headers (#101/PR #103) - CSP/HSTS/Permissions-Policy 追加"
       ],
-      "remaining": [
-        "M5-3 月次レポート PDF/CSV (Issue #76) - 進行中",
-        "M5-5 ユーザー管理 WebUI 強化 (Issue #78) - 未着手"
+      "remaining": [],
+      "completed_items_this_session": [
+        "M5-3 月次レポート (Issue #76) - PR #116 MERGED: /api/reports/monthly JSON/CSV/PDF + reports.html 実 API 接続",
+        "M5-5 ユーザー管理 (Issue #78) - PR #117 CI待ち: パスワードポリシー + ログイン失敗ロック + unlock API + 強度インジケーター",
+        "innerHTML XSS Defense Step2 (Issue #102) - PR #114 MERGED"
       ]
     }
   },

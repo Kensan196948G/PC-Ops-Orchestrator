@@ -218,9 +218,14 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | GET/PUT/DELETE | `/api/alert-rules/<id>` | JWT | ルール詳細・更新・削除 |
 | POST | `/api/alert-rules/<id>/toggle` | JWT | ルール有効/無効切替 |
 | POST | `/api/alert-rules/<id>/test-notify` | JWT | 通知先テスト送信 |
-| GET | `/api/auth/users` | JWT(admin) | ユーザー一覧（管理者のみ） |
-| POST | `/api/auth/users` | JWT(admin) | ユーザー作成 |
+| GET | `/api/auth/users` | JWT(admin) | ユーザー一覧（最終ログイン・失敗回数・ロック状態含む） |
+| POST | `/api/auth/users` | JWT(admin) | ユーザー作成（パスワードポリシー必須） |
 | PATCH/DELETE | `/api/auth/users/<id>` | JWT(admin) | ユーザー更新・削除 |
+| POST | `/api/auth/users/<id>/unlock` | JWT(admin) | アカウントロック解除 |
+| GET | `/api/reports/monthly` | JWT | 月次 KPI 集計 JSON (PC/タスク/アラート/SLA) |
+| GET | `/api/reports/monthly/list` | JWT | 過去 N ヶ月レポート一覧 |
+| GET | `/api/reports/monthly/export.csv` | JWT(admin+) | 月次レポート CSV ダウンロード |
+| GET | `/api/reports/monthly/export.pdf` | JWT(admin+) | 月次レポート PDF ダウンロード |
 | GET | `/api/docs/` | - | **Swagger UI（OpenAPI 3.0 ドキュメント）** |
 | GET | `/api/openapi.yaml` | - | OpenAPI 3.0 仕様 (YAML) |
 
@@ -255,7 +260,7 @@ WebUI ユーザーは 3 種類のロールを持ち、API 側で `@require_role`
 | スケジュールタスク削除 | ✅ | ❌ | ❌ |
 | グループ閲覧 | ✅ | ✅ | ✅ |
 | グループ作成 / 編集 / 削除 / PC 追加削除 / 一括タスク | ✅ | ❌ | ❌ |
-| ユーザー管理 (CRUD) | ✅ | ❌ | ❌ |
+| ユーザー管理 (CRUD + ロック/unlock + 最終ログイン) | ✅ | ❌ | ❌ |
 | 操作ログ閲覧 | ✅ | ✅ | ❌ |
 | API ドキュメント (Swagger UI) | ✅ | ✅ | ✅ |
 
@@ -472,13 +477,13 @@ gantt
     section M3〜M4 完了
     M3 スケジュール/グループ/Swagger :done, m3, 2026-05-03, 20d
     M4 RBAC/通知/E2E/metrics      :done, m4, 2026-05-04, 15d
-    section M5 進行中
+    section M5 完了 (2026-05-06)
     M5-1 監査ログ高度化           :done, m51, 2026-05-05, 1d
     M5-2 PC一括タスク実行         :done, m52, 2026-05-05, 1d
     M5-Design Topbar+Sidebar     :done, m5d, 2026-05-06, 1d
-    M5-3 月次レポート (#76)       :active, m53, 2026-05-07, 4d
-    M5-4 ダークモード (#77)       :m54, after m53, 4d
-    M5-5 ユーザー管理強化 (#78)   :m55, after m54, 4d
+    M5-3 月次レポート (#76)       :done, m53, 2026-05-06, 1d
+    M5-4 ダークモード (#77)       :done, m54, 2026-05-06, 1d
+    M5-5 ユーザー管理強化 (#78)   :done, m55, 2026-05-06, 1d
     section M6 リリース準備
     Verify / Bug修正              :m6v, 2026-09-01, 30d
     本番リリース                  :crit, m6r, 2026-10-28, 1d
@@ -490,20 +495,21 @@ gantt
 | 📊 **M2** | PC・タスク・アラート CRUD | ✅ 完了 | PC一覧/詳細・タスク管理・CSV エクスポート |
 | 🗓️ **M3** | スケジュール・グループ・Swagger | ✅ 完了 | APScheduler / PCグループ / OpenAPI 3.0 |
 | 🔐 **M4** | RBAC・通知・E2E | ✅ 完了 | admin/operator/viewer / Slack/Teams/Email / Playwright 94 tests |
-| 🚧 **M5** | M5-1 監査ログ✅ / M5-2 一括実行✅ / Topbar+Badge✅ / M5-4 ダーク+a11y✅(PR#107) / 月次レポート⏳ #76 / ユーザー強化⏳ #78 | 🟡 進行中 | Issue #74/#75/#77/#87/#88/#93/#101 ✅ |
+| ✅ **M5** | 監査ログ✅ / 一括実行✅ / Topbar+Badge✅ / ダーク+a11y✅ / **月次レポート API+PDF✅(PR#116)** / **ユーザー管理強化✅(PR#117)** / XSS防御✅(PR#114) | ✅ 完了 | 全 9 Issue クローズ |
 | 🚀 **M6** | リリース準備・本番移行 | 🔜 計画中 | CHANGELOG・タグ付け・本番デプロイ |
 
-### 🆕 M5 直近完了 (2026-05-06)
+### ✅ M5 完了サマリー (2026-05-06)
 
 | Issue / PR | 内容 | 主な変更 |
 |---|---|---|
 | 🎨 **#88 / PR #89** | Claude Design 同期: 監査ログ + 7 新規ページ | base.html / style.css / 7 templates |
-| ✨ **#93 / PR #94** | Topbar (検索⌘K/環境/通知/同期/タスク作成) + Sidebar カウントバッジ | base.html (handler / kbd) + style.css (responsive) + E2E 5 件追加 |
-| 🛠️ **#98 + #97 / PR #99** | CI 失敗 (Flask E2E 60s timeout) 修復 + syncBtn 失敗トースト修正 | `wait_until="domcontentloaded"` 統一 + `throwOnError` フラグ |
-| 🔒 **#87 / PR #100 + #105** | pip-audit **9 CVE 全件解消** (Phase 1: Flask/PyJWT/Werkzeug/python-dotenv + Phase 2: flask-cors 5→6) | requirements.txt (5 パッケージ更新) + CORS preflight テスト追加 |
-| 🛡️ **#101 / PR #103** | Security Headers 強化: CSP / HSTS / Permissions-Policy 追加 | app.py `_set_security_headers` + 5 新規アサーション |
-| 🌓 **#77 / PR #107** | M5-4 ダークモード切替 + WCAG 2.1 AA フォーカスリング | CSS `[data-theme="dark"]` トークン + Topbar トグル + FOUC 防止 + E2E 6 件 |
-| 📋 **#102 (open)** | innerHTML 14 箇所の textContent / escapeHTML 化 (P2 Defense in Depth) | CSP `'unsafe-inline'` 削減への前提作業 |
+| ✨ **#93 / PR #94** | Topbar (検索⌘K/環境/通知/同期/タスク作成) + Sidebar カウントバッジ | base.html + E2E 5 件 |
+| 🔒 **#87 / PR #100+#105** | pip-audit **9 CVE 全件解消** (Flask/PyJWT/Werkzeug/flask-cors) | requirements.txt 5 pkg + CORS テスト |
+| 🛡️ **#101 / PR #103** | Security Headers: CSP / HSTS / Permissions-Policy | `_set_security_headers` + 5 テスト |
+| 🌓 **#77 / PR #107** | M5-4 ダークモード + WCAG 2.1 AA フォーカスリング | CSS `[data-theme="dark"]` + E2E 6 件 |
+| 🔐 **#102 / PR #109+#114** | innerHTML XSS Defense — escapeHTML 全 14 箇所適用 | base.html + tasks.js / dashboard.js / pc_detail.js |
+| 📊 **#76 / PR #116** | **M5-3 月次レポート API** — JSON/CSV/PDF + UI 接続 | routes/reports.py + reportlab PDF + 13 テスト |
+| 👥 **#78 / PR #117** | **M5-5 ユーザー管理強化** — ロック/unlock/パスワードポリシー | auth_routes.py + User 4 列 + 強度インジケーター |
 
 ---
 
@@ -511,7 +517,7 @@ gantt
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| **API 拡張テスト（Python）** | **163項目** | **✅ PASS** |
+| **API 拡張テスト（Python）** | **183項目** | **✅ PASS** |
 | **WebUI E2E テスト（Playwright）** | **99項目** | **✅ PASS** |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
