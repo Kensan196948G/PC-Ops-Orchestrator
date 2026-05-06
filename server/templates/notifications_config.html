@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}通知設定{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">通知設定</h2>
+    <p class="page-description">Slack / Teams / Email / Webhook の通知チャネルとイベントルーティングを設定します。</p>
+</div>
+
+<div class="card">
+    <div class="empty-state">
+        <h3>準備中</h3>
+        <p>このページは将来のマイルストーンで実装予定です。</p>
+        <ul>
+            <li>チャネル管理 (Slack / Teams / Email / Webhook)</li>
+            <li>イベントルーティング (severity → channel)</li>
+            <li>ユーザー別受信設定 (on / off / 時間帯)</li>
+            <li>SMTP 設定</li>
+            <li>テスト送信</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

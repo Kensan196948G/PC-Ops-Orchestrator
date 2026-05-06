@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}証明書管理{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">証明書管理</h2>
+    <p class="page-description">TLS / SSL 証明書、クライアント証明書、コード署名証明書の有効期限を監視します。</p>
+</div>
+
+<div class="card">
+    <div class="empty-state">
+        <h3>準備中</h3>
+        <p>このページは将来のマイルストーンで実装予定です。</p>
+        <ul>
+            <li>TLS / SSL 証明書一覧</li>
+            <li>クライアント証明書一覧</li>
+            <li>コード署名証明書一覧</li>
+            <li>有効期限アラート (30 / 60 / 90 日前)</li>
+            <li>自動更新スケジュール</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

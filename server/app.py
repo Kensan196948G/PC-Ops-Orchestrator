@@ -147,6 +147,34 @@ def create_app(config_name=None):
     def alert_rules_page():
         return render_template("alert_rules.html")
 
+    @app.route("/reports")
+    def reports_page():
+        return render_template("reports.html")
+
+    @app.route("/agents")
+    def agents_page():
+        return render_template("agents.html")
+
+    @app.route("/settings")
+    def settings_page():
+        return render_template("settings.html")
+
+    @app.route("/certs")
+    def certs_page():
+        return render_template("certs.html")
+
+    @app.route("/backups")
+    def backups_page():
+        return render_template("backups.html")
+
+    @app.route("/notifications-config")
+    def notifications_config_page():
+        return render_template("notifications_config.html")
+
+    @app.route("/licenses")
+    def licenses_page():
+        return render_template("licenses.html")
+
     @app.route("/login")
     def login_page():
         return render_template("login.html")

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}システム設定{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">システム設定</h2>
+    <p class="page-description">サーバー全体の設定 (CORS / JWT 有効期限 / Agent 通信間隔 / DB 接続先) を画面上で変更できます。</p>
+</div>
+
+<div class="card">
+    <div class="empty-state">
+        <h3>準備中</h3>
+        <p>このページは将来のマイルストーンで実装予定です。</p>
+        <ul>
+            <li>全般設定 (タイムゾーン / 言語 / ログレベル)</li>
+            <li>認証設定 (JWT 有効期限 / リフレッシュトークン)</li>
+            <li>Agent 通信設定 (heartbeat interval / timeout)</li>
+            <li>DB 接続設定 (read replica / backup target)</li>
+            <li>CORS 許可オリジン</li>
+            <li>レート制限設定</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
