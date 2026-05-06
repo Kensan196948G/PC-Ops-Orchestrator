@@ -457,6 +457,10 @@ class User(db.Model):
     role = db.Column(db.String(64), default="viewer")
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    last_login = db.Column(db.DateTime, nullable=True)
+    failed_login_count = db.Column(db.Integer, default=0, nullable=False)
+    is_locked = db.Column(db.Boolean, default=False, nullable=False)
+    locked_at = db.Column(db.DateTime, nullable=True)
 
     def to_dict(self):
         return {
@@ -465,4 +469,8 @@ class User(db.Model):
             "role": self.role,
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "last_login": self.last_login.isoformat() if self.last_login else None,
+            "failed_login_count": self.failed_login_count,
+            "is_locked": self.is_locked,
+            "locked_at": self.locked_at.isoformat() if self.locked_at else None,
         }

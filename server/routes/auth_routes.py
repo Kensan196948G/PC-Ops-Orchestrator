@@ -1,3 +1,6 @@
+import re
+from datetime import datetime, timezone
+
 from flask import Blueprint, request, jsonify
 from extensions import db, limiter
 from models import User
@@ -10,6 +13,9 @@ from auth import (
     admin_required,
     log_operation,
 )
+
+_MAX_FAILED_LOGINS = 5
+_PASSWORD_RE = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$")
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -28,11 +34,27 @@ def login():
         return jsonify({"error": "ユーザー名とパスワードが必要です"}), 400
 
     user = User.query.filter_by(username=username).first()
+
     if not user or not verify_password(user.password_hash, password):
+        if user:
+            user.failed_login_count = (user.failed_login_count or 0) + 1
+            if user.failed_login_count >= _MAX_FAILED_LOGINS and not user.is_locked:
+                user.is_locked = True
+                user.locked_at = datetime.now(timezone.utc)
+            db.session.commit()
         return jsonify({"error": "ユーザー名またはパスワードが正しくありません"}), 401
 
     if not user.is_active:
         return jsonify({"error": "このアカウントは無効です"}), 403
+
+    if user.is_locked:
+        return jsonify(
+            {"error": "アカウントがロックされています。管理者にお問い合わせください"}
+        ), 403
+
+    user.last_login = datetime.now(timezone.utc)
+    user.failed_login_count = 0
+    db.session.commit()
 
     token = create_token(user.id, user.username, user.role)
 
@@ -74,6 +96,8 @@ def setup():
         username=username,
         password_hash=hash_password(password),
         role="admin",
+        failed_login_count=0,
+        is_locked=False,
     )
     db.session.add(user)
     db.session.commit()
@@ -107,8 +131,12 @@ def create_user():
 
     if not username or not password:
         return jsonify({"error": "username と password は必須です"}), 400
-    if len(password) < 8:
-        return jsonify({"error": "パスワードは 8 文字以上にしてください"}), 400
+    if not _PASSWORD_RE.match(password):
+        return jsonify(
+            {
+                "error": "パスワードは 8 文字以上で大小英字・数字・記号をそれぞれ含む必要があります"
+            }
+        ), 400
     if role not in ALLOWED_ROLES:
         return jsonify(
             {
@@ -154,13 +182,37 @@ def update_user(user_id):
     if "is_active" in data:
         target.is_active = bool(data["is_active"])
     if "password" in data:
-        if len(data["password"]) < 8:
-            return jsonify({"error": "パスワードは 8 文字以上にしてください"}), 400
+        if not _PASSWORD_RE.match(data["password"]):
+            return jsonify(
+                {
+                    "error": "パスワードは 8 文字以上で大小英字・数字・記号をそれぞれ含む必要があります"
+                }
+            ), 400
         target.password_hash = hash_password(data["password"])
 
     db.session.commit()
     log_operation("update_user", f"user:{target.username}", "ユーザー情報更新")
     return jsonify({"message": "ユーザーを更新しました", "user": target.to_dict()})
+
+
+@auth_bp.route("/users/<int:user_id>/unlock", methods=["POST"])
+@admin_required
+def unlock_user(user_id):
+    target = db.session.get(User, user_id)
+    if not target:
+        return jsonify({"error": f"ユーザー {user_id} が見つかりません"}), 404
+
+    target.is_locked = False
+    target.failed_login_count = 0
+    target.locked_at = None
+    db.session.commit()
+    log_operation("unlock_user", f"user:{target.username}", "アカウントロック解除")
+    return jsonify(
+        {
+            "message": f"ユーザー {target.username} のロックを解除しました",
+            "user": target.to_dict(),
+        }
+    )
 
 
 @auth_bp.route("/users/<int:user_id>", methods=["DELETE"])

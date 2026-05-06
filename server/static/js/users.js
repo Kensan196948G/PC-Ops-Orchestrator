@@ -17,6 +17,49 @@ function activeBadge(isActive) {
     return span;
 }
 
+function lockBadge(isLocked) {
+    const span = document.createElement('span');
+    span.className = 'badge ' + (isLocked ? 'badge-danger' : 'badge-success');
+    span.textContent = isLocked ? 'ロック' : '正常';
+    return span;
+}
+
+// ── password strength ──────────────────────────────────
+function calcStrength(pw) {
+    if (!pw) return 0;
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (pw.length >= 12) score++;
+    if (/[a-z]/.test(pw)) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/\d/.test(pw)) score++;
+    if (/[^A-Za-z\d]/.test(pw)) score++;
+    return score;
+}
+
+function updateStrength(inputId, barId) {
+    const pw = document.getElementById(inputId).value;
+    const bar = document.getElementById(barId);
+    if (!bar) return;
+    bar.replaceChildren();
+    const score = calcStrength(pw);
+    const labels = ['', '非常に弱い', '弱い', '普通', '普通', '強い', '非常に強い'];
+    const colors = ['', '#dc2626', '#f59e0b', '#f59e0b', '#16a34a', '#16a34a', '#166534'];
+    if (!pw) return;
+    const pct = Math.round((score / 6) * 100);
+    const outer = document.createElement('div');
+    outer.style.cssText = 'background:var(--border);border-radius:4px;height:6px;overflow:hidden;';
+    const inner = document.createElement('div');
+    inner.style.cssText = 'height:100%;border-radius:4px;transition:width 0.3s;width:' + pct + '%;background:' + (colors[score] || '#dc2626') + ';';
+    outer.appendChild(inner);
+    const label = document.createElement('span');
+    label.style.cssText = 'font-size:0.78rem;color:' + (colors[score] || '#dc2626') + ';';
+    label.textContent = labels[score] || '非常に弱い';
+    bar.appendChild(outer);
+    bar.appendChild(label);
+}
+
+// ── user table ──────────────────────────────────────────
 async function loadUsers() {
     const tbody = document.getElementById('user-table-body');
     try {
@@ -30,7 +73,7 @@ async function loadUsers() {
                 const tr = document.createElement('tr');
                 const td = (text) => {
                     const el = document.createElement('td');
-                    el.textContent = text;
+                    el.textContent = text ?? '-';
                     return el;
                 };
 
@@ -45,16 +88,39 @@ async function loadUsers() {
                 activeTd.appendChild(activeBadge(u.is_active));
                 tr.appendChild(activeTd);
 
+                tr.appendChild(td(formatTime(u.last_login)));
+
+                const failTd = document.createElement('td');
+                failTd.textContent = String(u.failed_login_count ?? 0);
+                if ((u.failed_login_count ?? 0) > 0) {
+                    failTd.style.color = 'var(--warning)';
+                    failTd.style.fontWeight = '600';
+                }
+                tr.appendChild(failTd);
+
+                const lockTd = document.createElement('td');
+                lockTd.appendChild(lockBadge(u.is_locked));
+                tr.appendChild(lockTd);
+
                 tr.appendChild(td(formatTime(u.created_at)));
 
                 const actionTd = document.createElement('td');
+                actionTd.style.display = 'flex';
+                actionTd.style.gap = '4px';
                 if (u.id !== currentUser.id) {
                     const editBtn = document.createElement('button');
                     editBtn.className = 'btn btn-secondary role-admin-only';
-                    editBtn.style.marginRight = '4px';
                     editBtn.textContent = '編集';
                     editBtn.addEventListener('click', () => openEditModal(u));
                     actionTd.appendChild(editBtn);
+
+                    if (u.is_locked) {
+                        const unlockBtn = document.createElement('button');
+                        unlockBtn.className = 'btn btn-warning role-admin-only';
+                        unlockBtn.textContent = '解除';
+                        unlockBtn.addEventListener('click', () => unlockUser(u.id, u.username));
+                        actionTd.appendChild(unlockBtn);
+                    }
 
                     const delBtn = document.createElement('button');
                     delBtn.className = 'btn btn-danger role-admin-only';
@@ -71,7 +137,7 @@ async function loadUsers() {
         } else {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
-            td.colSpan = 6;
+            td.colSpan = 9;
             td.className = 'text-center';
             td.textContent = 'ユーザーが登録されていません';
             tr.appendChild(td);
@@ -80,7 +146,7 @@ async function loadUsers() {
     } catch (e) {
         const tr = document.createElement('tr');
         const td = document.createElement('td');
-        td.colSpan = 6;
+        td.colSpan = 9;
         td.className = 'text-center';
         td.style.color = 'var(--danger)';
         td.textContent = '読み込みに失敗しました';
@@ -89,10 +155,14 @@ async function loadUsers() {
     }
 }
 
+// ── modal helpers ──────────────────────────────────────
+
 function openCreateModal() {
     document.getElementById('new-username').value = '';
     document.getElementById('new-password').value = '';
     document.getElementById('new-role').value = 'operator';
+    const bar = document.getElementById('new-strength');
+    if (bar) bar.replaceChildren();
     document.getElementById('create-modal').style.display = 'flex';
 }
 
@@ -132,6 +202,8 @@ function openEditModal(user) {
     document.getElementById('edit-role').value = user.role;
     document.getElementById('edit-active').value = user.is_active ? 'true' : 'false';
     document.getElementById('edit-password').value = '';
+    const bar = document.getElementById('edit-strength');
+    if (bar) bar.replaceChildren();
     document.getElementById('edit-modal').style.display = 'flex';
 }
 
@@ -149,7 +221,7 @@ async function submitEdit() {
     if (password) body.password = password;
 
     try {
-        const data = await apiFetch(`/auth/users/${userId}`, {
+        const data = await apiFetch('/auth/users/' + userId, {
             method: 'PATCH',
             body: JSON.stringify(body),
         });
@@ -165,11 +237,26 @@ async function submitEdit() {
     }
 }
 
+async function unlockUser(userId, username) {
+    if (!confirm('ユーザー「' + username + '」のロックを解除しますか？')) return;
+    try {
+        const data = await apiFetch('/auth/users/' + userId + '/unlock', { method: 'POST' });
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+        showSuccess(data.message);
+        loadUsers();
+    } catch (e) {
+        showError('ロック解除に失敗しました');
+    }
+}
+
 async function deleteUser(userId, username) {
-    if (!confirm(`ユーザー「${username}」を削除しますか？`)) return;
+    if (!confirm('ユーザー「' + username + '」を削除しますか？')) return;
 
     try {
-        const data = await apiFetch(`/auth/users/${userId}`, { method: 'DELETE' });
+        const data = await apiFetch('/auth/users/' + userId, { method: 'DELETE' });
         if (data.error) {
             showError(data.error);
             return;

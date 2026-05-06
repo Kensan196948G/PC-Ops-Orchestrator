@@ -173,13 +173,13 @@ class TestPrivilegeEscalation:
         suffix = uuid.uuid4().hex[:8]
         admin_token = _admin_token()
         viewer_id = _create_user(
-            admin_token, f"sec_viewer_{suffix}", "viewer-pass-99", "viewer"
+            admin_token, f"sec_viewer_{suffix}", "Viewer-Pass99!", "viewer"
         )
         try:
             r_login = _json_request(
                 "POST",
                 "/api/auth/login",
-                data={"username": f"sec_viewer_{suffix}", "password": "viewer-pass-99"},
+                data={"username": f"sec_viewer_{suffix}", "password": "Viewer-Pass99!"},
             )
             assert r_login.status_code == 200
             viewer_token = json.loads(r_login.data)["token"]
@@ -196,7 +196,7 @@ class TestPrivilegeEscalation:
         suffix = uuid.uuid4().hex[:8]
         admin_token = _admin_token()
         viewer_id = _create_user(
-            admin_token, f"sec_viewer2_{suffix}", "viewer-pass-99", "viewer"
+            admin_token, f"sec_viewer2_{suffix}", "Viewer-Pass99!", "viewer"
         )
         try:
             r_login = _json_request(
@@ -204,7 +204,7 @@ class TestPrivilegeEscalation:
                 "/api/auth/login",
                 data={
                     "username": f"sec_viewer2_{suffix}",
-                    "password": "viewer-pass-99",
+                    "password": "Viewer-Pass99!",
                 },
             )
             viewer_token = json.loads(r_login.data)["token"]
@@ -215,7 +215,7 @@ class TestPrivilegeEscalation:
                 token=viewer_token,
                 data={
                     "username": f"hacker_{suffix}",
-                    "password": "hacker-pass-1",
+                    "password": "Hacker-Pass1!",
                     "role": "admin",
                 },
             )
@@ -231,7 +231,7 @@ class TestPrivilegeEscalation:
         suffix = uuid.uuid4().hex[:8]
         admin_token = _admin_token()
         viewer_id = _create_user(
-            admin_token, f"sec_viewer3_{suffix}", "viewer-pass-99", "viewer"
+            admin_token, f"sec_viewer3_{suffix}", "Viewer-Pass99!", "viewer"
         )
         try:
             r_login = _json_request(
@@ -239,7 +239,7 @@ class TestPrivilegeEscalation:
                 "/api/auth/login",
                 data={
                     "username": f"sec_viewer3_{suffix}",
-                    "password": "viewer-pass-99",
+                    "password": "Viewer-Pass99!",
                 },
             )
             viewer_token = json.loads(r_login.data)["token"]
@@ -273,23 +273,23 @@ class TestIdor:
         suffix = uuid.uuid4().hex[:8]
         admin_token = _admin_token()
         op_a_id = _create_user(
-            admin_token, f"op_a_{suffix}", "operator-pass-9", "operator"
+            admin_token, f"op_a_{suffix}", "Operator-Pass9!", "operator"
         )
         op_b_id = _create_user(
-            admin_token, f"op_b_{suffix}", "operator-pass-9", "operator"
+            admin_token, f"op_b_{suffix}", "Operator-Pass9!", "operator"
         )
         try:
             r_a = _json_request(
                 "POST",
                 "/api/auth/login",
-                data={"username": f"op_a_{suffix}", "password": "operator-pass-9"},
+                data={"username": f"op_a_{suffix}", "password": "Operator-Pass9!"},
             )
             token_a = json.loads(r_a.data)["token"]
 
             r_b = _json_request(
                 "POST",
                 "/api/auth/login",
-                data={"username": f"op_b_{suffix}", "password": "operator-pass-9"},
+                data={"username": f"op_b_{suffix}", "password": "Operator-Pass9!"},
             )
             token_b = json.loads(r_b.data)["token"]
 
@@ -322,7 +322,7 @@ class TestIdor:
         suffix = uuid.uuid4().hex[:8]
         admin_token = _admin_token()
         viewer_id = _create_user(
-            admin_token, f"sec_viewer4_{suffix}", "viewer-pass-99", "viewer"
+            admin_token, f"sec_viewer4_{suffix}", "Viewer-Pass99!", "viewer"
         )
         try:
             r_login = _json_request(
@@ -330,7 +330,7 @@ class TestIdor:
                 "/api/auth/login",
                 data={
                     "username": f"sec_viewer4_{suffix}",
-                    "password": "viewer-pass-99",
+                    "password": "Viewer-Pass99!",
                 },
             )
             viewer_token = json.loads(r_login.data)["token"]
