@@ -28,10 +28,7 @@
   "status": {
     "current_phase": "verify",
     "stable": true,
-    "pending_prs": [
-      103,
-      107
-    ],
+    "pending_prs": [],
     "merged_prs": [
       36,
       38,
@@ -51,14 +48,16 @@
       94,
       99,
       100,
-      105
+      103,
+      105,
+      107
     ]
   },
   "priority": {
     "score": 0
   },
   "open_issues": {
-    "note": "M5 進行中: #76 (月次レポート) #78 (ユーザー管理) #102 (innerHTML XSS) がオープン。本セッションで #87 (9 CVE) #97 #98 #95 #96 を close、#101 (Security Headers) #77 (M5-4 ダーク) は PR #103/#107 で対応中。"
+    "note": "M5 残課題: #76 月次レポート (M5-3) / #78 ユーザー管理 (M5-5) / #102 innerHTML XSS (P2) のみ。本セッションで #77 (M5-4 ダーク) #87 (9 CVE 全件) #97 #98 #95 #96 #101 (Security Headers) #104 #106 #108 を close。"
   },
   "milestones": {
     "M1": {
@@ -122,18 +121,22 @@
     "prs_merged": [
       99,
       100,
-      105
-    ],
-    "prs_pending": [
       103,
+      105,
       107
     ],
+    "prs_pending": [],
     "issues_closed": [
+      77,
       87,
       95,
       96,
       97,
-      98
+      98,
+      101,
+      104,
+      106,
+      108
     ],
     "issues_opened": [
       101,
@@ -147,7 +150,7 @@
       "PR #107 (Issue #77 / M5-4): ダークモード切替 + WCAG 2.1 AA フォーカスリング - data-theme トークン + Topbar トグル + FOUC 防止 + E2E 6 件 (CI 待ち)",
       "WebUI 全テスト検証 250 項目 - bandit / ruff / pytest / 静的セキュリティ検査 → Issue #101 (Security Headers) #102 (innerHTML XSS) 起票"
     ],
-    "ci_status": "GREEN (#99 #100 #105 merged) / IN_PROGRESS (#103 #107)",
+    "ci_status": "GREEN — 5 PR (#99 #100 #103 #105 #107) all merged, main stable",
     "verification": {
       "pytest_unit": "183 passed (Phase 1 ブランチ ベース) / 178 passed (Phase 2 / M5-4 ブランチ ベース)",
       "ruff_check": "All checks passed",
@@ -157,9 +160,9 @@
       "pip_audit": "Phase 1+2 で 9 CVE 全件解消の見込み (CI 待ち)"
     },
     "resume_point": {
-      "next_action": "PR #103 / #107 の CI 完了確認 → merge → M5-3 月次レポート (#76) 着手",
+      "next_action": "M5-3 月次レポート PDF/CSV (Issue #76) 着手 — reportlab 等の依存追加・/api/reports/monthly エンドポイント・WebUI 設定画面",
       "blocker": "なし",
-      "notes": "5 PR 並列開発で大幅進捗。Issue #87 完全クローズ済。残り M5-3 月次レポート (#76) #78 ユーザー管理 #102 innerHTML XSS が M5 残課題。"
+      "notes": "本セッション全 5 PR merged で main stable。Issue #87 (9 CVE) #77 (M5-4) #101 (Security Headers) 完全クローズ。M5 残課題は #76 (月次レポート) #78 (ユーザー管理) #102 (innerHTML XSS Defense)。リリース期限 2026-10-28 に向けて余裕あり。"
     }
   },
   "learning": {
