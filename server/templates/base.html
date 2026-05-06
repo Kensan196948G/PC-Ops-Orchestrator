@@ -200,7 +200,10 @@
             return res.json();
         }
 
-        async function updateAlertsBadge() {
+        // Fetch helpers used by both 30/45/60s polling (silent) and the manual
+        // sync button (must surface failures via toast). Pass throwOnError:true
+        // from manual triggers so callers can show "同期に失敗しました".
+        async function updateAlertsBadge({ throwOnError = false } = {}) {
             try {
                 const data = await apiFetch('/alerts?per_page=1');
                 const count = data.unresolved_count || 0;
@@ -214,10 +217,12 @@
                     topbarBadge.textContent = count > 99 ? '99+' : count;
                     topbarBadge.style.display = count > 0 ? 'inline-block' : 'none';
                 }
-            } catch (e) {}
+            } catch (e) {
+                if (throwOnError) throw e;
+            }
         }
 
-        async function updateEnvPill() {
+        async function updateEnvPill({ throwOnError = false } = {}) {
             const pill = document.getElementById('env-pill');
             const label = document.getElementById('env-pill-label');
             if (!pill || !label) return;
@@ -231,15 +236,17 @@
                     pill.classList.remove('env-pill-ok');
                     pill.classList.add('env-pill-error');
                     label.textContent = 'API degraded';
+                    if (throwOnError) throw new Error(`HTTP ${res.status}`);
                 }
             } catch (e) {
                 pill.classList.remove('env-pill-ok');
                 pill.classList.add('env-pill-error');
                 label.textContent = 'API down';
+                if (throwOnError) throw e;
             }
         }
 
-        async function updateSidebarCounts() {
+        async function updateSidebarCounts({ throwOnError = false } = {}) {
             const setBadge = (id, count) => {
                 const el = document.getElementById(id);
                 if (!el) return;
@@ -251,6 +258,15 @@
                 }
             };
             const fetchCount = async (path, key) => {
+                // When throwOnError is requested we let the error bubble up;
+                // otherwise we silently treat fetch failure as count=0.
+                if (throwOnError) {
+                    const data = await apiFetch(path);
+                    if (typeof data[key] === 'number') return data[key];
+                    if (Array.isArray(data.items)) return data.items.length;
+                    if (Array.isArray(data)) return data.length;
+                    return 0;
+                }
                 try {
                     const data = await apiFetch(path);
                     if (typeof data[key] === 'number') return data[key];
@@ -394,9 +410,15 @@
                 syncBtn.addEventListener('click', async () => {
                     syncBtn.classList.add('is-syncing');
                     try {
-                        const jobs = [updateEnvPill()];
+                        // Manual sync must propagate fetch failures so the
+                        // catch arm shows the error toast — the polling-side
+                        // callers below stay silent (default throwOnError:false).
+                        const jobs = [updateEnvPill({ throwOnError: true })];
                         if (TOKEN) {
-                            jobs.push(updateAlertsBadge(), updateSidebarCounts());
+                            jobs.push(
+                                updateAlertsBadge({ throwOnError: true }),
+                                updateSidebarCounts({ throwOnError: true }),
+                            );
                         }
                         await Promise.all(jobs);
                         showToast('同期しました', 'success');
