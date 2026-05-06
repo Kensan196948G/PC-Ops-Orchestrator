@@ -35,10 +35,12 @@
                 <a href="/pcs" class="nav-item" data-page="pcs">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
                     <span class="nav-label">PC一覧</span>
+                    <span id="pcs-badge" class="nav-badge muted" style="display:none;">0</span>
                 </a>
                 <a href="/tasks" class="nav-item" data-page="tasks">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
                     <span class="nav-label">タスク管理</span>
+                    <span id="tasks-badge" class="nav-badge muted" style="display:none;">0</span>
                 </a>
                 <a href="/alerts" class="nav-item" data-page="alerts">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
@@ -73,6 +75,7 @@
                 <a href="/agents" class="nav-item" data-page="agents">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
                     <span class="nav-label">Agent管理</span>
+                    <span id="agents-badge" class="nav-badge muted" style="display:none;">0</span>
                 </a>
                     </div>
                 </div>
@@ -128,9 +131,42 @@
                 </button>
             </div>
         </aside>
-        <main class="main-content">
-            {% block content %}{% endblock %}
-        </main>
+        <div class="main">
+            <header class="topbar" role="banner">
+                <div class="search">
+                    <span class="search-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    </span>
+                    <input id="topbar-search" type="search" placeholder="PC名・IP・タスクID・ユーザーで検索..." aria-label="検索" autocomplete="off">
+                    <span class="kbd" aria-hidden="true">⌘K</span>
+                </div>
+                <div class="topbar-actions">
+                    <span class="env-pill" id="env-pill" title="API ステータス">
+                        <span class="dot" aria-hidden="true"></span>
+                        <span id="env-pill-label">API healthy</span>
+                    </span>
+                    <button class="btn btn-secondary btn-sm" id="topbar-sync-btn" type="button" title="同期">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
+                        <span>同期</span>
+                    </button>
+                    <a class="btn btn-primary btn-sm" id="topbar-create-task" href="/tasks" title="タスク発行">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <span>タスク発行</span>
+                    </a>
+                    <span class="topbar-divider" aria-hidden="true"></span>
+                    <a class="icon-btn" href="/alerts" id="topbar-bell" title="通知" aria-label="通知">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        <span id="topbar-bell-badge" class="topbar-bell-badge" style="display:none;">0</span>
+                    </a>
+                    <a class="icon-btn" href="/settings" id="topbar-cog" title="設定" aria-label="設定">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </a>
+                </div>
+            </header>
+            <main class="main-content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
     </div>
 
     <div id="toast-container"></div>
@@ -167,12 +203,70 @@
         async function updateAlertsBadge() {
             try {
                 const data = await apiFetch('/alerts?per_page=1');
-                const badge = document.getElementById('alerts-badge');
-                if (!badge) return;
                 const count = data.unresolved_count || 0;
-                badge.textContent = count;
-                badge.style.display = count > 0 ? 'inline-block' : 'none';
+                const badge = document.getElementById('alerts-badge');
+                if (badge) {
+                    badge.textContent = count;
+                    badge.style.display = count > 0 ? 'inline-block' : 'none';
+                }
+                const topbarBadge = document.getElementById('topbar-bell-badge');
+                if (topbarBadge) {
+                    topbarBadge.textContent = count > 99 ? '99+' : count;
+                    topbarBadge.style.display = count > 0 ? 'inline-block' : 'none';
+                }
             } catch (e) {}
+        }
+
+        async function updateEnvPill() {
+            const pill = document.getElementById('env-pill');
+            const label = document.getElementById('env-pill-label');
+            if (!pill || !label) return;
+            try {
+                const res = await fetch('/health', { cache: 'no-store' });
+                if (res.ok) {
+                    pill.classList.remove('env-pill-error');
+                    pill.classList.add('env-pill-ok');
+                    label.textContent = 'API healthy';
+                } else {
+                    pill.classList.remove('env-pill-ok');
+                    pill.classList.add('env-pill-error');
+                    label.textContent = 'API degraded';
+                }
+            } catch (e) {
+                pill.classList.remove('env-pill-ok');
+                pill.classList.add('env-pill-error');
+                label.textContent = 'API down';
+            }
+        }
+
+        async function updateSidebarCounts() {
+            const setBadge = (id, count) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (count > 0) {
+                    el.textContent = count > 99 ? '99+' : count;
+                    el.style.display = 'inline-block';
+                } else {
+                    el.style.display = 'none';
+                }
+            };
+            const fetchCount = async (path, key) => {
+                try {
+                    const data = await apiFetch(path);
+                    if (typeof data[key] === 'number') return data[key];
+                    if (Array.isArray(data.items)) return data.items.length;
+                    if (Array.isArray(data)) return data.length;
+                    return 0;
+                } catch (e) { return 0; }
+            };
+            const [pcs, tasks, agents] = await Promise.all([
+                fetchCount('/pcs?per_page=1', 'total'),
+                fetchCount('/tasks?status=running&per_page=1', 'total'),
+                fetchCount('/agents?status=online&per_page=1', 'total'),
+            ]);
+            setBadge('pcs-badge', pcs);
+            setBadge('tasks-badge', tasks);
+            setBadge('agents-badge', agents);
         }
 
         async function apiFetchRaw(path, options = {}) {
@@ -275,6 +369,39 @@
             if (TOKEN) {
                 updateAlertsBadge();
                 setInterval(updateAlertsBadge, 30000);
+                updateSidebarCounts();
+                setInterval(updateSidebarCounts, 45000);
+            }
+
+            // Topbar: env-pill (API health), search ⌘K shortcut, sync button
+            updateEnvPill();
+            setInterval(updateEnvPill, 60000);
+
+            const topbarSearch = document.getElementById('topbar-search');
+            if (topbarSearch) {
+                document.addEventListener('keydown', (e) => {
+                    const isMac = navigator.platform.toLowerCase().includes('mac');
+                    const meta = isMac ? e.metaKey : e.ctrlKey;
+                    if (meta && (e.key === 'k' || e.key === 'K')) {
+                        e.preventDefault();
+                        topbarSearch.focus();
+                        topbarSearch.select();
+                    }
+                });
+            }
+
+            const syncBtn = document.getElementById('topbar-sync-btn');
+            if (syncBtn) {
+                syncBtn.addEventListener('click', () => {
+                    syncBtn.classList.add('is-syncing');
+                    updateEnvPill();
+                    if (TOKEN) {
+                        updateAlertsBadge();
+                        updateSidebarCounts();
+                    }
+                    showToast('同期しました', 'success');
+                    setTimeout(() => syncBtn.classList.remove('is-syncing'), 600);
+                });
             }
 
             const currentPath = window.location.pathname;
