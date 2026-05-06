@@ -145,57 +145,52 @@
   },
   "session_summary": {
     "id": "20260506-190001-PC-Ops-Orchestrator",
-    "loop_phase": "Monitor → Verify → Build (Security Hardening + Dark Mode) → Verify",
+    "loop_phase": "Monitor → Build (M5-3/M5-5) → Verify → Improve (M6 準備)",
     "duration_minutes": 300,
     "prs_merged": [
-      99,
-      100,
-      103,
-      105,
-      107,
-      109,
-      111
+      114,
+      116,
+      117,
+      120
     ],
     "prs_pending": [],
     "issues_closed": [
-      77,
-      87,
-      95,
-      96,
-      97,
-      98,
-      101,
-      104,
-      106,
-      108
+      76,
+      78,
+      102,
+      115,
+      118,
+      119
     ],
     "issues_opened": [
-      101,
-      102
+      121
     ],
     "completed": [
-      "PR #99 (Issues #98 + #97 close): main CI 失敗修復 - Flask E2E goto wait_until=domcontentloaded 統一 + syncBtn throwOnError オプションで失敗トースト修正",
-      "PR #100 (Issue #87 Phase 1): Flask 3.1.3 / PyJWT 2.12.0 / Werkzeug 3.1.6 / python-dotenv 1.2.2 → 8 CVE 解消",
-      "PR #105 (Issue #87 Phase 2 close): flask-cors 5.0.1 → 6.0.0 → 残り 1 CVE 解消、CORS preflight テスト追加 → Issue #87 完全クローズ",
-      "PR #103 (Issue #101 close): Security Headers 強化 - CSP / HSTS (production) / Permissions-Policy 追加 + 5 新規アサーション",
-      "PR #107 (Issue #77 / M5-4 close): ダークモード切替 + WCAG 2.1 AA フォーカスリング - data-theme トークン + Topbar トグル + FOUC 防止 + E2E 6 件",
-      "PR #109 (Issue #102 Step 1): escapeHTML ヘルパを base.html に追加 + window 公開 + E2E 4 件。innerHTML 14 箇所の置換は次セッションへ (Step 2)",
-      "PR #111: 7 Admin ページ (reports/agents/settings/certs/backups/notifications-config/licenses) にダミーデータで完全実装 + Gunicorn graceful reload で適用確認 (HTTP 200 全件)",
-      "WebUI 全テスト検証 250 項目 - bandit / ruff / pytest / 静的セキュリティ検査 → Issue #101 (Security Headers) #102 (innerHTML XSS) 起票",
-      "stale Auto-Fix Issue #95 #96 #104 #106 #108 を close (後続コミットで全て解消済)",
-      "test_ui_rendering.py 全 22 箇所の goto を wait_until=domcontentloaded に統一 (PR #111 内修正)"
+      "PR #114 (Issue #102 close): innerHTML XSS Step2 — tasks.js/dashboard.js/pc_detail.js 全 14 箇所 escapeHTML/escHtml wrap",
+      "PR #116 (Issue #76 close): M5-3 月次レポート API — /api/reports/monthly JSON/CSV/PDF + reportlab IPA Gothic + 13 テスト",
+      "PR #117 (Issue #78 close): M5-5 ユーザー管理強化 — パスワードポリシー (大小英字+数字+記号) + ログイン失敗5回ロック + unlock API + 強度インジケーター + 7 テスト",
+      "PR #120: M5-3/M5-5 Playwright E2E テスト 6 件 (reports/users ページ)",
+      "GitHub Release v0.5.0 作成 — M5 完了の正式マーク",
+      "CHANGELOG.md 追加 — M1〜M5 変更履歴 (v0.1.0〜v0.5.0)",
+      "docs/deployment.md 追加 — 本番デプロイ手順書 (Systemd/Nginx/ロールバック)",
+      ".github/workflows/security-audit.yml 追加 — pip-audit 週次スケジュール CI",
+      "OpenAPI v1.1.0 — reports/* + unlock エンドポイント追加",
+      ".env.example 充実化 — JWT/CORS/Security Headers/通知設定追記",
+      "Issue #121 (M6-1) 起票 — CHANGELOG/デプロイ手順/pip-audit CI/CSP nonce",
+      "test_reports.py / test_user_security.py を CI テストスイートに追加",
+      "Stale CI Issues #115/#118/#119 クローズ"
     ],
-    "ci_status": "GREEN — 7 PR (#99 #100 #103 #105 #107 #109 #111) all merged, main stable",
+    "ci_status": "GREEN — PR #114/#116/#117/#120 all MERGED, main stable",
     "verification": {
-      "pytest_unit": "183 passed (Phase 1 ブランチ ベース) / 178 passed (Phase 2 / M5-4 ブランチ ベース)",
+      "pytest_unit": "163 passed (全テストスイート: test_api + test_api_extended + test_security_backend + test_reports + test_user_security)",
       "ruff_check": "All checks passed",
-      "ruff_format": "41 files formatted",
-      "bandit": "Medium=2 (既知 noqa) / High=0",
-      "github_ci": "PR #99 #100 #105 全 SUCCESS → MERGED",
-      "pip_audit": "Phase 1+2 で 9 CVE 全件解消の見込み (CI 待ち)"
+      "ruff_format": "47 files already formatted",
+      "bandit": "Medium=2 (既知 noqa: 0.0.0.0 + urllib.urlopen) / High=0",
+      "github_ci": "PR #114/#116/#117/#120 全 SUCCESS → MERGED",
+      "pip_audit": "9 CVE 全件解消済み (前セッション)"
     },
     "resume_point": {
-      "next_action": "M5-3 月次レポート API バックエンド実装 (#76 — /api/reports/monthly エンドポイント + reportlab PDF + 既存ダミー UI を実 API 接続) / Issue #102 Step 2 (innerHTML 14 箇所を escapeHTML wrap)",
+      "next_action": "M6 Issue #121 — CHANGELOG 改善 / CSP nonce 方式検討 / パフォーマンス最適化 / GitHub Release v1.0.0 準備",
       "blocker": "なし",
       "notes": "本セッション全 7 PR merged で main stable。Issue #77/#87/#97/#98/#101/#95/#96/#104/#106/#108 close。Admin ページ 7 種 (reports/agents/settings/certs/backups/notifications-config/licenses) はダミーデータ UI 実装済み・API 接続が次マイルストーン。M5 残課題は #76 月次 API / #78 ユーザー管理 / #102 innerHTML XSS Step2。"
     }
@@ -238,7 +233,10 @@
       "CSS Variables を :root と [data-theme=\"dark\"] の二系統で定義しコンポーネントで共有すると、ダークモード追加コストがほぼゼロになる",
       "FOUC 防止: <head> 内 inline script で document.documentElement.setAttribute('data-theme', ...) を実行すると paint 前にテーマ適用できる",
       "Security Headers の HSTS は config_name == 'production' のときだけ送ると HTTP の dev/E2E 環境で副作用が出ない",
-      "CSP に cdn.jsdelivr.net (Chart.js) を script-src で許可しないと dashboard が壊れる。CONTENT_SECURITY_POLICY config キーで運用上書き可能にすると安全"
+      "CSP に cdn.jsdelivr.net (Chart.js) を script-src で許可しないと dashboard が壊れる。CONTENT_SECURITY_POLICY config キーで運用上書き可能にすると安全",
+      "パスワードポリシーの強化 (大小英字+数字+記号) は既存テストのパスワードも同時に更新する必要がある。test_api.py / test_security_backend.py の弱いパスワードを一括 sed で置換するのが効率的",
+      "Flask-Migrate は既存 DB に NOT NULL カラムを追加する場合 server_default を設定しないと OperationalError になる (SQLite の制約)",
+      "reportlab TTFont で日本語 PDF を生成する場合 /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf が利用可能 (Ubuntu 22.04 以降は ipafont-gothic パッケージで提供)"
     ]
   }
 }
