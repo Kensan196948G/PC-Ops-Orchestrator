@@ -261,4 +261,30 @@ async function submitForm(e) {
     loadScheduledTasks(currentPage);
 }
 
-document.addEventListener('DOMContentLoaded', () => loadScheduledTasks(1));
+document.addEventListener('DOMContentLoaded', () => {
+    const showCreateBtn = document.getElementById('btn-show-create-st');
+    if (showCreateBtn) showCreateBtn.addEventListener('click', showCreateModal);
+
+    const enabledFilter = document.getElementById('enabled-filter');
+    if (enabledFilter) enabledFilter.addEventListener('change', () => loadScheduledTasks(1));
+
+    const stModal = document.getElementById('st-modal');
+    if (stModal) stModal.addEventListener('click', closeModal);
+
+    const closeStModalBtn = document.getElementById('btn-close-st-modal');
+    if (closeStModalBtn) closeStModalBtn.addEventListener('click', closeModalDirect);
+
+    const cancelStModalBtn = document.getElementById('btn-cancel-st-modal');
+    if (cancelStModalBtn) cancelStModalBtn.addEventListener('click', closeModalDirect);
+
+    const stTaskType = document.getElementById('st-task-type');
+    if (stTaskType) stTaskType.addEventListener('change', toggleCommandField);
+
+    const stScheduleType = document.getElementById('st-schedule-type');
+    if (stScheduleType) stScheduleType.addEventListener('change', toggleScheduleFields);
+
+    const stForm = document.getElementById('st-form');
+    if (stForm) stForm.addEventListener('submit', submitForm);
+
+    loadScheduledTasks(1);
+});

@@ -237,6 +237,30 @@ async function exportTasksCSV() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const showCreateBtn = document.getElementById('btn-show-create-task');
+    if (showCreateBtn) showCreateBtn.addEventListener('click', showCreateForm);
+
+    const exportCsvBtn = document.getElementById('btn-export-tasks-csv');
+    if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportTasksCSV);
+
+    const createBtn = document.getElementById('btn-create-task');
+    if (createBtn) createBtn.addEventListener('click', createTask);
+
+    const hideCreateBtn = document.getElementById('btn-hide-create-task');
+    if (hideCreateBtn) hideCreateBtn.addEventListener('click', hideCreateForm);
+
+    const statusFilter = document.getElementById('task-status-filter');
+    if (statusFilter) statusFilter.addEventListener('change', () => loadTasks());
+
+    const typeFilter = document.getElementById('task-type-filter');
+    if (typeFilter) typeFilter.addEventListener('change', () => loadTasks());
+
+    const modal = document.getElementById('task-detail-modal');
+    if (modal) modal.addEventListener('click', closeTaskModal);
+
+    const closeModalBtn = document.getElementById('btn-close-task-modal');
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeTaskModalDirect);
+
     loadTasks(1);
     setInterval(() => loadTasks(currentTaskPage), 30000);
 });

@@ -108,6 +108,24 @@ async function exportCsv() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const userFilter = document.getElementById('user-filter');
+    if (userFilter) userFilter.addEventListener('input', debounceLoad);
+
+    const actionFilter = document.getElementById('action-filter');
+    if (actionFilter) actionFilter.addEventListener('input', debounceLoad);
+
+    const fromDate = document.getElementById('from-date');
+    if (fromDate) fromDate.addEventListener('change', debounceLoad);
+
+    const toDate = document.getElementById('to-date');
+    if (toDate) toDate.addEventListener('change', debounceLoad);
+
+    const refreshBtn = document.getElementById('btn-refresh-audit');
+    if (refreshBtn) refreshBtn.addEventListener('click', () => loadLogs(1));
+
+    const csvBtn = document.getElementById('btn-export-audit-csv');
+    if (csvBtn) csvBtn.addEventListener('click', exportCsv);
+
     loadLogs(1);
     setInterval(() => loadLogs(_currentPage), 30000);
 });

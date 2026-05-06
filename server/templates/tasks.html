@@ -4,8 +4,8 @@
 <div class="page-header">
     <h2 class="page-title">タスク管理</h2>
     <div class="page-actions">
-        <button class="btn btn-primary role-operator-or-admin" onclick="showCreateForm()">+ 新規タスク</button>
-        <button class="btn btn-secondary" onclick="exportTasksCSV()">&#8595; CSV</button>
+        <button class="btn btn-primary role-operator-or-admin" id="btn-show-create-task">+ 新規タスク</button>
+        <button class="btn btn-secondary" id="btn-export-tasks-csv">&#8595; CSV</button>
     </div>
 </div>
 
@@ -21,15 +21,15 @@
         <input type="text" id="new-task-pc" class="form-input" placeholder="PC名 (空欄=全PC対象)">
         <input type="text" id="new-task-command" class="form-input" placeholder="PowerShell コマンド (カスタム時)" style="display:none;">
         <div class="task-form-actions">
-            <button class="btn btn-primary" onclick="createTask()">作成</button>
-            <button class="btn btn-secondary" onclick="hideCreateForm()">キャンセル</button>
+            <button class="btn btn-primary" id="btn-create-task">作成</button>
+            <button class="btn btn-secondary" id="btn-hide-create-task">キャンセル</button>
         </div>
     </div>
 </div>
 
 <div class="card">
     <div class="page-actions">
-        <select id="task-status-filter" class="form-input" onchange="loadTasks()">
+        <select id="task-status-filter" class="form-input">
             <option value="">すべての状態</option>
             <option value="pending">未処理</option>
             <option value="running">実行中</option>
@@ -37,7 +37,7 @@
             <option value="failed">失敗</option>
             <option value="cancelled">キャンセル</option>
         </select>
-        <select id="task-type-filter" class="form-input" onchange="loadTasks()">
+        <select id="task-type-filter" class="form-input">
             <option value="">すべての種類</option>
             <option value="cleanup">クリーンアップ</option>
             <option value="update">更新実行</option>
@@ -67,11 +67,11 @@
 </div>
 
 <!-- Task Detail Modal -->
-<div id="task-detail-modal" class="modal-overlay" onclick="closeTaskModal(event)">
+<div id="task-detail-modal" class="modal-overlay">
     <div class="modal-container">
         <div class="modal-header">
             <h3 class="modal-title">タスク詳細</h3>
-            <button class="modal-close" onclick="closeTaskModalDirect()" aria-label="閉じる">×</button>
+            <button class="modal-close" id="btn-close-task-modal" aria-label="閉じる">×</button>
         </div>
         <div class="modal-body" id="task-detail-body"></div>
     </div>

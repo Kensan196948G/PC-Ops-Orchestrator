@@ -5,8 +5,8 @@
     <h2 class="page-title">バックアップ管理</h2>
     <p class="page-description">DB / 設定ファイルのバックアップスケジュール・履歴・リストア（ダミーデータ）。</p>
     <div style="display:flex;gap:0.5rem;">
-        <button class="btn btn-secondary" type="button" onclick="alert('整合性チェック（次マイルストーン実装予定）')">🩺 整合性チェック</button>
-        <button class="btn btn-primary" type="button" onclick="alert('即時バックアップ（次マイルストーン実装予定）')">▶ 即時バックアップ</button>
+        <button class="btn btn-secondary" type="button" data-stub-alert="整合性チェック（次マイルストーン実装予定）">🩺 整合性チェック</button>
+        <button class="btn btn-primary" type="button" data-stub-alert="即時バックアップ（次マイルストーン実装予定）">▶ 即時バックアップ</button>
     </div>
 </div>
 
@@ -68,7 +68,7 @@
             </tbody>
         </table>
         <div style="margin-top:0.75rem;text-align:right;">
-            <button class="btn btn-primary" style="font-size:0.8rem;" onclick="alert('スケジュール追加（次マイルストーン実装予定）')">+ スケジュール追加</button>
+            <button class="btn btn-primary" style="font-size:0.8rem;" data-stub-alert="スケジュール追加（次マイルストーン実装予定）">+ スケジュール追加</button>
         </div>
     </div>
     <div class="card">
@@ -90,7 +90,7 @@
     <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;">
         <label>復元日時<br><input type="datetime-local" disabled value="2026-05-06T03:00"></label>
         <label>復元先<br><select disabled><option>staging-restore</option><option>production (要確認)</option></select></label>
-        <button class="btn btn-warning" type="button" onclick="alert('リストア（admin 確認モーダル → 次マイルストーン実装予定）')">▶ リストア実行</button>
+        <button class="btn btn-warning" type="button" data-stub-alert="リストア（admin 確認モーダル → 次マイルストーン実装予定）">▶ リストア実行</button>
     </div>
 </div>
 {% endblock %}

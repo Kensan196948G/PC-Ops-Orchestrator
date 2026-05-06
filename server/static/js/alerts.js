@@ -180,6 +180,18 @@ async function exportAlertsCSV() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const severityFilter = document.getElementById('severity-filter');
+    if (severityFilter) severityFilter.addEventListener('change', () => loadAlerts(1));
+
+    const resolvedFilter = document.getElementById('resolved-filter');
+    if (resolvedFilter) resolvedFilter.addEventListener('change', () => loadAlerts(1));
+
+    const syncBtn = document.getElementById('btn-sync-alerts');
+    if (syncBtn) syncBtn.addEventListener('click', syncAlerts);
+
+    const csvBtn = document.getElementById('btn-export-alerts-csv');
+    if (csvBtn) csvBtn.addEventListener('click', exportAlertsCSV);
+
     loadAlerts(1);
     setInterval(() => loadAlerts(currentAlertsPage), 30000);
 });

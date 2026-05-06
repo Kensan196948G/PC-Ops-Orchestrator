@@ -3,12 +3,12 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">スケジュールタスク</h2>
-    <button class="btn btn-primary role-operator-or-admin" onclick="showCreateModal()">+ 新規スケジュール</button>
+    <button class="btn btn-primary role-operator-or-admin" id="btn-show-create-st">+ 新規スケジュール</button>
 </div>
 
 <div class="card">
     <div class="page-actions">
-        <select id="enabled-filter" class="form-input" onchange="loadScheduledTasks(1)">
+        <select id="enabled-filter" class="form-input">
             <option value="">すべて</option>
             <option value="true">有効のみ</option>
             <option value="false">無効のみ</option>
@@ -36,14 +36,14 @@
 </div>
 
 <!-- Create/Edit Modal -->
-<div id="st-modal" class="modal-overlay" onclick="closeModal(event)">
+<div id="st-modal" class="modal-overlay">
     <div class="modal-container">
         <div class="modal-header">
             <h3 class="modal-title" id="st-modal-title">スケジュールタスクの作成</h3>
-            <button class="modal-close" onclick="closeModalDirect()" aria-label="閉じる">×</button>
+            <button class="modal-close" id="btn-close-st-modal" aria-label="閉じる">×</button>
         </div>
         <div class="modal-body">
-            <form id="st-form" onsubmit="submitForm(event)">
+            <form id="st-form">
                 <input type="hidden" id="st-id">
                 <div class="form-group">
                     <label class="form-label">名前 <span class="required">*</span></label>
@@ -55,7 +55,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">タスク種別 <span class="required">*</span></label>
-                    <select id="st-task-type" class="form-input" onchange="toggleCommandField()">
+                    <select id="st-task-type" class="form-input">
                         <option value="cleanup">クリーンアップ</option>
                         <option value="update">更新実行</option>
                         <option value="diagnose">診断実行</option>
@@ -73,7 +73,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">スケジュール種別 <span class="required">*</span></label>
-                    <select id="st-schedule-type" class="form-input" onchange="toggleScheduleFields()">
+                    <select id="st-schedule-type" class="form-input">
                         <option value="interval">間隔（N分ごと）</option>
                         <option value="daily">毎日（指定時刻）</option>
                         <option value="weekly">毎週（指定曜日・時刻）</option>
@@ -109,7 +109,7 @@
                 </div>
                 <div class="task-form-actions">
                     <button type="submit" class="btn btn-primary">保存</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeModalDirect()">キャンセル</button>
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-st-modal">キャンセル</button>
                 </div>
             </form>
         </div>

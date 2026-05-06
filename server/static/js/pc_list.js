@@ -301,6 +301,39 @@ async function submitBulkTask() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) searchInput.addEventListener('input', searchPCs);
+
+    const statusFilter = document.getElementById('status-filter');
+    if (statusFilter) statusFilter.addEventListener('change', searchPCs);
+
+    const osFilter = document.getElementById('os-filter');
+    if (osFilter) osFilter.addEventListener('change', searchPCs);
+
+    const exportCsvBtn = document.getElementById('btn-export-pcs-csv');
+    if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportPCsCSV);
+
+    const bulkTaskBtn = document.getElementById('bulk-task-btn');
+    if (bulkTaskBtn) bulkTaskBtn.addEventListener('click', openBulkModal);
+
+    const selectAllCb = document.getElementById('select-all-cb');
+    if (selectAllCb) selectAllCb.addEventListener('change', () => toggleSelectAll(selectAllCb.checked));
+
+    const closeBulkModalBtn = document.getElementById('btn-close-bulk-modal');
+    if (closeBulkModalBtn) closeBulkModalBtn.addEventListener('click', closeBulkModal);
+
+    const cancelBulkModalBtn = document.getElementById('btn-cancel-bulk-modal');
+    if (cancelBulkModalBtn) cancelBulkModalBtn.addEventListener('click', closeBulkModal);
+
+    const closeBulkResultBtn = document.getElementById('btn-close-bulk-result-modal');
+    if (closeBulkResultBtn) closeBulkResultBtn.addEventListener('click', closeBulkResultModal);
+
+    const closeBulkResult2 = document.getElementById('btn-close-bulk-result');
+    if (closeBulkResult2) closeBulkResult2.addEventListener('click', closeBulkResultModal);
+
+    const bulkForm = document.getElementById('bulk-form');
+    if (bulkForm) bulkForm.addEventListener('submit', (e) => { e.preventDefault(); submitBulkTask(); });
+
     const taskTypeEl = document.getElementById('bulk-task-type');
     if (taskTypeEl) {
         taskTypeEl.addEventListener('change', () => {

@@ -274,5 +274,33 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/';
         return;
     }
+
+    const openCreateBtn = document.getElementById('btn-open-create-user');
+    if (openCreateBtn) openCreateBtn.addEventListener('click', openCreateModal);
+
+    const backdropCreate = document.getElementById('btn-backdrop-close-create');
+    if (backdropCreate) backdropCreate.addEventListener('click', closeCreateModal);
+
+    const cancelCreateBtn = document.getElementById('btn-cancel-create-user');
+    if (cancelCreateBtn) cancelCreateBtn.addEventListener('click', closeCreateModal);
+
+    const createForm = document.getElementById('create-form');
+    if (createForm) createForm.addEventListener('submit', (e) => { e.preventDefault(); submitCreate(); });
+
+    const newPasswordInput = document.getElementById('new-password');
+    if (newPasswordInput) newPasswordInput.addEventListener('input', () => updateStrength('new-password', 'new-strength'));
+
+    const backdropEdit = document.getElementById('btn-backdrop-close-edit');
+    if (backdropEdit) backdropEdit.addEventListener('click', closeEditModal);
+
+    const cancelEditBtn = document.getElementById('btn-cancel-edit-user');
+    if (cancelEditBtn) cancelEditBtn.addEventListener('click', closeEditModal);
+
+    const editForm = document.getElementById('edit-form');
+    if (editForm) editForm.addEventListener('submit', (e) => { e.preventDefault(); submitEdit(); });
+
+    const editPasswordInput = document.getElementById('edit-password');
+    if (editPasswordInput) editPasswordInput.addEventListener('input', () => updateStrength('edit-password', 'edit-strength'));
+
     loadUsers();
 });

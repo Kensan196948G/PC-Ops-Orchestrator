@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">PCグループ管理</h2>
-    <button class="btn btn-primary role-admin-only" onclick="showCreateModal()">+ 新規グループ</button>
+    <button class="btn btn-primary role-admin-only" id="btn-create-group">+ 新規グループ</button>
 </div>
 
 <div class="card">
@@ -26,14 +26,14 @@
 </div>
 
 <!-- Create/Edit Group Modal -->
-<div id="group-modal" class="modal-overlay" onclick="closeGroupModal(event)">
+<div id="group-modal" class="modal-overlay">
     <div class="modal-container">
         <div class="modal-header">
             <h3 class="modal-title" id="group-modal-title">グループの作成</h3>
-            <button class="modal-close" onclick="closeGroupModalDirect()" aria-label="閉じる">×</button>
+            <button class="modal-close" id="btn-close-group-modal" aria-label="閉じる">×</button>
         </div>
         <div class="modal-body">
-            <form id="group-form" onsubmit="submitGroupForm(event)">
+            <form id="group-form">
                 <input type="hidden" id="group-id">
                 <div class="form-group">
                     <label class="form-label">グループ名 <span class="required">*</span></label>
@@ -50,7 +50,7 @@
                 </div>
                 <div class="task-form-actions">
                     <button type="submit" class="btn btn-primary">保存</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeGroupModalDirect()">キャンセル</button>
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-group-modal">キャンセル</button>
                 </div>
             </form>
         </div>
@@ -58,18 +58,18 @@
 </div>
 
 <!-- Group Task Modal -->
-<div id="group-task-modal" class="modal-overlay" onclick="closeGroupTaskModal(event)">
+<div id="group-task-modal" class="modal-overlay">
     <div class="modal-container">
         <div class="modal-header">
             <h3 class="modal-title" id="group-task-modal-title">一括タスク実行</h3>
-            <button class="modal-close" onclick="closeGroupTaskModalDirect()" aria-label="閉じる">×</button>
+            <button class="modal-close" id="btn-close-group-task-modal" aria-label="閉じる">×</button>
         </div>
         <div class="modal-body">
-            <form id="group-task-form" onsubmit="submitGroupTask(event)">
+            <form id="group-task-form">
                 <input type="hidden" id="group-task-group-id">
                 <div class="form-group">
                     <label class="form-label">タスク種別 <span class="required">*</span></label>
-                    <select id="group-task-type" class="form-input" onchange="toggleGroupTaskCommand()">
+                    <select id="group-task-type" class="form-input">
                         <option value="cleanup">クリーンアップ</option>
                         <option value="update">更新実行</option>
                         <option value="diagnose">診断実行</option>
@@ -83,7 +83,7 @@
                 </div>
                 <div class="task-form-actions">
                     <button type="submit" class="btn btn-primary">一括実行</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeGroupTaskModalDirect()">キャンセル</button>
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-group-task-modal">キャンセル</button>
                 </div>
             </form>
         </div>
@@ -91,16 +91,16 @@
 </div>
 
 <!-- PC Members Modal -->
-<div id="members-modal" class="modal-overlay" onclick="closeMembersModal(event)">
+<div id="members-modal" class="modal-overlay">
     <div class="modal-container" style="max-width:600px;">
         <div class="modal-header">
             <h3 class="modal-title" id="members-modal-title">所属 PC</h3>
-            <button class="modal-close" onclick="closeMembersModalDirect()" aria-label="閉じる">×</button>
+            <button class="modal-close" id="btn-close-members-modal" aria-label="閉じる">×</button>
         </div>
         <div class="modal-body">
             <div class="form-group" style="display:flex;gap:8px;">
                 <input type="text" id="add-pc-name" class="form-input" placeholder="PC名を入力して追加">
-                <button type="button" class="btn btn-primary" onclick="addPcToGroup()">追加</button>
+                <button type="button" class="btn btn-primary" id="btn-add-pc-to-group">追加</button>
             </div>
             <table class="table">
                 <thead>
