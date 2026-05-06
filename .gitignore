@@ -11,6 +11,9 @@ server/out.log
 server/err.log
 server/.test_token
 agent/logs/
+# Local Playwright MCP scratch + top-level PNG screenshots from E2E sessions
+.playwright-mcp/
+/*.png
 # Claude Code internal files — only state.json is tracked
 .claude/*
 !.claude/state.json
