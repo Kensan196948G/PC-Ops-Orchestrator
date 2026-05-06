@@ -39,7 +39,7 @@ def test_dashboard_loads_within_5_seconds(page_with_login, live_server):
     """Dashboard must reach domcontentloaded within 5 seconds."""
     p = page_with_login
     start = time.time()
-    p.goto(f"{live_server}/")
+    p.goto(f"{live_server}/", wait_until="domcontentloaded")
     p.wait_for_load_state("domcontentloaded", timeout=5000)
     elapsed = time.time() - start
     assert elapsed < 5.0, f"Dashboard took {elapsed:.2f}s"
@@ -164,7 +164,7 @@ def test_pcs_page_loads_within_5_seconds(page_with_login, live_server):
     """PC list page must load within 5 seconds."""
     p = page_with_login
     start = time.time()
-    p.goto(f"{live_server}/pcs")
+    p.goto(f"{live_server}/pcs", wait_until="domcontentloaded")
     p.wait_for_load_state("domcontentloaded", timeout=5000)
     elapsed = time.time() - start
     assert elapsed < 5.0, f"/pcs took {elapsed:.2f}s"
