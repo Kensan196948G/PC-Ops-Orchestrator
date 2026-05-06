@@ -259,14 +259,13 @@
                     return 0;
                 } catch (e) { return 0; }
             };
-            const [pcs, tasks, agents] = await Promise.all([
+            const [pcs, tasks] = await Promise.all([
                 fetchCount('/pcs?per_page=1', 'total'),
                 fetchCount('/tasks?status=running&per_page=1', 'total'),
-                fetchCount('/agents?status=online&per_page=1', 'total'),
             ]);
             setBadge('pcs-badge', pcs);
             setBadge('tasks-badge', tasks);
-            setBadge('agents-badge', agents);
+            // /api/agents is not implemented yet; agents-badge stays hidden until that endpoint lands.
         }
 
         async function apiFetchRaw(path, options = {}) {
