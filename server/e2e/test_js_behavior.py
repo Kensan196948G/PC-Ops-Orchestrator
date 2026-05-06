@@ -6,7 +6,8 @@ def test_no_js_pageerror_on_dashboard(page_with_login, live_server):
     p = page_with_login
     errors = []
     p.on("pageerror", lambda e: errors.append(str(e)))
-    p.goto(f"{live_server}/")
+    # CDN-hosted Chart.js can stall the "load" event in CI; wait for DOM only.
+    p.goto(f"{live_server}/", wait_until="domcontentloaded")
     p.wait_for_load_state("networkidle", timeout=10000)
     assert not errors, f"Uncaught JS errors on dashboard: {errors}"
 
@@ -21,7 +22,8 @@ def test_no_console_errors_on_dashboard(page_with_login, live_server):
             console_errors.append(msg.text)
 
     p.on("console", capture)
-    p.goto(f"{live_server}/")
+    # CDN-hosted Chart.js can stall the "load" event in CI; wait for DOM only.
+    p.goto(f"{live_server}/", wait_until="domcontentloaded")
     p.wait_for_load_state("networkidle", timeout=10000)
 
     # Filter out known benign errors:
@@ -124,7 +126,7 @@ def test_unauthenticated_redirect_to_login(page, live_server):
     Accessing dashboard without a token must redirect to /login
     (the JS in base.html handles this).
     """
-    page.goto(f"{live_server}/")
+    page.goto(f"{live_server}/", wait_until="domcontentloaded")
     # Wait for JS DOMContentLoaded redirect
     page.wait_for_load_state("networkidle", timeout=8000)
     assert "/login" in page.url, "Unauthenticated access must redirect to /login"
@@ -135,7 +137,7 @@ def test_no_js_errors_on_pcs_page(page_with_login, live_server):
     p = page_with_login
     errors = []
     p.on("pageerror", lambda e: errors.append(str(e)))
-    p.goto(f"{live_server}/pcs")
+    p.goto(f"{live_server}/pcs", wait_until="domcontentloaded")
     p.wait_for_load_state("networkidle", timeout=10000)
     assert not errors, f"JS errors on /pcs: {errors}"
 
@@ -145,7 +147,7 @@ def test_no_js_errors_on_tasks_page(page_with_login, live_server):
     p = page_with_login
     errors = []
     p.on("pageerror", lambda e: errors.append(str(e)))
-    p.goto(f"{live_server}/tasks")
+    p.goto(f"{live_server}/tasks", wait_until="domcontentloaded")
     p.wait_for_load_state("networkidle", timeout=10000)
     assert not errors, f"JS errors on /tasks: {errors}"
 
