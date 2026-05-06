@@ -81,15 +81,16 @@
       120,
       124,
       125,
-      129
+      129,
+      130
     ],
-    "pending_prs": [130]
+    "pending_prs": []
   },
   "priority": {
     "score": 0
   },
   "open_issues": {
-    "note": "M6進行中: PR #129 (CSP Phase 2 unsafe-inline除去) MERGED。PR #130 (N+1修正) CI待ち。Issue #121 CSP Phase 2完了・N+1解消完了。残: v1.0.0 Release準備。"
+    "note": "M6進行中: PR #129 (CSP Phase 2) MERGED。PR #130 (N+1修正) MERGED。Issue #121 残: v1.0.0 Release準備・groups.py N+1・style-src Phase 3。"
   },
   "milestones": {
     "M1": {
@@ -177,9 +178,9 @@
       "csp_nonce": "Phase 2 完了: script-src から 'unsafe-inline' 除去。inline handlers = 0"
     },
     "resume_point": {
-      "next_action": "PR #130 merge確認 → GitHub Release v0.6.0-beta 作成 → groups.py N+1修正 → style-src 'unsafe-inline' Phase 3",
-      "blocker": "なし (PR #130 CI pending のみ)",
-      "notes": "CSP Phase 2 完了: script-src 'unsafe-inline' 除去でXSS耐性大幅向上。test_csp_script_src_uses_nonce_not_unsafe_inline が strict 版に更新済み。N+1修正はPR #130でalerts/tasks CSV 5001→2クエリ。次セッション優先: PR #130 merge + GitHub Release v0.6.0-beta + Issue #121 残課題。"
+      "next_action": "Issue #121 残課題: groups.py N+1修正 (PCGroup.pcs.count() → subquery) + style-src 'unsafe-inline' Phase 3 + v1.0.0 リリース最終準備",
+      "blocker": "なし",
+      "notes": "CSP Phase 2 完了: script-src 'unsafe-inline' 除去でXSS耐性大幅向上。PR #130 N+1修正MERGED。GitHub Release v0.6.0-beta 作成済み。164 tests passed。次セッション優先: groups.py N+1修正 + Issue #121 完全クローズ + style-src Phase 3 (CSS 'unsafe-inline' 除去) + v1.0.0 本番リリース最終準備。"
     }
   },
   "learning": {
