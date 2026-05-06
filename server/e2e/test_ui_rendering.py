@@ -12,6 +12,13 @@ PAGES = [
     ("/scheduled-tasks", "PC-Ops Orchestrator - スケジュール"),
     ("/groups", "PC-Ops Orchestrator - PCグループ"),
     ("/alert-rules", "PC-Ops Orchestrator - アラートルール"),
+    ("/reports", "PC-Ops Orchestrator - レポート・分析"),
+    ("/agents", "PC-Ops Orchestrator - Agent管理"),
+    ("/settings", "PC-Ops Orchestrator - システム設定"),
+    ("/certs", "PC-Ops Orchestrator - 証明書管理"),
+    ("/backups", "PC-Ops Orchestrator - バックアップ管理"),
+    ("/notifications-config", "PC-Ops Orchestrator - 通知設定"),
+    ("/licenses", "PC-Ops Orchestrator - ライセンス管理"),
 ]
 
 

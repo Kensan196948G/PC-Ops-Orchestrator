@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}バックアップ管理{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">バックアップ管理</h2>
+    <p class="page-description">DB / 設定ファイルのバックアップスケジュールと履歴を管理し、リストア操作を提供します。</p>
+</div>
+
+<div class="card">
+    <div class="empty-state">
+        <h3>準備中</h3>
+        <p>このページは将来のマイルストーンで実装予定です。</p>
+        <ul>
+            <li>バックアップ履歴 (full / incremental)</li>
+            <li>スケジュール設定 (cron 式)</li>
+            <li>保管先設定 (local / S3 / Azure Blob)</li>
+            <li>リストア操作 (point-in-time recovery)</li>
+            <li>整合性チェック</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Agent管理{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">Agent管理</h2>
+    <p class="page-description">登録済み PowerShell Agent の一覧、APIキー管理、バージョン管理を提供します。</p>
+</div>
+
+<div class="card">
+    <div class="empty-state">
+        <h3>準備中</h3>
+        <p>このページは将来のマイルストーンで実装予定です。</p>
+        <ul>
+            <li>Agent 一覧 (CPU / メモリ / バージョン / 最終 heartbeat)</li>
+            <li>API キー一覧・ローテーション</li>
+            <li>Agent バージョン一括更新</li>
+            <li>未承認 Agent 承認フロー</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

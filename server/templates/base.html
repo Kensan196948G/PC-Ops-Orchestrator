@@ -22,7 +22,12 @@
                 </div>
             </div>
             <nav class="sidebar-nav">
-                <div class="nav-section-label">OPERATIONS</div>
+                <div class="nav-section" data-section="operations">
+                    <button class="nav-section-toggle" type="button" aria-expanded="true" aria-controls="nav-section-operations-items">
+                        <span class="nav-section-label">OPERATIONS</span>
+                        <svg class="nav-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="nav-section-items" id="nav-section-operations-items">
                 <a href="/" class="nav-item" data-page="dashboard">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
                     <span class="nav-label">Dashboard</span>
@@ -40,8 +45,19 @@
                     <span class="nav-label">アラート</span>
                     <span id="alerts-badge" class="nav-badge" style="display:none;">0</span>
                 </a>
+                <a href="/reports" class="nav-item" data-page="reports">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></span>
+                    <span class="nav-label">レポート・分析</span>
+                </a>
+                    </div>
+                </div>
 
-                <div class="nav-section-label">AUTOMATION</div>
+                <div class="nav-section" data-section="automation">
+                    <button class="nav-section-toggle" type="button" aria-expanded="true" aria-controls="nav-section-automation-items">
+                        <span class="nav-section-label">AUTOMATION</span>
+                        <svg class="nav-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="nav-section-items" id="nav-section-automation-items">
                 <a href="/scheduled-tasks" class="nav-item" data-page="scheduled-tasks">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
                     <span class="nav-label">スケジュール</span>
@@ -54,22 +70,49 @@
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07"/><path d="M20.45 20.45A10 10 0 0 0 20.45 3.55"/></svg></span>
                     <span class="nav-label">アラートルール</span>
                 </a>
+                <a href="/agents" class="nav-item" data-page="agents">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
+                    <span class="nav-label">Agent管理</span>
+                </a>
+                    </div>
+                </div>
 
-                <div class="nav-section-label">ADMIN</div>
+                <div class="nav-section" data-section="admin">
+                    <button class="nav-section-toggle" type="button" aria-expanded="true" aria-controls="nav-section-admin-items">
+                        <span class="nav-section-label">ADMIN</span>
+                        <svg class="nav-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="nav-section-items" id="nav-section-admin-items">
                 <a href="/users" class="nav-item" data-page="users" id="nav-users" style="display:none;">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
                     <span class="nav-label">ユーザー管理</span>
                 </a>
                 <a href="/audit" class="nav-item" data-page="audit" id="nav-audit" style="display:none;">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
-                    <span class="nav-label">操作ログ</span>
+                    <span class="nav-label">監査ログ</span>
                 </a>
-                {% if swagger_enabled %}
-                <a href="/api/docs/" class="nav-item" data-page="api-docs" id="nav-api-docs" target="_blank" rel="noopener">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
-                    <span class="nav-label">API ドキュメント</span>
+                <a href="/settings" class="nav-item" data-page="settings" id="nav-settings" style="display:none;">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+                    <span class="nav-label">システム設定</span>
                 </a>
-                {% endif %}
+                <a href="/certs" class="nav-item" data-page="certs" id="nav-certs" style="display:none;">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+                    <span class="nav-label">証明書管理</span>
+                </a>
+                <a href="/backups" class="nav-item" data-page="backups" id="nav-backups" style="display:none;">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span>
+                    <span class="nav-label">バックアップ管理</span>
+                </a>
+                <a href="/notifications-config" class="nav-item" data-page="notifications-config" id="nav-notif-cfg" style="display:none;">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg></span>
+                    <span class="nav-label">通知設定</span>
+                </a>
+                <a href="/licenses" class="nav-item" data-page="licenses" id="nav-licenses" style="display:none;">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="12" cy="15" r="2"/><path d="M12 12v1"/><path d="M12 17v1"/></svg></span>
+                    <span class="nav-label">ライセンス管理</span>
+                </a>
+                    </div>
+                </div>
             </nav>
             <div class="sidebar-footer">
                 <div class="avatar" id="user-avatar">--</div>
@@ -210,6 +253,13 @@
                 if (navAudit && (user.role === 'admin' || user.role === 'operator')) {
                     navAudit.style.display = '';
                 }
+                // ADMIN-only sections (settings/certs/backups/notif-cfg/licenses)
+                if (user.role === 'admin') {
+                    ['nav-settings', 'nav-certs', 'nav-backups', 'nav-notif-cfg', 'nav-licenses'].forEach((id) => {
+                        const el = document.getElementById(id);
+                        if (el) el.style.display = '';
+                    });
+                }
                 // Hide write-only actions for viewers (best-effort UX; API enforces auth)
                 if (user.role === 'viewer') {
                     document.body.classList.add('role-viewer');
@@ -234,6 +284,41 @@
                     currentPath.startsWith('/' + page) ||
                     (currentPath.includes('/pcs') && page === 'pcs'))) {
                     item.classList.add('active');
+                }
+            });
+
+            // Sidebar accordion: section toggle + state persistence
+            const NAV_STATE_KEY = 'navSectionsCollapsed';
+            let savedNavState = {};
+            try {
+                savedNavState = JSON.parse(localStorage.getItem(NAV_STATE_KEY) || '{}');
+            } catch (e) {
+                savedNavState = {};
+            }
+            const activeSection = document.querySelector('.nav-section .nav-item.active')?.closest('.nav-section');
+            document.querySelectorAll('.nav-section').forEach(section => {
+                const sectionId = section.dataset.section;
+                if (!sectionId) return;
+                const btn = section.querySelector('.nav-section-toggle');
+                const shouldCollapse = savedNavState[sectionId] === true && section !== activeSection;
+                if (shouldCollapse) {
+                    section.classList.add('collapsed');
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                } else {
+                    section.classList.remove('collapsed');
+                    if (btn) btn.setAttribute('aria-expanded', 'true');
+                }
+                if (btn) {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const collapsed = section.classList.toggle('collapsed');
+                        btn.setAttribute('aria-expanded', String(!collapsed));
+                        try {
+                            const state = JSON.parse(localStorage.getItem(NAV_STATE_KEY) || '{}');
+                            state[sectionId] = collapsed;
+                            localStorage.setItem(NAV_STATE_KEY, JSON.stringify(state));
+                        } catch (err) {}
+                    });
                 }
             });
         });
