@@ -9,7 +9,7 @@
     "lint_errors_target": 0,
     "lint_errors_current": 0,
     "open_issues_target": 0,
-    "open_issues_current": 4,
+    "open_issues_current": 5,
     "ci_success": true
   },
   "project": {
@@ -28,20 +28,20 @@
   },
   "completed_issues": [
     2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 25, 26, 27, 31, 32, 37, 39, 41, 42,
-    45, 46, 47, 48, 57, 58, 59, 65, 74, 75, 86
+    45, 46, 47, 48, 57, 58, 59, 65, 74, 75, 86, 88, 93
   ],
   "merged_prs": [
     1, 6, 15, 17, 20, 21, 28, 29, 30, 33, 35, 36, 38, 40, 43, 44,
-    53, 54, 55, 56, 60, 61, 62, 63, 64, 66
+    53, 54, 55, 56, 60, 61, 62, 63, 64, 66, 89, 94
   ],
   "open_prs": [],
-  "open_issues": [76, 77, 78, 87],
+  "open_issues": [76, 77, 78, 87, 97],
   "milestones": {
     "M1": "完了 (Flask管理サーバー基盤・Agent・JWT/API Key 認証)",
     "M2": "完了 (PC一覧/詳細・タスク管理・アラート管理・CSV エクスポート)",
     "M3": "完了 (M3-1 スケジュールタスク / M3-2 PCグループ / M3-3 アラートルール / M3-4 OpenAPI Swagger UI)",
     "M4": "完了 (M4-1 RBAC / M4-2 通知統合 / M4-3 Playwright E2E / Improve: /api/metrics + rate limit)",
-    "M5": "進行中 (M5-1 監査ログ高度化✅ / M5-2 PC一括タスク実行✅ / M5-3 月次レポート⏳ #76 / M5-4 ダークモード⏳ #77 / M5-5 ユーザー管理強化⏳ #78)",
+    "M5": "進行中 (M5-1 監査ログ高度化✅ / M5-2 PC一括タスク実行✅ / Claude Design 同期✅ #88/#93 / M5-3 月次レポート⏳ #76 / M5-4 ダークモード⏳ #77 / M5-5 ユーザー管理強化⏳ #78)",
     "Security": "P1 #87 - 9 CVE (flask/flask-cors/pyjwt/werkzeug/python-dotenv) 依存更新待ち"
   },
   "features_implemented": [
@@ -74,7 +74,8 @@
     "/api/metrics + 書き込み系 rate limit (M4 Improve)",
     "監査ログ高度化: 日付範囲フィルタ・CSV エクスポート (M5-1 / Issue #74)",
     "PC 一括タスク実行: チェックボックス選択・bulk API (M5-2 / Issue #75)",
-    "Claude Design 対応 UI 全面刷新 (ライトテーマ・サイドバー SVG アイコン・Login 2カラム)"
+    "Claude Design 対応 UI 全面刷新 (ライトテーマ・サイドバー SVG アイコン・Login 2カラム)",
+    "Topbar (検索/⌘K/環境ピル/通知ベル/同期ボタン/タスク作成) + Sidebar カウントバッジ (PC/Tasks/Agents) — Issue #93 / PR #94"
   ],
   "verification_results": {
     "session_2026_05_06": {
@@ -87,6 +88,6 @@
       "ci_run": "25420370542 - Flask + ruff + Pester + Agent Teams すべて green、PS Test 進行中"
     }
   },
-  "last_updated": "2026-05-06T15:43:00Z",
-  "session_notes": "2026-05-06 セッション: Issue #86 (CI E2E ログイン文字列アサーション破壊) を修正し commit 406beaf を push、Issue 自動 close。バックエンド検証 (pytest 178/178)・ruff・bandit・pip-audit を実行し、9 CVE を P1 Issue #87 として起票。Claude Design UI 刷新済み・M5-1/M5-2 完了。次セッション: M5-3 月次レポート (#76) 実装、または P1 #87 依存更新（Phase1: flask/pyjwt/werkzeug/python-dotenv マイナーアップデート）から着手。"
+  "last_updated": "2026-05-06T08:35:00Z",
+  "session_notes": "2026-05-06 セッション: Issue #93 (Claude Design Topbar + Sidebar Badge) PR #94 を実装→ STABLE 達成 → admin squash merge (8d93c02)。CodeRabbit Major #1 (agents-badge fetch 追加) は Memory 教訓 (未実装 API → console.error 404 → Playwright FAIL) により却下、Major #2 (手動同期トースト誤表示) は P3 Issue #97 として外出し。前回 PR #89 (Issue #88) も merged_prs に追記。次セッション: M5-3 月次レポート (#76) 実装、または P1 #87 依存更新（Phase1: flask/pyjwt/werkzeug/python-dotenv マイナーアップデート）から着手。"
 }

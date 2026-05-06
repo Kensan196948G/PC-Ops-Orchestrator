@@ -458,12 +458,57 @@ sequenceDiagram
 
 ---
 
+## 📅 マイルストーン進捗
+
+> プロジェクト登録: **2026-04-28** ／ 本番リリース期限: **2026-10-28**（絶対厳守 / 残 5 ヶ月強）
+
+```mermaid
+gantt
+    title 6ヶ月マイルストーン (2026-04-28 〜 2026-10-28)
+    dateFormat YYYY-MM-DD
+    section M1〜M2 完了
+    M1 Flask基盤・Agent・JWT      :done, m1, 2026-04-28, 30d
+    M2 PC/Task/Alert + CSV       :done, m2, 2026-05-01, 25d
+    section M3〜M4 完了
+    M3 スケジュール/グループ/Swagger :done, m3, 2026-05-03, 20d
+    M4 RBAC/通知/E2E/metrics      :done, m4, 2026-05-04, 15d
+    section M5 進行中
+    M5-1 監査ログ高度化           :done, m51, 2026-05-05, 1d
+    M5-2 PC一括タスク実行         :done, m52, 2026-05-05, 1d
+    M5-Design Topbar+Sidebar     :done, m5d, 2026-05-06, 1d
+    M5-3 月次レポート (#76)       :active, m53, 2026-05-07, 4d
+    M5-4 ダークモード (#77)       :m54, after m53, 4d
+    M5-5 ユーザー管理強化 (#78)   :m55, after m54, 4d
+    section M6 リリース準備
+    Verify / Bug修正              :m6v, 2026-09-01, 30d
+    本番リリース                  :crit, m6r, 2026-10-28, 1d
+```
+
+| Milestone | 目的 | 状態 | 主な成果 |
+|---|---|:---:|---|
+| 🏛️ **M1** | Flask 管理サーバー基盤 | ✅ 完了 | `app.py` / 9 Blueprint / JWT + API Key + RBAC |
+| 📊 **M2** | PC・タスク・アラート CRUD | ✅ 完了 | PC一覧/詳細・タスク管理・CSV エクスポート |
+| 🗓️ **M3** | スケジュール・グループ・Swagger | ✅ 完了 | APScheduler / PCグループ / OpenAPI 3.0 |
+| 🔐 **M4** | RBAC・通知・E2E | ✅ 完了 | admin/operator/viewer / Slack/Teams/Email / Playwright 94 tests |
+| 🚧 **M5** | M5-1 監査ログ✅ / M5-2 一括実行✅ / Topbar+Badge✅ / 月次レポート⏳ #76 / ダーク⏳ #77 / ユーザー強化⏳ #78 | 🟡 進行中 | Issue #74/#75/#88/#93 ✅・残 3 件 |
+| 🚀 **M6** | リリース準備・本番移行 | 🔜 計画中 | CHANGELOG・タグ付け・本番デプロイ |
+
+### 🆕 M5 直近完了 (2026-05-06)
+
+| Issue / PR | 内容 | 主な変更 |
+|---|---|---|
+| 🎨 **#88 / PR #89** | Claude Design 同期: 監査ログ + 7 新規ページ | base.html / style.css / 7 templates |
+| ✨ **#93 / PR #94** | Topbar (検索⌘K/環境/通知/同期/タスク作成) + Sidebar カウントバッジ | base.html (handler / kbd) + style.css (responsive) + E2E 5 件追加 |
+| 📌 **#97 (open)** | PR #94 後続: 手動同期エラートースト誤表示 (CodeRabbit Major Duplicate) | P3 / `throwOnError` フラグ案 |
+
+---
+
 ## 🧪 品質・テスト状況
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
 | **API 拡張テスト（Python）** | **163項目** | **✅ PASS** |
-| **WebUI E2E テスト（Playwright）** | **94項目** | **✅ PASS** |
+| **WebUI E2E テスト（Playwright）** | **99項目** | **✅ PASS** |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
 | Agent Teams E2E テスト | 複数 | ✅ PASS |
