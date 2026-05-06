@@ -149,55 +149,37 @@
     }
   },
   "session_summary": {
-    "id": "20260506-190001-PC-Ops-Orchestrator",
-    "loop_phase": "Monitor → Build (M5-3/M5-5) → Verify → Improve (M6 準備)",
-    "duration_minutes": 300,
+    "id": "20260506-220001-PC-Ops-Orchestrator",
+    "loop_phase": "Monitor → Verify (CI修復) → Build (CSP Phase 2 + N+1修正) → Improve (state/Memory)",
+    "duration_minutes": 245,
     "prs_merged": [
-      114,
-      116,
-      117,
-      120
+      129
     ],
-    "prs_pending": [],
-    "issues_closed": [
-      76,
-      78,
-      102,
-      115,
-      118,
-      119
-    ],
-    "issues_opened": [
-      121
-    ],
+    "prs_pending": [130],
+    "issues_closed": [128],
+    "issues_opened": [],
     "completed": [
-      "PR #114 (Issue #102 close): innerHTML XSS Step2 — tasks.js/dashboard.js/pc_detail.js 全 14 箇所 escapeHTML/escHtml wrap",
-      "PR #116 (Issue #76 close): M5-3 月次レポート API — /api/reports/monthly JSON/CSV/PDF + reportlab IPA Gothic + 13 テスト",
-      "PR #117 (Issue #78 close): M5-5 ユーザー管理強化 — パスワードポリシー (大小英字+数字+記号) + ログイン失敗5回ロック + unlock API + 強度インジケーター + 7 テスト",
-      "PR #120: M5-3/M5-5 Playwright E2E テスト 6 件 (reports/users ページ)",
-      "GitHub Release v0.5.0 作成 — M5 完了の正式マーク",
-      "CHANGELOG.md 追加 — M1〜M5 変更履歴 (v0.1.0〜v0.5.0)",
-      "docs/deployment.md 追加 — 本番デプロイ手順書 (Systemd/Nginx/ロールバック)",
-      ".github/workflows/security-audit.yml 追加 — pip-audit 週次スケジュール CI",
-      "OpenAPI v1.1.0 — reports/* + unlock エンドポイント追加",
-      ".env.example 充実化 — JWT/CORS/Security Headers/通知設定追記",
-      "Issue #121 (M6-1) 起票 — CHANGELOG/デプロイ手順/pip-audit CI/CSP nonce",
-      "test_reports.py / test_user_security.py を CI テストスイートに追加",
-      "Stale CI Issues #115/#118/#119 クローズ"
+      "PR #129 MERGED: CSP Phase 2 — 全 16 テンプレートのインラインハンドラを addEventListener に移行、'unsafe-inline' 除去",
+      "stub-actions.js 新規作成 — data-stub-alert パターンで alert() スタブを共通管理",
+      "test_csp_script_src_uses_nonce_not_unsafe_inline (strict 版) 追加",
+      "PR #130 作成中 (CI待ち): N+1 クエリ修正 — alerts/tasks CSV エクスポートに joinedload 追加 (5001→2クエリ)",
+      "CHANGELOG.md 更新 — CSP Phase 2 / N+1 修正 追記",
+      "Issue #121 進捗コメント追加",
+      "Issue #128 (stale CI failure) クローズ",
+      "Memory 更新: project_m6_in_progress.md / feedback_csp_phase2_migration.md"
     ],
-    "ci_status": "GREEN — PR #114/#116/#117/#120 all MERGED, main stable",
+    "ci_status": "GREEN — PR #129 MERGED / PR #130 CI待ち (PowerShell tests pending)",
     "verification": {
-      "pytest_unit": "163 passed (全テストスイート: test_api + test_api_extended + test_security_backend + test_reports + test_user_security)",
+      "pytest_unit": "164 passed (全テストスイート: test_api + test_api_extended + test_security_backend + test_reports + test_user_security)",
       "ruff_check": "All checks passed",
-      "ruff_format": "47 files already formatted",
-      "bandit": "Medium=2 (既知 noqa: 0.0.0.0 + urllib.urlopen) / High=0",
-      "github_ci": "PR #114/#116/#117/#120 全 SUCCESS → MERGED",
-      "pip_audit": "9 CVE 全件解消済み (前セッション)"
+      "ruff_format": "48 files already formatted",
+      "github_ci": "PR #129 全 CI SUCCESS → MERGED (squash)",
+      "csp_nonce": "Phase 2 完了: script-src から 'unsafe-inline' 除去。inline handlers = 0"
     },
     "resume_point": {
-      "next_action": "M6 Issue #121 — CSP Phase 2 (onclick を addEventListener に移行して 'unsafe-inline' 除去) / パフォーマンス最適化 / GitHub Release v1.0.0 準備",
-      "blocker": "なし",
-      "notes": "本セッション全 7 PR merged で main stable。Issue #77/#87/#97/#98/#101/#95/#96/#104/#106/#108 close。Admin ページ 7 種 (reports/agents/settings/certs/backups/notifications-config/licenses) はダミーデータ UI 実装済み・API 接続が次マイルストーン。M5 残課題は #76 月次 API / #78 ユーザー管理 / #102 innerHTML XSS Step2。"
+      "next_action": "PR #130 merge確認 → GitHub Release v0.6.0-beta 作成 → groups.py N+1修正 → style-src 'unsafe-inline' Phase 3",
+      "blocker": "なし (PR #130 CI pending のみ)",
+      "notes": "CSP Phase 2 完了: script-src 'unsafe-inline' 除去でXSS耐性大幅向上。test_csp_script_src_uses_nonce_not_unsafe_inline が strict 版に更新済み。N+1修正はPR #130でalerts/tasks CSV 5001→2クエリ。次セッション優先: PR #130 merge + GitHub Release v0.6.0-beta + Issue #121 残課題。"
     }
   },
   "learning": {
