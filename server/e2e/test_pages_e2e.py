@@ -22,7 +22,9 @@ def test_page_renders_after_login(page_with_login, live_server, path, page_name)
     errors = []
     p.on("pageerror", lambda err: errors.append(str(err)))
 
-    p.goto(f"{live_server}{path}")
+    # CDN-hosted Chart.js can stall the "load" event in CI; wait for DOM only
+    # then converge on networkidle so external CDNs do not block the goto.
+    p.goto(f"{live_server}{path}", wait_until="domcontentloaded")
     p.wait_for_load_state("networkidle", timeout=10000)
 
     assert p.url == f"{live_server}{path}", f"URL mismatch for {path}"
