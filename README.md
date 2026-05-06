@@ -586,6 +586,41 @@ gantt
 | 📌 Jira | チケット自動生成 | `config/config.json` |
 | 🔐 SIEM | セキュリティログ連携 | `config/config.json` |
 
+### 🐰 + 🤖 Codex review / CodeRabbit 統合レビュー
+
+PR 作成前と Verify フェーズで **Codex review** と **CodeRabbit** を併用し、品質ゲートを通します。両者は補完関係（CodeRabbit は静的解析 40+ 解析器、Codex は設計・ロジックの深いレビュー）にあり、ClaudeOS v8 の標準ワークフローに組み込まれています。
+
+```mermaid
+flowchart LR
+    A[PR 作成] --> B[🐰 CodeRabbit<br/>静的解析 + AI]
+    A --> C[🤖 Codex review<br/>設計レビュー]
+    B --> D{Critical / High<br/>指摘?}
+    C --> D
+    D -- yes --> E[同 PR 内で修正<br/>commit + push]
+    E --> B
+    D -- no --> F[CI 緑 + STABLE 判定]
+    F --> G[Squash merge]
+    G --> H[Issue 自動 close]
+```
+
+| ツール | 役割 | コマンド | 必須タイミング |
+|---|---|---|---|
+| 🐰 **CodeRabbit** | 静的解析 + AI（40+ 解析器） | `/coderabbit:review committed --base main` | PR 作成前・修正後再確認 |
+| 🤖 **Codex review** | 設計・ロジック・保守性レビュー | `/codex:review --base main --background` → `/codex:status` → `/codex:result` | PR 作成前・Verify フェーズ |
+| 🤖 **Codex 対抗レビュー** | 認証・DB・並列処理・リリース直前 | `/codex:adversarial-review --base main --background` | 認証/認可/DB スキーマ/並列処理 変更時 |
+| 🤖 **Codex rescue** | 同一エラー 2 回目以降のデバッグ | `/codex:rescue --background investigate` | CI 失敗 2 回目・大規模設計変更前 |
+
+**指摘対応ルール:**
+
+| 重大度 | 対応 |
+|---|---|
+| 🔴 Critical | 必須修正。未修正で merge **禁止** |
+| 🟠 High | 必須修正。未修正で merge **禁止** |
+| 🟡 Medium | 原則修正。技術的理由があれば理由を記録してスキップ可 |
+| ⚪ Low | 任意。時間・Token 残量に応じて対応 |
+
+無限ループ防止: 同一ファイルへの修正は最大 3 ラウンド、全体レビューループは最大 5 ラウンド。上限到達時は残指摘を Issue 化して次フェーズへ進む。
+
 ### 📊 観測性 (Prometheus メトリクス)
 
 `/api/metrics` で **Prometheus exposition format** によるメトリクスを露出します（認証不要、内部ネットワーク前提）。

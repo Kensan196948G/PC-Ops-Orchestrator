@@ -36,26 +36,41 @@ Codex が利用可能な場合のみ実行する。**Codex が使えなくても
 
 ※リリース直前のみ: `/codex:setup --enable-review-gate`
 
-### ステップ 3: 自律開発の開始
+### ステップ 3: 自律開発の開始（CTO 全権委任モード）
 
-> **以降、全てをCTOの判断に任せます。CTO全権委任で自律開発を続けてください。**
+> **以降、全てを CTO の判断に任せます。次のセッションを気にせず、本セッション内で
+> 設定時間まで CTO 全権委任で自律開発ループを継続してください。**
 
-- ⏱ **設定された時間から5時間作業を厳密に守ってください。** セッション開始時刻を必ず確認すること。
-- 🔁 設定された時間内で **Monitor → Development → Verify → Improvement** をループ（ループ回数はCTO判断でOK）で進めてください。ループ回数は KPI 状態・CI 状態・進捗により動的に決定する。
-- 🤖 **AgentTeams機能を大いに活用してください。**
-- ⚡ **Auto Mode による自律開発を実行してください。**
-- 📊 全プロセスや状況を可視化してください。
+- ⏱ **設定された時間から 5 時間作業を厳密に守ってください。** セッション開始時刻を必ず確認すること。**5 時間到達時は終了処理（commit / push / PR / state 更新 / Memory 保存）を完了させて停止する。**
+- 🔁 設定された時間内で **Monitor → Development → Verify → Improvement** をループ（ループ回数は CTO 判断で OK）で進めてください。ループ回数は KPI 状態・CI 状態・進捗により動的に決定する。
+- 🤖 **AgentTeams 機能を大いに活用してください。**（複雑タスクは並列起動、軽量タスクは SubAgent）
+- ⚡ **Auto Mode による自律開発を実行してください。**（ユーザー確認なしに進める。Issue → 設計 → 実装 → 検証 → PR → merge を自己完結）
+- 📊 全プロセスや状況を可視化してください。（タスクリスト・PR 状態・CI 進捗・KPI を逐次表示）
 - 📝 ドキュメントファイルも常に確認・更新してください。
-- 📖 README.md は分かりやすく、表とアイコン多用、ダイアグラム図も活用して常に更新してください。
-- 📋 **GitHub Projects も常に更新してください。**
+- 📖 README.md は分かりやすく、**表とアイコンを多用、Mermaid 等のダイアグラム図も活用して常に更新**してください。
+- 📋 **GitHub Projects も常に更新してください。**（Inbox → Backlog → Ready → Design → Development → Verify → Deploy Gate → Done / Blocked）
 
-**プロジェクト期間の制約（最優先）:**
-- プロジェクト登録から **6ヶ月後の本番リリース** は厳守
-- 実行は Linux Cron（月〜土、1セッション最大5時間）
-- 開発フェーズの配分はCTO判断で自由に変更してOK（期限内に収めること）
-- GitHub Projects に6ヶ月後のマイルストーンを設定・維持すること
+#### 🐰 + 🤖 Codex review / CodeRabbit を Verify フェーズで両方活用する
 
-ユーザーが具体的な指示を出していない場合は、Monitor フェーズから開始し、
+Verify フェーズおよび PR 作成前は **Codex と CodeRabbit を併用**して品質ゲートを通すこと。
+
+| ツール | 役割 | コマンド | タイミング |
+|---|---|---|---|
+| 🐰 **CodeRabbit** | 静的解析 + AI（40+ 解析器） | `/coderabbit:review committed --base main` | PR 作成前・Verify フェーズ・修正後再確認 |
+| 🤖 **Codex review** | 設計・ロジックの深いレビュー | `/codex:review --base main --background` → `/codex:status` → `/codex:result` | PR 作成前・Verify フェーズ |
+| 🤖 **Codex 対抗レビュー** | 認証・DB・並列処理・リリース直前 | `/codex:adversarial-review --base main --background` | 認証/認可/DBスキーマ/並列処理変更時 |
+| 🤖 **Codex rescue** | 同一エラー 2 回目以降 / デバッグ | `/codex:rescue --background investigate` | CI 失敗 2 回目・大規模設計変更前 |
+
+両ツールの指摘 (Critical / High) は**同 PR 内で必ず解消**してから merge すること。Medium は理由付きでスキップ可、Low は時間・Token 残量に応じて対応。
+
+**プロジェクト期間の制約（絶対厳守）:**
+- 📅 **プロジェクト期間は 6 ヶ月**（登録日から半年）
+- 🚀 **本番リリース期限は登録から 6 ヶ月後**（PC-Ops-Orchestrator: 2026-04-28 開始 → **2026-10-28 リリース**）
+- ⏰ **作業時間は 1 セッション最大 5 時間**（Linux Cron 月〜土・300 分制限）
+- 🔧 **開発フェーズの配分は進み具合により CTO 判断で自由に変更してOK**。ただし**半年後の本番リリースは絶対厳守**
+- 📋 GitHub Projects に **6 ヶ月後のマイルストーン (Production Release) を設定・維持**すること
+
+**ユーザーが具体的な指示を出していない場合**は、Monitor フェーズから開始し、
 GitHub Projects / Issues / CI の状態を確認して次のアクションを決定してください。
 
 ### ステップ 4: Memory / 前回セッションからの復元

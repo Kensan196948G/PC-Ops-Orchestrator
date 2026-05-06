@@ -2,7 +2,29 @@
   "project": {
     "name": "PC-Ops-Orchestrator",
     "start_date": "2026-04-28",
-    "release_deadline": "2026-10-28"
+    "release_deadline": "2026-10-28",
+    "duration_months": 6,
+    "registered_at": "2026-04-28",
+    "github_milestones": {
+      "production_release_v1": {
+        "number": 1,
+        "title": "🚀 Production Release v1.0",
+        "due_on": "2026-10-27T00:00:00Z",
+        "url": "https://github.com/Kensan196948G/PC-Ops-Orchestrator/milestone/1"
+      },
+      "m5": {
+        "number": 2,
+        "title": "M5 — 監査・レポート・UI 強化",
+        "due_on": "2026-08-30T00:00:00Z",
+        "url": "https://github.com/Kensan196948G/PC-Ops-Orchestrator/milestone/2"
+      },
+      "m6": {
+        "number": 3,
+        "title": "M6 — リリース準備・本番移行",
+        "due_on": "2026-10-14T00:00:00Z",
+        "url": "https://github.com/Kensan196948G/PC-Ops-Orchestrator/milestone/3"
+      }
+    }
   },
   "phase": {
     "current": "verify",
