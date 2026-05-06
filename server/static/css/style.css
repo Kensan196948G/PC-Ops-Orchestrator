@@ -37,7 +37,92 @@
     --card-bg: var(--bg-card);
     --hover-bg: var(--bg-hover);
     --border-color: var(--border);
+    /* ── Focus ring (a11y; WCAG 2.1 AA visible keyboard focus) ── */
+    --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.45);
 }
+
+/* ── Dark theme override ── */
+/* Applied via [data-theme="dark"] on <html>. The toggle in base.html flips
+   this attribute and persists the choice in localStorage. Components keep
+   referencing the same CSS variables, so no per-element override is needed. */
+[data-theme="dark"] {
+    --bg-primary: #0e1018;
+    --bg-secondary: #161924;
+    --bg-tertiary: #1c2030;
+    --bg-card: #1a1d2a;
+    --bg-hover: #232839;
+    --bg-elevated: #2a2f43;
+    --text-primary: #e6e9f4;
+    --text-secondary: #a0a7c0;
+    --text-muted: #6c7390;
+    --border: #2a2f43;
+    --border-strong: #3a4060;
+    --accent: #4f8cff;
+    --accent-2: #6fa1ff;
+    --accent-soft: rgba(79, 140, 255, 0.18);
+    --accent-hover: #6fa1ff;
+    --success: #22c55e;
+    --success-soft: rgba(34, 197, 94, 0.18);
+    --warning: #f59e0b;
+    --warning-soft: rgba(245, 158, 11, 0.18);
+    --danger: #ef4444;
+    --danger-soft: rgba(239, 68, 68, 0.18);
+    --info: #06b6d4;
+    --info-soft: rgba(6, 182, 212, 0.18);
+    --purple: #a78bfa;
+    --purple-soft: rgba(167, 139, 250, 0.18);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55), 0 4px 8px rgba(0, 0, 0, 0.4);
+    --focus-ring: 0 0 0 3px rgba(111, 161, 255, 0.55);
+    color-scheme: dark;
+}
+
+/* Match OS preference for first-time visitors who have not toggled yet. */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+        color-scheme: dark;
+    }
+}
+
+/* ── A11y: visible keyboard focus on interactive elements ── */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* ── Theme toggle button (Topbar) ── */
+.theme-toggle {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: var(--radius);
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.theme-toggle:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+}
+.theme-toggle svg {
+    width: 16px;
+    height: 16px;
+}
+[data-theme="dark"] .theme-toggle .icon-sun { display: inline-block; }
+[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+html:not([data-theme="dark"]) .theme-toggle .icon-sun { display: none; }
+html:not([data-theme="dark"]) .theme-toggle .icon-moon { display: inline-block; }
 
 * {
     margin: 0;

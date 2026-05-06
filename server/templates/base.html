@@ -6,6 +6,17 @@
     <title>PC-Ops Orchestrator - {% block title %}Dashboard{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Apply persisted theme before paint to avoid a flash of light theme (FOUC). -->
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('theme');
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = saved || (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) { /* ignore storage errors */ }
+        })();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     {% block head %}{% endblock %}
 </head>
@@ -154,6 +165,10 @@
                         <span>タスク発行</span>
                     </a>
                     <span class="topbar-divider" aria-hidden="true"></span>
+                    <button class="theme-toggle" id="topbar-theme-toggle" type="button" title="テーマ切替" aria-label="ライト/ダーク切替" aria-pressed="false">
+                        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    </button>
                     <a class="icon-btn" href="/alerts" id="topbar-bell" title="通知" aria-label="通知">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                         <span id="topbar-bell-badge" class="topbar-bell-badge" style="display:none;">0</span>
@@ -402,6 +417,25 @@
                         topbarSearch.focus();
                         topbarSearch.select();
                     }
+                });
+            }
+
+            // Theme toggle (light/dark). Initial value was applied in <head>
+            // before paint. Here we just sync the aria-pressed state and wire
+            // the click handler.
+            const themeToggle = document.getElementById('topbar-theme-toggle');
+            if (themeToggle) {
+                const syncPressed = () => {
+                    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                    themeToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+                };
+                syncPressed();
+                themeToggle.addEventListener('click', () => {
+                    const current = document.documentElement.getAttribute('data-theme') || 'light';
+                    const next = current === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', next);
+                    try { localStorage.setItem('theme', next); } catch (e) {}
+                    syncPressed();
                 });
             }
 
