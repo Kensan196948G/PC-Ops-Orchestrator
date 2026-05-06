@@ -21,11 +21,13 @@ def setup_module():
     with app.app_context():
         db.create_all()
         if not User.query.filter_by(username="admin").first():
-            db.session.add(User(
-                username="admin",
-                password_hash=hash_password("admin"),
-                role="admin",
-            ))
+            db.session.add(
+                User(
+                    username="admin",
+                    password_hash=hash_password("admin"),
+                    role="admin",
+                )
+            )
             db.session.commit()
 
 
@@ -51,17 +53,31 @@ def auth(path, method="GET", token=None, body=None):
 
 
 def test_weak_password_rejected(admin_token):
-    r = auth("/api/auth/users", "POST", admin_token, {
-        "username": "weakpw", "password": "simple123", "role": "viewer",
-    })
+    r = auth(
+        "/api/auth/users",
+        "POST",
+        admin_token,
+        {
+            "username": "weakpw",
+            "password": "simple123",
+            "role": "viewer",
+        },
+    )
     assert r.status_code == 400
     assert "パスワード" in r.get_json()["error"]
 
 
 def test_strong_password_accepted(admin_token):
-    r = auth("/api/auth/users", "POST", admin_token, {
-        "username": "strongpw_user", "password": "StrongPass1!", "role": "viewer",
-    })
+    r = auth(
+        "/api/auth/users",
+        "POST",
+        admin_token,
+        {
+            "username": "strongpw_user",
+            "password": "StrongPass1!",
+            "role": "viewer",
+        },
+    )
     assert r.status_code == 201
     uid = r.get_json()["user"]["id"]
     auth(f"/api/auth/users/{uid}", "DELETE", admin_token)
@@ -71,16 +87,29 @@ def test_strong_password_accepted(admin_token):
 
 
 def test_last_login_set_after_login(admin_token):
-    r = auth("/api/auth/users", "POST", admin_token, {
-        "username": "ll_test_user", "password": "LastLog1!", "role": "viewer",
-    })
+    r = auth(
+        "/api/auth/users",
+        "POST",
+        admin_token,
+        {
+            "username": "ll_test_user",
+            "password": "LastLog1!",
+            "role": "viewer",
+        },
+    )
     assert r.status_code == 201
     uid = r.get_json()["user"]["id"]
     assert r.get_json()["user"]["last_login"] is None
 
-    client.post("/api/auth/login", json={"username": "ll_test_user", "password": "LastLog1!"}, headers={"Content-Type": "application/json"})
+    client.post(
+        "/api/auth/login",
+        json={"username": "ll_test_user", "password": "LastLog1!"},
+        headers={"Content-Type": "application/json"},
+    )
 
-    r2 = client.get("/api/auth/users", headers={"Authorization": f"Bearer {admin_token}"})
+    r2 = client.get(
+        "/api/auth/users", headers={"Authorization": f"Bearer {admin_token}"}
+    )
     users = {u["id"]: u for u in r2.get_json()["users"]}
     assert users[uid]["last_login"] is not None
 
@@ -91,25 +120,38 @@ def test_last_login_set_after_login(admin_token):
 
 
 def test_account_locks_after_5_failures(admin_token):
-    r = auth("/api/auth/users", "POST", admin_token, {
-        "username": "lock_target", "password": "LockMe99!", "role": "viewer",
-    })
+    r = auth(
+        "/api/auth/users",
+        "POST",
+        admin_token,
+        {
+            "username": "lock_target",
+            "password": "LockMe99!",
+            "role": "viewer",
+        },
+    )
     assert r.status_code == 201
     uid = r.get_json()["user"]["id"]
 
     for _ in range(5):
-        client.post("/api/auth/login",
-                    json={"username": "lock_target", "password": "WrongPass!"},
-                    headers={"Content-Type": "application/json"})
+        client.post(
+            "/api/auth/login",
+            json={"username": "lock_target", "password": "WrongPass!"},
+            headers={"Content-Type": "application/json"},
+        )
 
-    r2 = client.post("/api/auth/login",
-                     json={"username": "lock_target", "password": "LockMe99!"},
-                     headers={"Content-Type": "application/json"})
+    r2 = client.post(
+        "/api/auth/login",
+        json={"username": "lock_target", "password": "LockMe99!"},
+        headers={"Content-Type": "application/json"},
+    )
     assert r2.status_code == 403
     body = r2.get_json()
     assert "ロック" in body["error"]
 
-    users_r = client.get("/api/auth/users", headers={"Authorization": f"Bearer {admin_token}"})
+    users_r = client.get(
+        "/api/auth/users", headers={"Authorization": f"Bearer {admin_token}"}
+    )
     users = {u["id"]: u for u in users_r.get_json()["users"]}
     assert users[uid]["is_locked"] is True
     assert users[uid]["failed_login_count"] >= 5
@@ -121,24 +163,35 @@ def test_account_locks_after_5_failures(admin_token):
 
 
 def test_unlock_user(admin_token):
-    r = auth("/api/auth/users", "POST", admin_token, {
-        "username": "unlock_target", "password": "Unlock99!", "role": "viewer",
-    })
+    r = auth(
+        "/api/auth/users",
+        "POST",
+        admin_token,
+        {
+            "username": "unlock_target",
+            "password": "Unlock99!",
+            "role": "viewer",
+        },
+    )
     uid = r.get_json()["user"]["id"]
 
     for _ in range(5):
-        client.post("/api/auth/login",
-                    json={"username": "unlock_target", "password": "Wrong!Pass"},
-                    headers={"Content-Type": "application/json"})
+        client.post(
+            "/api/auth/login",
+            json={"username": "unlock_target", "password": "Wrong!Pass"},
+            headers={"Content-Type": "application/json"},
+        )
 
     r2 = auth(f"/api/auth/users/{uid}/unlock", "POST", admin_token)
     assert r2.status_code == 200
     assert r2.get_json()["user"]["is_locked"] is False
     assert r2.get_json()["user"]["failed_login_count"] == 0
 
-    r3 = client.post("/api/auth/login",
-                     json={"username": "unlock_target", "password": "Unlock99!"},
-                     headers={"Content-Type": "application/json"})
+    r3 = client.post(
+        "/api/auth/login",
+        json={"username": "unlock_target", "password": "Unlock99!"},
+        headers={"Content-Type": "application/json"},
+    )
     assert r3.status_code == 200
 
     auth(f"/api/auth/users/{uid}", "DELETE", admin_token)
@@ -153,9 +206,16 @@ def test_unlock_nonexistent_user(admin_token):
 
 
 def test_user_to_dict_includes_new_fields(admin_token):
-    r = auth("/api/auth/users", "POST", admin_token, {
-        "username": "field_check", "password": "FieldCheck1!", "role": "viewer",
-    })
+    r = auth(
+        "/api/auth/users",
+        "POST",
+        admin_token,
+        {
+            "username": "field_check",
+            "password": "FieldCheck1!",
+            "role": "viewer",
+        },
+    )
     u = r.get_json()["user"]
     assert "last_login" in u
     assert "failed_login_count" in u
