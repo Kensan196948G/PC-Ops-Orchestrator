@@ -676,6 +676,17 @@ body.login-body {
     flex-wrap: wrap;
 }
 
+.page-actions .form-input {
+    width: auto;
+    min-width: 120px;
+    max-width: 200px;
+}
+
+.page-actions .filter-search {
+    min-width: 180px;
+    max-width: 260px;
+}
+
 /* ── Cards ── */
 .card {
     background: var(--bg-card);
