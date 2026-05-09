@@ -2,96 +2,218 @@
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 <div class="page-header">
-    <h2 class="page-title">Dashboard</h2>
-    <p class="page-description" id="last-update">---</p>
-    <button class="btn btn-secondary" id="btn-refresh-dashboard">&#x21bb; 更新</button>
-</div>
-
-<div class="stats-grid" id="stats-grid">
-    <div class="stat-card stat-total" id="stat-total-card" style="cursor:pointer;">
-        <div class="stat-value" id="stat-total">-</div>
-        <div class="stat-label">総PC数</div>
+    <div class="page-header-left">
+        <div class="breadcrumb">Operations <span class="sep">›</span> Dashboard</div>
+        <h2 class="page-title">Dashboard</h2>
+        <p class="page-description" id="last-update">読み込み中...</p>
     </div>
-    <div class="stat-card stat-healthy">
-        <div class="stat-value" id="stat-healthy">-</div>
-        <div class="stat-label">正常</div>
-    </div>
-    <div class="stat-card stat-warning">
-        <div class="stat-value" id="stat-warning">-</div>
-        <div class="stat-label">要注意</div>
-    </div>
-    <div class="stat-card stat-critical">
-        <div class="stat-value" id="stat-critical">-</div>
-        <div class="stat-label">危険</div>
-    </div>
-    <div class="stat-card stat-online">
-        <div class="stat-value" id="stat-online">-</div>
-        <div class="stat-label">オンライン</div>
-    </div>
-    <div class="stat-card stat-task">
-        <div class="stat-value" id="stat-pending-tasks">-</div>
-        <div class="stat-label">未処理タスク</div>
-    </div>
-    <div class="stat-card stat-disk">
-        <div class="stat-value" id="stat-low-disk">-</div>
-        <div class="stat-label">ディスク容量不足</div>
-    </div>
-    <div class="stat-card stat-memory">
-        <div class="stat-value" id="stat-high-mem">-</div>
-        <div class="stat-label">メモリ高使用率</div>
+    <div class="page-actions">
+        <select class="form-input" id="dashboard-range" style="width:auto;">
+            <option value="24h">過去 24時間</option>
+            <option value="7d">過去 7日間</option>
+            <option value="30d">過去 30日間</option>
+        </select>
+        <button class="btn btn-secondary" id="btn-export-csv" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            CSV
+        </button>
+        <button class="btn btn-secondary" id="btn-refresh-dashboard" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
+            更新
+        </button>
     </div>
 </div>
 
-<div class="charts-grid">
-    <div class="card">
-        <h3 class="card-title">健全性分布</h3>
-        <div class="chart-container">
-            <canvas id="healthChart"></canvas>
+<!-- KPI Grid -->
+<div class="kpi-grid" id="kpi-grid">
+    <div class="kpi accent" id="kpi-total" style="cursor:pointer;" title="PC一覧へ">
+        <div class="kpi-head">
+            <span class="kpi-label">総PC数</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value" id="stat-total">—</div>
+        <div class="kpi-delta neutral" id="kpi-total-delta">PC 管理台数</div>
+    </div>
+    <div class="kpi success">
+        <div class="kpi-head">
+            <span class="kpi-label">正常</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value" id="stat-healthy">—</div>
+        <div class="kpi-delta up" id="kpi-healthy-delta">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polyline points="18 15 12 9 6 15"/></svg>
+            <span id="healthy-pct">—</span>% 健全
         </div>
     </div>
-    <div class="card">
-        <h3 class="card-title">OS バージョン内訳</h3>
-        <div class="chart-container">
-            <canvas id="osChart"></canvas>
+    <div class="kpi warning">
+        <div class="kpi-head">
+            <span class="kpi-label">要注意</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value" id="stat-warning">—</div>
+        <div class="kpi-delta neutral">確認推奨</div>
+    </div>
+    <div class="kpi danger">
+        <div class="kpi-head">
+            <span class="kpi-label">危険</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value" id="stat-critical">—</div>
+        <div class="kpi-delta down">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polyline points="6 9 12 15 18 9"/></svg>
+            即時対応推奨
+        </div>
+    </div>
+    <div class="kpi danger">
+        <div class="kpi-head">
+            <span class="kpi-label">未解決アラート</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value" id="stat-alerts">—</div>
+        <div class="kpi-delta neutral" id="kpi-alerts-delta">未対応</div>
+    </div>
+    <div class="kpi info">
+        <div class="kpi-head">
+            <span class="kpi-label">未処理タスク</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value" id="stat-pending-tasks">—</div>
+        <div class="kpi-delta neutral" id="kpi-tasks-delta">ペンディング</div>
+    </div>
+    <div class="kpi danger">
+        <div class="kpi-head">
+            <span class="kpi-label">ディスク容量不足</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value" id="stat-low-disk">—</div>
+        <div class="kpi-delta down">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polyline points="6 9 12 15 18 9"/></svg>
+            空き容量低下
+        </div>
+    </div>
+    <div class="kpi purple">
+        <div class="kpi-head">
+            <span class="kpi-label">今日の完了タスク</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value" id="stat-completed-tasks">—</div>
+        <div class="kpi-delta up">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polyline points="18 15 12 9 6 15"/></svg>
+            本日実行済み
         </div>
     </div>
 </div>
 
-<div class="card">
-    <h3 class="card-title">アクティブアラート <span id="dashboard-alert-count" style="font-size:0.85rem;color:var(--text-secondary);font-weight:normal;"></span></h3>
+<!-- Charts row: Health ring + OS breakdown -->
+<div class="charts-grid" style="margin-bottom:1.5rem;">
+    <div class="card card-framed">
+        <div class="card-header">
+            <div class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                健全性分布
+            </div>
+            <span class="card-subtitle" id="health-pc-count">— 台</span>
+        </div>
+        <div class="card-body">
+            <div class="ring-summary">
+                <div style="width:140px;height:140px;flex-shrink:0;position:relative;">
+                    <canvas id="healthChart" width="140" height="140"></canvas>
+                </div>
+                <div class="ring-stats">
+                    <div class="ring-stat"><span class="swatch" style="background:#2ed573;border-radius:2px;"></span><span class="label">正常</span><span class="value" id="ring-healthy">—</span></div>
+                    <div class="ring-stat"><span class="swatch" style="background:#ffa502;border-radius:2px;"></span><span class="label">要注意</span><span class="value" id="ring-warning">—</span></div>
+                    <div class="ring-stat"><span class="swatch" style="background:#ff4757;border-radius:2px;"></span><span class="label">危険</span><span class="value" id="ring-critical">—</span></div>
+                    <div class="ring-stat"><span class="swatch" style="background:#8b91a8;border-radius:2px;"></span><span class="label">オフライン</span><span class="value" id="ring-offline">—</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card card-framed">
+        <div class="card-header">
+            <div class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                OS バージョン内訳
+            </div>
+            <span class="card-subtitle" id="os-version-count">— 種類</span>
+        </div>
+        <div class="card-body">
+            <div class="os-bars" id="os-bars-body">
+                <p style="color:var(--text-muted);font-size:0.82rem;">読み込み中...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active alerts -->
+<div class="card card-framed" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+        <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            アクティブアラート
+        </div>
+        <span class="card-subtitle" id="dashboard-alert-count">—</span>
+    </div>
     <table class="table">
         <thead>
             <tr>
                 <th>重大度</th>
                 <th>種類</th>
+                <th>PC</th>
                 <th>メッセージ</th>
                 <th>発生日時</th>
             </tr>
         </thead>
         <tbody id="dashboard-alerts-body">
-            <tr><td colspan="4" class="text-center">読み込み中...</td></tr>
+            <tr><td colspan="5" class="text-center">読み込み中...</td></tr>
         </tbody>
     </table>
-    <div style="margin-top:0.75rem;text-align:right;">
-        <a href="/alerts" class="btn btn-secondary" style="font-size:0.8rem;">全アラートを見る</a>
+    <div style="padding:0.75rem 1.25rem;border-top:1px solid var(--border);text-align:right;">
+        <a href="/alerts" class="btn btn-secondary btn-sm">全アラートを見る →</a>
     </div>
 </div>
 
-<div class="card">
-    <h3 class="card-title">最近の操作ログ</h3>
-    <table class="table" id="recent-ops-table">
-        <thead>
-            <tr>
-                <th>日時</th>
-                <th>操作</th>
-                <th>対象</th>
-                <th>実行者</th>
-            </tr>
-        </thead>
-        <tbody id="recent-ops-body">
-            <tr><td colspan="4" class="text-center">読み込み中...</td></tr>
-        </tbody>
-    </table>
+<!-- Recent tasks + Audit log as feed -->
+<div class="charts-grid">
+    <div class="card card-framed">
+        <div class="card-header">
+            <div class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                最近のタスク
+            </div>
+            <a href="/tasks" class="btn btn-secondary btn-sm">全て見る</a>
+        </div>
+        <div class="feed" id="recent-tasks-feed">
+            <div class="feed-item"><div class="feed-body"><span class="feed-title" style="color:var(--text-muted);">読み込み中...</span></div></div>
+        </div>
+    </div>
+    <div class="card card-framed">
+        <div class="card-header">
+            <div class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                最近の監査ログ
+            </div>
+            <a href="/audit" class="btn btn-secondary btn-sm">全て見る</a>
+        </div>
+        <div class="feed" id="recent-ops-feed">
+            <div class="feed-item"><div class="feed-body"><span class="feed-title" style="color:var(--text-muted);">読み込み中...</span></div></div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 

@@ -96,9 +96,7 @@
         const ym = getSelectedYearMonth();
         if (!ym) return;
         try {
-            const res = await apiFetch('/api/reports/monthly?year=' + ym.year + '&month=' + ym.month);
-            if (!res.ok) return;
-            const data = await res.json();
+            const data = await apiFetch('/reports/monthly?year=' + ym.year + '&month=' + ym.month);
             renderStats(data);
             renderCharts(data);
             renderAlertTable(data);
@@ -188,20 +186,41 @@
         tbody.appendChild(trTotal);
     }
 
-    function makeDownloadBtn(label, href) {
-        const a = document.createElement('a');
-        a.href = href;
-        a.className = 'btn btn-secondary';
-        a.style.fontSize = '0.8rem';
-        a.textContent = label;
-        return a;
+    async function downloadWithAuth(path, filename) {
+        try {
+            const res = await apiFetchRaw(path);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                if (typeof showToast === 'function') showToast(err.error || 'ダウンロードに失敗しました', 'error');
+                return;
+            }
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error('download failed', e);
+            if (typeof showToast === 'function') showToast('ダウンロードに失敗しました', 'error');
+        }
+    }
+
+    function makeDownloadBtn(label, path, filename) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-secondary';
+        btn.style.fontSize = '0.8rem';
+        btn.textContent = label;
+        btn.addEventListener('click', () => downloadWithAuth(path, filename));
+        return btn;
     }
 
     async function loadArchive() {
         try {
-            const res = await apiFetch('/api/reports/monthly/list?months=12');
-            if (!res.ok) return;
-            const data = await res.json();
+            const data = await apiFetch('/reports/monthly/list?months=12');
             const tbody = document.getElementById('archiveTableBody');
             tbody.replaceChildren();
             if (!data.reports || data.reports.length === 0) {
@@ -227,11 +246,13 @@
                     tr.appendChild(td);
                 });
                 const tdOps = document.createElement('td');
-                const pdfBtn = makeDownloadBtn('PDF', '/api/reports/monthly/export.pdf?year=' + year + '&month=' + month);
-                const csvBtn = makeDownloadBtn('CSV', '/api/reports/monthly/export.csv?year=' + year + '&month=' + month);
-                tdOps.appendChild(pdfBtn);
-                tdOps.appendChild(document.createTextNode(' '));
+                const csvPath = '/reports/monthly/export.csv?year=' + year + '&month=' + month;
+                const pdfPath = '/reports/monthly/export.pdf?year=' + year + '&month=' + month;
+                const csvBtn = makeDownloadBtn('CSV', csvPath, `report-${r.period}.csv`);
+                const pdfBtn = makeDownloadBtn('PDF', pdfPath, `report-${r.period}.pdf`);
                 tdOps.appendChild(csvBtn);
+                tdOps.appendChild(document.createTextNode(' '));
+                tdOps.appendChild(pdfBtn);
                 tr.appendChild(tdOps);
                 tbody.appendChild(tr);
             });
@@ -248,11 +269,17 @@
 
         document.getElementById('btnCsvExport').addEventListener('click', () => {
             const ym = getSelectedYearMonth();
-            if (ym) window.open('/api/reports/monthly/export.csv?year=' + ym.year + '&month=' + ym.month, '_blank');
+            if (ym) downloadWithAuth(
+                '/reports/monthly/export.csv?year=' + ym.year + '&month=' + ym.month,
+                `report-${ym.year}-${String(ym.month).padStart(2,'0')}.csv`
+            );
         });
         document.getElementById('btnPdfExport').addEventListener('click', () => {
             const ym = getSelectedYearMonth();
-            if (ym) window.open('/api/reports/monthly/export.pdf?year=' + ym.year + '&month=' + ym.month, '_blank');
+            if (ym) downloadWithAuth(
+                '/reports/monthly/export.pdf?year=' + ym.year + '&month=' + ym.month,
+                `report-${ym.year}-${String(ym.month).padStart(2,'0')}.pdf`
+            );
         });
 
         loadMonthlyData();
