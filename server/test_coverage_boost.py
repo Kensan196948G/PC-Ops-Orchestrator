@@ -794,3 +794,89 @@ def test_alert_rules_viewer_cannot_create():
 def test_alert_rules_viewer_can_list():
     r = req("GET", "/api/alert-rules", token=_viewer_token)
     assert r.status_code == 200
+
+
+# ── Scheduled Tasks endpoint tests ────────────────────────────────────
+
+
+def test_scheduled_tasks_list_returns_200():
+    r = req("GET", "/api/scheduled-tasks", token=_admin_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert "scheduled_tasks" in data
+
+
+def test_scheduled_tasks_list_requires_auth():
+    r = req("GET", "/api/scheduled-tasks")
+    assert r.status_code == 401
+
+
+def test_scheduled_tasks_create_valid():
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"SchedTest-{uuid.uuid4().hex[:6]}",
+            "task_type": "cleanup",
+            "schedule_type": "daily",
+            "daily_time": "02:00",
+        },
+    )
+    assert r.status_code == 201
+    data = json.loads(r.data)
+    task_id = data["scheduled_task"]["id"]
+    # Cleanup
+    req("DELETE", f"/api/scheduled-tasks/{task_id}", token=_admin_token)
+
+
+def test_scheduled_tasks_create_missing_name():
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={"task_type": "cleanup", "schedule_type": "daily"},
+    )
+    assert r.status_code == 400
+
+
+def test_scheduled_tasks_get_nonexistent():
+    r = req("GET", "/api/scheduled-tasks/999999", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_scheduled_tasks_update_nonexistent():
+    r = req(
+        "PUT", "/api/scheduled-tasks/999999", token=_admin_token, data={"name": "x"}
+    )
+    assert r.status_code == 404
+
+
+def test_scheduled_tasks_delete_nonexistent():
+    r = req("DELETE", "/api/scheduled-tasks/999999", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_scheduled_tasks_toggle_nonexistent():
+    r = req("POST", "/api/scheduled-tasks/999999/toggle", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_scheduled_tasks_run_now_nonexistent():
+    r = req("POST", "/api/scheduled-tasks/999999/run-now", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_scheduled_tasks_viewer_cannot_create():
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_viewer_token,
+        data={"name": "x", "task_type": "cleanup", "schedule_type": "daily"},
+    )
+    assert r.status_code == 403
+
+
+def test_scheduled_tasks_viewer_can_list():
+    r = req("GET", "/api/scheduled-tasks", token=_viewer_token)
+    assert r.status_code == 200
