@@ -992,10 +992,6 @@ def test_update_user_weak_password():
 
 def test_delete_user_self_deletion_forbidden():
     """Admin cannot delete their own account."""
-    # Get the admin user's id
-    users_r = req("GET", "/api/auth/users", token=_admin_token)
-    users = json.loads(users_r.data)["users"]
-    # Find the current admin user
     import jwt as _jwt
 
     token_data = _jwt.decode(_admin_token, options={"verify_signature": False})
