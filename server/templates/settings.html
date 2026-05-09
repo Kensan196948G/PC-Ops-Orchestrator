@@ -75,4 +75,41 @@
         </div>
     </div>
 </div>
+
+<div class="card role-admin-only">
+    <h3 class="card-title">🧪 開発・デモ用ツール</h3>
+    <p class="text-secondary mb-sm">通知チャンネル・証明書・ライセンスのデモデータを DB に登録します。既存データはスキップされます。</p>
+    <div class="d-flex-gap">
+        <button class="btn btn-secondary" type="button" id="btn-seed-demo">📦 デモデータを登録</button>
+        <span id="seed-result" class="text-secondary text-sm"></span>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('btn-seed-demo');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const resultEl = document.getElementById('seed-result');
+        try {
+            const res = await fetch('/api/admin/seed-demo', { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                if (typeof showToast === 'function') showToast(data.message, 'success');
+                resultEl.textContent = data.message;
+            } else {
+                if (typeof showToast === 'function') showToast(data.error || 'エラーが発生しました', 'error');
+                resultEl.textContent = data.error || 'エラーが発生しました';
+            }
+        } catch (e) {
+            if (typeof showToast === 'function') showToast('通信エラーが発生しました', 'error');
+            resultEl.textContent = '通信エラーが発生しました';
+        } finally {
+            btn.disabled = false;
+        }
+    });
+});
+</script>
 {% endblock %}

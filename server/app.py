@@ -94,6 +94,7 @@ def create_app(config_name=None):
     from routes.notification_channels import notification_channels_bp
     from routes.certificates import certificates_bp
     from routes.licenses import licenses_bp
+    from routes.seed import seed_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(collect_bp)
@@ -111,6 +112,7 @@ def create_app(config_name=None):
     app.register_blueprint(notification_channels_bp)
     app.register_blueprint(certificates_bp)
     app.register_blueprint(licenses_bp)
+    app.register_blueprint(seed_bp, url_prefix="/api")
 
     # Rate limiter -> /metrics integration:
     # increment the in-process counter every time Flask-Limiter rejects a
