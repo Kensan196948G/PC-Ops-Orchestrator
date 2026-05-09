@@ -589,3 +589,85 @@ def test_tasks_pagination():
 def test_tasks_viewer_can_list():
     r = req("GET", "/api/tasks", token=_viewer_token)
     assert r.status_code == 200
+
+
+# ── Alerts acknowledge/resolve with data ─────────────────────────────
+
+
+def _create_test_alert(app_ctx):
+    """Create a test Alert in DB and return its id."""
+    from models import Alert
+
+    with app_ctx:
+        alert = Alert(
+            pc_id=None,
+            alert_type="test_alert",
+            severity="high",
+            message="テスト用アラート",
+            source_key=f"test-{uuid.uuid4().hex[:8]}",
+        )
+        db.session.add(alert)
+        db.session.commit()
+        return alert.id
+
+
+def test_alerts_acknowledge_success():
+    alert_id = _create_test_alert(app.app_context())
+    r = req("POST", f"/api/alerts/{alert_id}/acknowledge", token=_operator_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert data["alert"]["acknowledged"] is True
+
+
+def test_alerts_acknowledge_already_resolved():
+    """Acknowledging a resolved alert should return 400."""
+    alert_id = _create_test_alert(app.app_context())
+    # Resolve first
+    req("POST", f"/api/alerts/{alert_id}/resolve", token=_operator_token)
+    # Now try to acknowledge
+    r = req("POST", f"/api/alerts/{alert_id}/acknowledge", token=_operator_token)
+    assert r.status_code == 400
+
+
+def test_alerts_resolve_success():
+    alert_id = _create_test_alert(app.app_context())
+    r = req("POST", f"/api/alerts/{alert_id}/resolve", token=_operator_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert data["alert"]["resolved"] is True
+
+
+def test_alerts_resolve_already_resolved():
+    """Resolving an already-resolved alert should return 400."""
+    alert_id = _create_test_alert(app.app_context())
+    req("POST", f"/api/alerts/{alert_id}/resolve", token=_operator_token)
+    r = req("POST", f"/api/alerts/{alert_id}/resolve", token=_operator_token)
+    assert r.status_code == 400
+
+
+def test_alerts_get_existing():
+    """GET specific alert should return 200 with full data."""
+    alert_id = _create_test_alert(app.app_context())
+    r = req("GET", f"/api/alerts/{alert_id}", token=_admin_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert data["severity"] == "high"
+    assert data["alert_type"] == "test_alert"
+
+
+def test_alerts_sync_endpoint():
+    """POST /api/alerts/sync should return 200."""
+    r = req("POST", "/api/alerts/sync", token=_operator_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert "created" in data
+    assert "resolved" in data
+
+
+def test_alerts_csv_with_data():
+    """CSV export with actual alert data should include the alert row."""
+    alert_id = _create_test_alert(app.app_context())
+    r = req("GET", "/api/alerts/export.csv", token=_admin_token)
+    assert r.status_code == 200
+    content = r.data.decode("utf-8-sig")
+    assert str(alert_id) in content
