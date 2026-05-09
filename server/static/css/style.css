@@ -1176,7 +1176,8 @@ select.form-input {
     backdrop-filter: blur(2px);
 }
 
-.modal-overlay.open {
+.modal-overlay.open,
+.modal-overlay.active {
     display: flex;
 }
 

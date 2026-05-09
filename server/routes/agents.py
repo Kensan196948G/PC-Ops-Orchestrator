@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
+from sqlalchemy import case
 from auth import login_required
 from extensions import db
 from models import PC, SystemSnapshot
@@ -18,7 +19,8 @@ def list_agents():
     q = PC.query
     if status:
         q = q.filter(PC.status == status)
-    q = q.order_by(PC.last_seen.desc().nullslast())
+    # Sort: last_seen DESC, NULLs last (SQLite-compatible via CASE)
+    q = q.order_by(case((PC.last_seen.is_(None), 1), else_=0), PC.last_seen.desc())
     pagination = q.paginate(page=page, per_page=per_page, error_out=False)
 
     now = datetime.now(timezone.utc)
