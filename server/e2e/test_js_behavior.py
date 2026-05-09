@@ -48,14 +48,14 @@ def test_no_js_pageerror_on_login(page, live_server):
     """Login page must not throw any uncaught JS exceptions."""
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.wait_for_load_state("networkidle", timeout=8000)
     assert not errors, f"Uncaught JS errors on login page: {errors}"
 
 
 def test_token_stored_in_localstorage_after_login(page, live_server):
     """After a successful login the JWT token must be present in localStorage."""
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.fill("#username", "admin")
     page.fill("#password", "admin")
     page.click("button[type=submit]")
@@ -66,7 +66,7 @@ def test_token_stored_in_localstorage_after_login(page, live_server):
 
 def test_user_info_stored_in_localstorage_after_login(page, live_server):
     """After login the user info JSON must be present in localStorage."""
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.fill("#username", "admin")
     page.fill("#password", "admin")
     page.click("button[type=submit]")
@@ -108,7 +108,7 @@ def test_login_state_maintained_after_reload(page, live_server):
     should not redirect to /login.
     """
     # First log in to get a token
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.fill("#username", "admin")
     page.fill("#password", "admin")
     page.click("button[type=submit]")
@@ -154,7 +154,7 @@ def test_no_js_errors_on_tasks_page(page_with_login, live_server):
 
 def test_localstorage_token_is_jwt_format(page, live_server):
     """The stored token must look like a JWT (three dot-separated parts)."""
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.fill("#username", "admin")
     page.fill("#password", "admin")
     page.click("button[type=submit]")

@@ -2,7 +2,7 @@
 
 
 def test_login_page_renders(page, live_server):
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     assert page.title() == "PC-Ops Orchestrator - Login"
     assert page.is_visible("#username")
     assert page.is_visible("#password")
@@ -10,7 +10,7 @@ def test_login_page_renders(page, live_server):
 
 
 def test_login_success_redirects_to_dashboard(page, live_server):
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.fill("#username", "admin")
     page.fill("#password", "admin")
     page.click("button[type=submit]")
@@ -20,7 +20,7 @@ def test_login_success_redirects_to_dashboard(page, live_server):
 
 
 def test_login_invalid_credentials_shows_error(page, live_server):
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.fill("#username", "admin")
     page.fill("#password", "wrongpassword")
     page.click("button[type=submit]")
@@ -31,7 +31,7 @@ def test_login_invalid_credentials_shows_error(page, live_server):
 
 
 def test_login_empty_fields_prevented(page, live_server):
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.click("button[type=submit]")
     # HTML5 required prevents submission; we remain on login page
     assert "/login" in page.url
