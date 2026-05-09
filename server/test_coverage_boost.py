@@ -880,3 +880,79 @@ def test_scheduled_tasks_viewer_cannot_create():
 def test_scheduled_tasks_viewer_can_list():
     r = req("GET", "/api/scheduled-tasks", token=_viewer_token)
     assert r.status_code == 200
+
+
+# ── Auth edge cases ───────────────────────────────────────────────────
+
+
+def test_login_no_body():
+    """POST /api/auth/login without body should return 400."""
+    r = client.open(
+        "/api/auth/login",
+        method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+    assert r.status_code == 400
+
+
+def test_login_empty_username():
+    """POST /api/auth/login with empty username should return 400."""
+    r = client.open(
+        "/api/auth/login",
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        data='{"username": "", "password": "something"}',
+    )
+    assert r.status_code == 400
+
+
+def test_login_inactive_user():
+    """Login with is_active=False user should return 403."""
+    import uuid
+    from models import User
+
+    unique = uuid.uuid4().hex[:8]
+    username = f"inactive_{unique}"
+    with app.app_context():
+        u = User(
+            username=username,
+            password_hash=hash_password("InactiveTest1!"),
+            role="viewer",
+            is_active=False,
+        )
+        db.session.add(u)
+        db.session.commit()
+
+    r = client.open(
+        "/api/auth/login",
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        data=f'{{"username": "{username}", "password": "InactiveTest1!"}}',
+    )
+    assert r.status_code == 403
+
+
+def test_setup_returns_400_when_users_exist():
+    """POST /api/auth/setup should return 400 when users already exist."""
+    r = client.open(
+        "/api/auth/setup",
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        data='{"username": "newadmin", "password": "NewAdmin1!"}',
+    )
+    assert r.status_code == 400
+
+
+def test_create_user_no_body():
+    r = req("POST", "/api/auth/users", token=_admin_token)
+    assert r.status_code == 400
+
+
+def test_create_user_missing_credentials():
+    r = req(
+        "POST",
+        "/api/auth/users",
+        token=_admin_token,
+        data={"username": "", "password": ""},
+    )
+    assert r.status_code == 400
