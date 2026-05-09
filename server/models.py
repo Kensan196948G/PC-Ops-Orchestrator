@@ -93,6 +93,9 @@ class PC(db.Model):
     scheduled_tasks = db.relationship(
         "ScheduledTask", backref="pc", lazy="dynamic", cascade="all, delete-orphan"
     )
+    alerts = db.relationship(
+        "Alert", backref="pc", lazy="dynamic", cascade="all, delete-orphan"
+    )
 
     def to_dict(self):
         return {
