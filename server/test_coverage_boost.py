@@ -426,3 +426,89 @@ def test_update_group_no_body():
     r2 = req("PUT", f"/api/groups/{gid}", token=_admin_token)
     assert r2.status_code == 400
     req("DELETE", f"/api/groups/{gid}", token=_admin_token)
+
+
+# ── PCs endpoints ────────────────────────────────────────────────────
+
+
+def test_pcs_csv_export_returns_200():
+    r = req("GET", "/api/pcs/export.csv", token=_admin_token)
+    assert r.status_code == 200
+
+
+def test_pcs_csv_export_content_type():
+    r = req("GET", "/api/pcs/export.csv", token=_admin_token)
+    assert "text/csv" in r.headers.get("Content-Type", "")
+
+
+def test_pcs_csv_export_has_bom():
+    r = req("GET", "/api/pcs/export.csv", token=_admin_token)
+    assert r.data[:3] == b"\xef\xbb\xbf"
+
+
+def test_pcs_csv_export_requires_auth():
+    r = req("GET", "/api/pcs/export.csv")
+    assert r.status_code == 401
+
+
+def test_pcs_list_with_status_filter():
+    r = req("GET", "/api/pcs?status=online", token=_admin_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert "pcs" in data
+    for pc in data["pcs"]:
+        assert pc["status"] == "online"
+
+
+def test_pcs_list_with_search_filter():
+    r = req("GET", "/api/pcs?search=test", token=_admin_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert "pcs" in data
+
+
+def test_pcs_list_with_os_filter():
+    r = req("GET", "/api/pcs?os=Windows", token=_admin_token)
+    assert r.status_code == 200
+
+
+def test_pcs_get_nonexistent():
+    r = req("GET", "/api/pcs/999999", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_pcs_software_nonexistent():
+    r = req("GET", "/api/pcs/999999/software", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_pcs_updates_nonexistent():
+    r = req("GET", "/api/pcs/999999/updates", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_pcs_history_nonexistent():
+    r = req("GET", "/api/pcs/999999/history", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_pcs_delete_nonexistent():
+    r = req("DELETE", "/api/pcs/999999", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_pcs_delete_requires_admin():
+    r = req("DELETE", "/api/pcs/999999", token=_viewer_token)
+    assert r.status_code == 403
+
+
+def test_pcs_viewer_can_list():
+    r = req("GET", "/api/pcs", token=_viewer_token)
+    assert r.status_code == 200
+
+
+def test_pcs_pagination():
+    r = req("GET", "/api/pcs?page=1&per_page=5", token=_admin_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert len(data["pcs"]) <= 5
