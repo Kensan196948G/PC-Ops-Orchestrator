@@ -9,8 +9,22 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Security (PR #139 — CI 確認中)
+- **CSP Phase 3** — `style-src 'unsafe-inline'` 完全除去
+  - 全 16 テンプレートのインライン `style=""` 属性をゼロに削減
+  - `login.html` の `<style>` ブロック (~200行) を外部 `style.css` に完全移行
+  - CSS ユーティリティクラス追加 (.hidden / .d-flex-gap / .mt-actions 等)
+  - JS 7 ファイルで `style.display` → `classList.toggle/add/remove` に統一
+  - `style-src 'self'` のみに更新 (XSS 攻撃面をさらに削減)
+
+### Added (PR #140 — CI 確認中)
+- **Agent管理 実機能化** — `/api/agents` 新規実装
+  - PC モデルからエージェント一覧 (CPU/メモリ/バージョン/heartbeat) をリアルタイム表示
+- **通知設定 CRUD** — `NotificationChannel` モデル + CRUD API + チャネル追加/編集/削除モーダル
+- **証明書管理 CRUD** — `Certificate` モデル + CRUD API + 登録/編集/削除モーダル + 残り日数バッジ
+- **ライセンス管理 CRUD** — `License` モデル + CRUD API + 登録/編集/削除 + 合計コスト自動集計
+
 ### Planned
-- style-src 'unsafe-inline' Phase 3 (CSS inline style 外部化)
 - v1.0.0 本番リリース最終準備 (deployment.md 整備)
 
 ---
