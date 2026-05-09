@@ -90,6 +90,10 @@ def create_app(config_name=None):
     from routes.alert_rules import alert_rules_bp
     from routes.metrics import metrics_bp
     from routes.reports import reports_bp
+    from routes.agents import agents_bp
+    from routes.notification_channels import notification_channels_bp
+    from routes.certificates import certificates_bp
+    from routes.licenses import licenses_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(collect_bp)
@@ -103,6 +107,10 @@ def create_app(config_name=None):
     app.register_blueprint(alert_rules_bp)
     app.register_blueprint(metrics_bp)
     app.register_blueprint(reports_bp)
+    app.register_blueprint(agents_bp)
+    app.register_blueprint(notification_channels_bp)
+    app.register_blueprint(certificates_bp)
+    app.register_blueprint(licenses_bp)
 
     # Rate limiter -> /metrics integration:
     # increment the in-process counter every time Flask-Limiter rejects a

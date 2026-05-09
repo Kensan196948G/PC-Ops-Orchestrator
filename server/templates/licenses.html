@@ -3,100 +3,91 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">ライセンス管理</h2>
-    <p class="page-description">インストール済みソフトウェアのライセンス数追跡・期限アラート・コスト分析（ダミーデータ）。</p>
-    <div style="display:flex;gap:0.5rem;">
-        <button class="btn btn-secondary" type="button" data-stub-alert="CSV エクスポート（次マイルストーン実装予定）">📊 一覧 CSV</button>
-        <button class="btn btn-primary" type="button" data-stub-alert="ライセンス追加（次マイルストーン実装予定）">+ ライセンス登録</button>
-    </div>
-</div>
-
-<div class="stats-grid">
-    <div class="stat-card stat-online">
-        <div class="stat-value">14</div>
-        <div class="stat-label">登録ライセンス</div>
-    </div>
-    <div class="stat-card stat-task">
-        <div class="stat-value">¥4.82M</div>
-        <div class="stat-label">年間コスト</div>
-    </div>
-    <div class="stat-card stat-warning">
-        <div class="stat-value">3</div>
-        <div class="stat-label">期限 90 日以内</div>
-    </div>
-    <div class="stat-card stat-critical">
-        <div class="stat-value">1</div>
-        <div class="stat-label">超過契約 (要購入)</div>
+    <p class="page-description">ソフトウェアライセンスの一元管理と費用集計。</p>
+    <div class="d-flex-gap">
+        <button class="btn btn-primary role-admin-only" id="btn-add-license">+ ライセンス登録</button>
     </div>
 </div>
 
 <div class="card">
-    <h3 class="card-title">ライセンス一覧</h3>
+    <h3 class="card-title">📋 ライセンス一覧</h3>
     <table class="table">
         <thead>
             <tr>
                 <th>製品名</th>
+                <th>ベンダー</th>
                 <th>種別</th>
-                <th>契約数</th>
-                <th>使用数</th>
-                <th>充足率</th>
+                <th>席数</th>
+                <th>単価</th>
+                <th>合計コスト</th>
                 <th>有効期限</th>
-                <th>年間コスト</th>
-                <th>状態</th>
+                <th>操作</th>
             </tr>
         </thead>
-        <tbody>
-            <tr><td>Microsoft 365 E3</td><td>サブスクリプション</td><td>150</td><td>148</td><td>98.7%</td><td>2027-03-31</td><td>¥2,160,000</td><td><span class="badge badge-success">充足</span></td></tr>
-            <tr><td>Adobe Creative Cloud (法人)</td><td>サブスクリプション</td><td>20</td><td>22</td><td>110% ⚠️</td><td>2027-03-31</td><td>¥720,000</td><td><span class="badge badge-danger">超過</span></td></tr>
-            <tr><td>Sophos Endpoint</td><td>サブスクリプション</td><td>200</td><td>148</td><td>74.0%</td><td>2026-07-15</td><td>¥480,000</td><td><span class="badge badge-warning">期限 70 日</span></td></tr>
-            <tr><td>Visual Studio Pro</td><td>VL (買切)</td><td>15</td><td>12</td><td>80.0%</td><td>—</td><td>¥0 (償却済)</td><td><span class="badge badge-success">有効</span></td></tr>
-            <tr><td>JetBrains All Products</td><td>サブスクリプション</td><td>10</td><td>9</td><td>90.0%</td><td>2026-08-31</td><td>¥360,000</td><td><span class="badge badge-warning">期限 117 日</span></td></tr>
-            <tr><td>Slack Business+</td><td>SaaS</td><td>200</td><td>168</td><td>84.0%</td><td>2027-02-28</td><td>¥720,000</td><td><span class="badge badge-success">充足</span></td></tr>
-            <tr><td>Datadog APM</td><td>SaaS</td><td>50 hosts</td><td>42 hosts</td><td>84.0%</td><td>2027-04-30</td><td>¥360,000</td><td><span class="badge badge-success">充足</span></td></tr>
-            <tr><td>Tableau Creator</td><td>サブスクリプション</td><td>5</td><td>4</td><td>80.0%</td><td>2026-06-15</td><td>¥240,000</td><td><span class="badge badge-warning">期限 40 日</span></td></tr>
+        <tbody id="licenses-body">
+            <tr><td colspan="8" class="text-center">読み込み中...</td></tr>
         </tbody>
+        <tfoot>
+            <tr class="fw-bold">
+                <td colspan="5">合計</td>
+                <td id="licenses-total">—</td>
+                <td colspan="2"></td>
+            </tr>
+        </tfoot>
     </table>
 </div>
 
-<div class="charts-grid">
-    <div class="card">
-        <h3 class="card-title">📦 ソフトウェアインベントリ (Top 8)</h3>
-        <table class="table">
-            <thead><tr><th>ソフトウェア</th><th>インストール数</th><th>ライセンス追跡</th></tr></thead>
-            <tbody>
-                <tr><td>Microsoft Office 365</td><td>148</td><td>✓</td></tr>
-                <tr><td>Microsoft Edge</td><td>148</td><td>—</td></tr>
-                <tr><td>Google Chrome</td><td>142</td><td>—</td></tr>
-                <tr><td>Sophos Endpoint</td><td>148</td><td>✓</td></tr>
-                <tr><td>Adobe Acrobat Reader</td><td>132</td><td>—</td></tr>
-                <tr><td>Adobe Creative Cloud</td><td>22</td><td>✓ (超過)</td></tr>
-                <tr><td>Slack</td><td>168</td><td>✓</td></tr>
-                <tr><td>Microsoft Teams</td><td>148</td><td>(M365 内包)</td></tr>
-            </tbody>
-        </table>
-    </div>
-    <div class="card">
-        <h3 class="card-title">💰 コスト分析 (年間)</h3>
-        <table class="table">
-            <thead><tr><th>カテゴリ</th><th>年額</th><th>占有率</th></tr></thead>
-            <tbody>
-                <tr><td>SaaS / サブスクリプション</td><td>¥4,300,000</td><td>89.2%</td></tr>
-                <tr><td>VL / 買切ライセンス</td><td>¥520,000</td><td>10.8%</td></tr>
-                <tr style="font-weight:600;"><td>合計</td><td>¥4,820,000</td><td>100%</td></tr>
-            </tbody>
-        </table>
-        <p style="color:var(--text-secondary);margin-top:0.5rem;font-size:0.85rem;">📈 前年同月比 +6.8% (M365 増床 + Datadog 新規)</p>
+<!-- License Modal -->
+<div id="license-modal" class="modal-overlay">
+    <div class="modal-container modal-560">
+        <div class="modal-header">
+            <h3 class="modal-title" id="license-modal-title">ライセンス登録</h3>
+            <button class="modal-close" id="btn-close-license-modal" aria-label="閉じる">×</button>
+        </div>
+        <div class="modal-body">
+            <form id="license-form">
+                <div class="form-group">
+                    <label class="form-label">製品名 <span class="required">*</span></label>
+                    <input type="text" id="license-product" class="form-input" placeholder="例: Microsoft 365 Business" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ベンダー</label>
+                    <input type="text" id="license-vendor" class="form-input" placeholder="例: Microsoft">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">種別</label>
+                    <select id="license-type" class="form-input">
+                        <option value="subscription">サブスクリプション</option>
+                        <option value="perpetual">永続ライセンス</option>
+                        <option value="volume">ボリュームライセンス</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">席数</label>
+                    <input type="number" id="license-seats" class="form-input" min="1" placeholder="例: 50">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">単価（円/席/月）</label>
+                    <input type="number" id="license-price" class="form-input" min="0" placeholder="例: 1360">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">有効期限（永続の場合は空欄）</label>
+                    <input type="date" id="license-expires" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">メモ</label>
+                    <textarea id="license-notes" class="form-input" rows="2" placeholder="備考など"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-close-license-modal-foot">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+{% endblock %}
 
-<div class="card">
-    <h3 class="card-title">⚠️ 期限アラート (30 / 60 / 90 日前)</h3>
-    <table class="table">
-        <thead><tr><th>製品名</th><th>残日数</th><th>金額</th><th>更新方針</th><th>担当</th></tr></thead>
-        <tbody>
-            <tr><td>Tableau Creator</td><td>40 日</td><td>¥240,000</td><td>更新</td><td>営業企画部</td></tr>
-            <tr><td>Sophos Endpoint</td><td>70 日</td><td>¥480,000</td><td>更新 (200 → 250 増床予定)</td><td>情シス</td></tr>
-            <tr><td>JetBrains All Products</td><td>117 日</td><td>¥360,000</td><td>更新</td><td>開発部</td></tr>
-        </tbody>
-    </table>
-</div>
+{% block scripts %}
+<script nonce="{{ csp_nonce }}" src="/static/js/licenses.js"></script>
 {% endblock %}
