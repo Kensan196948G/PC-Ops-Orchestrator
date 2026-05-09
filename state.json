@@ -89,7 +89,7 @@
     "score": 0
   },
   "open_issues": {
-    "note": "M6進行中: PR #131 (groups N+1 + Alert.pc fix + test +108件) CI待ち。style-src Phase 3 未着手。v0.6.0 GitHub Release 未作成。"
+    "note": "PR #136 MERGED (UI横並び修正)。PR #139 (CSP Phase 3 style-src unsafe-inline除去) CI待ち。PR #140 (WebUI: Agent管理/通知/証明書/ライセンス実機能化) CI待ち。v1.0.0 本番リリース最終準備・deployment.md 整備が次主要タスク。"
   },
   "milestones": {
     "M1": {
@@ -176,7 +176,7 @@
     "resume_point": {
       "next_action": "PR #131 CI 完了後 merge → v0.6.0 GitHub Release 作成 → style-src Phase 3 評価 → v1.0.0 最終リリース準備",
       "blocker": "PR #131 CI 待ち",
-      "notes": "今セッションの主成果: groups N+1修正 + Alert.pc relationship バグ修正 (本番で CSV エクスポートが 500 Error になっていた潜在バグ) + テスト313件 (routes カバレッジ 80%)。E2E CDN タイムアウト修正も完了。次セッション: PR #131 merge確認 → v0.6.0 Release → style-src Phase 3 検討。"
+      "notes": "今セッション主成果: PR #131 MERGED (groups N+1+Alert.pc+テスト326件+E2E CDN修正) → v0.6.0 GitHub Release作成 → PR #136 MERGED (UIフィルタ横並び修正) → PR #139作成 (CSP Phase 3: style-src unsafe-inline完全除去、全16テンプレートinline style=0件) → PR #140作成 (WebUI実機能化: /api/agents + 通知/証明書/ライセンスCRUD)。テスト215件通過。CI待ち: PR #139/#140。次: 両PR merge → deployment.md → v1.0.0 Release準備。"
     }
   },
   "learning": {
