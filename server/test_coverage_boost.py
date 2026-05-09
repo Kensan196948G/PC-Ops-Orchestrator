@@ -671,3 +671,126 @@ def test_alerts_csv_with_data():
     assert r.status_code == 200
     content = r.data.decode("utf-8-sig")
     assert str(alert_id) in content
+
+
+# ── Alert Rules endpoint tests ────────────────────────────────────────
+
+
+def test_alert_rules_list_returns_200():
+    r = req("GET", "/api/alert-rules", token=_admin_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert "alert_rules" in data
+
+
+def test_alert_rules_list_requires_auth():
+    r = req("GET", "/api/alert-rules")
+    assert r.status_code == 401
+
+
+def test_alert_rules_create_valid():
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_admin_token,
+        data={
+            "name": f"TestRule-{uuid.uuid4().hex[:6]}",
+            "metric": "disk",
+            "operator": "lt",
+            "threshold": 10.0,
+            "severity": "critical",
+        },
+    )
+    assert r.status_code == 201
+    data = json.loads(r.data)
+    rule_id = data["alert_rule"]["id"]
+    # Cleanup
+    req("DELETE", f"/api/alert-rules/{rule_id}", token=_admin_token)
+
+
+def test_alert_rules_create_invalid_metric():
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_admin_token,
+        data={
+            "name": "TestBadMetric",
+            "metric": "invalid_metric_xyz",
+            "operator": "lt",
+            "threshold": 10.0,
+            "severity": "warning",
+        },
+    )
+    assert r.status_code == 400
+
+
+def test_alert_rules_create_invalid_severity():
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_admin_token,
+        data={
+            "name": "TestBadSeverity",
+            "metric": "disk",
+            "operator": "lt",
+            "threshold": 10.0,
+            "severity": "invalid_severity_xyz",
+        },
+    )
+    assert r.status_code == 400
+
+
+def test_alert_rules_create_invalid_operator():
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_admin_token,
+        data={
+            "name": "TestBadOp",
+            "metric": "disk",
+            "operator": "between",
+            "threshold": 10.0,
+            "severity": "warning",
+        },
+    )
+    assert r.status_code == 400
+
+
+def test_alert_rules_get_nonexistent():
+    r = req("GET", "/api/alert-rules/999999", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_alert_rules_update_nonexistent():
+    r = req(
+        "PUT",
+        "/api/alert-rules/999999",
+        token=_admin_token,
+        data={"name": "x"},
+    )
+    assert r.status_code == 404
+
+
+def test_alert_rules_delete_nonexistent():
+    r = req("DELETE", "/api/alert-rules/999999", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_alert_rules_toggle_nonexistent():
+    r = req("POST", "/api/alert-rules/999999/toggle", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_alert_rules_viewer_cannot_create():
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_viewer_token,
+        data={"name": "x", "metric": "disk", "operator": "lt", "threshold": 5},
+    )
+    assert r.status_code == 403
+
+
+def test_alert_rules_viewer_can_list():
+    r = req("GET", "/api/alert-rules", token=_viewer_token)
+    assert r.status_code == 200
