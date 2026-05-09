@@ -956,3 +956,89 @@ def test_create_user_missing_credentials():
         data={"username": "", "password": ""},
     )
     assert r.status_code == 400
+
+
+# ── Auth update/delete edge cases ─────────────────────────────────────
+
+
+def test_update_user_weak_password():
+    """Updating user with weak password should return 400."""
+    import uuid
+
+    unique = uuid.uuid4().hex[:8]
+    create_r = req(
+        "POST",
+        "/api/auth/users",
+        token=_admin_token,
+        data={
+            "username": f"weakpw_{unique}",
+            "password": "StrongPass1!",
+            "role": "viewer",
+        },
+    )
+    assert create_r.status_code == 201
+    user_id = json.loads(create_r.data)["user"]["id"]
+
+    r = req(
+        "PATCH",
+        f"/api/auth/users/{user_id}",
+        token=_admin_token,
+        data={"password": "weakpw"},
+    )
+    assert r.status_code == 400
+
+    req("DELETE", f"/api/auth/users/{user_id}", token=_admin_token)
+
+
+def test_delete_user_self_deletion_forbidden():
+    """Admin cannot delete their own account."""
+    # Get the admin user's id
+    users_r = req("GET", "/api/auth/users", token=_admin_token)
+    users = json.loads(users_r.data)["users"]
+    # Find the current admin user
+    import jwt as _jwt
+
+    token_data = _jwt.decode(_admin_token, options={"verify_signature": False})
+    user_id = token_data.get("sub")
+    if user_id:
+        r = req("DELETE", f"/api/auth/users/{user_id}", token=_admin_token)
+        assert r.status_code == 400
+
+
+def test_delete_user_nonexistent():
+    r = req("DELETE", "/api/auth/users/999999", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_update_user_nonexistent():
+    r = req(
+        "PATCH", "/api/auth/users/999999", token=_admin_token, data={"role": "viewer"}
+    )
+    assert r.status_code == 404
+
+
+def test_update_user_invalid_role():
+    import uuid
+
+    unique = uuid.uuid4().hex[:8]
+    create_r = req(
+        "POST",
+        "/api/auth/users",
+        token=_admin_token,
+        data={
+            "username": f"invrol_{unique}",
+            "password": "StrongPass1!",
+            "role": "viewer",
+        },
+    )
+    user_id = json.loads(create_r.data)["user"]["id"]
+
+    r = req(
+        "PATCH",
+        f"/api/auth/users/{user_id}",
+        token=_admin_token,
+        data={"role": "superadmin"},
+    )
+    assert r.status_code == 400
+
+    req("DELETE", f"/api/auth/users/{user_id}", token=_admin_token)
