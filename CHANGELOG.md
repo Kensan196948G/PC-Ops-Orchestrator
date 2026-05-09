@@ -7,9 +7,17 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
-## [Unreleased] — M6 リリース準備中
+## [Unreleased]
 
-### Added (M6 進行中)
+### Planned
+- style-src 'unsafe-inline' Phase 3 (CSS inline style 外部化)
+- v1.0.0 本番リリース最終準備 (deployment.md 整備)
+
+---
+
+## [0.6.0] — 2026-05-09 — M6 テスト拡充・N+1修正・セキュリティ強化
+
+### Security
 - **CSP Phase 2** (Issue #121, PR #129)
   - 全 16 テンプレートのインラインハンドラ (`onclick/oninput/onchange/onsubmit`) を外部 JS の `addEventListener` に完全移行
   - `stub-actions.js` 新規作成 — `data-stub-alert` 属性でアラートスタブを共通管理
@@ -17,28 +25,31 @@ Versioning: [Semantic Versioning](https://semver.org/)
   - `test_csp_script_src_uses_nonce_not_unsafe_inline` — strict 版テスト追加
 
 ### Fixed
-- **N+1 クエリ解消** (Issue #121, PR #130)
+- **N+1 クエリ解消 — CSV エクスポート** (Issue #121, PR #130)
   - `alerts.py` / `tasks.py` CSV エクスポートで `joinedload(*.pc)` 追加
   - 最大 5000 行エクスポート時のクエリ数: 5001 → 2 に削減
-- **groups.py N+1 解消** (PR #131)
-  - `GET /api/groups` で N グループ × 1 COUNT クエリ → 2 クエリに削減
-  - `PCGroup.to_dict()` に `pc_count` オプション引数を追加
-  - `create_group()` のログ内 `group.pcs.count()` を `len(pc_names)` に置換
+- **N+1 クエリ解消 — groups 一覧** (PR #131)
+  - `GET /api/groups` で N グループ × 1 COUNT クエリ → 2 クエリに削減 (IN バルク COUNT)
+  - `PCGroup.to_dict()` に `pc_count` オプション引数を追加 (後方互換)
 - **Alert.pc relationship 欠落バグ修正** (PR #131)
   - `PC.alerts` relationship (backref="pc") を追加
-  - `joinedload(Alert.pc)` が AttributeError になる本番バグを解消
+  - `GET /api/alerts/export.csv` が `AttributeError` で 500 Error になっていた本番バグを解消
+- **E2E CDN タイムアウト修正** (PR #131)
+  - `conftest.py` + 4 テストファイルの `page.goto()` に `wait_until="domcontentloaded"` を追加
+  - CI で Chart.js CDN 遅延による 60s タイムアウトが恒久修正
 
 ### Added
-- **テストカバレッジ拡張** (PR #131): `test_coverage_boost.py` — 46 件追加
-  - alerts CSV エクスポート (BOM・Content-Type・フィルタ)
-  - tasks CSV エクスポート
+- **テストカバレッジ拡張** (PR #131): `test_coverage_boost.py` 新規作成 — **+121 件**
+  - alerts CSV エクスポート (BOM・Content-Type・フィルタ・acknowledge/resolve)
+  - tasks CSV エクスポート / バリデーション / 認可
   - groups CRUD エラーケース (400/404/409)
+  - pcs エンドポイント (CSV・フィルタ・サブリソース・404)
+  - alert_rules CRUD / scheduled_tasks CRUD
   - セキュリティヘッダ検証 (CSP strict, X-Frame-Options, Referrer-Policy)
-  - 合計テスト数: 205 → 251 件
-
-### Planned
-- CHANGELOG / GitHub Release v0.6.0 タグ
-- style-src 'unsafe-inline' Phase 3 (CSS inline style 外部化)
+  - auth エッジケース (inactive/no-body/setup済み/PATCH 弱パスワード/削除保護)
+  - 監査ログ フィルタ / CSV エクスポート
+  - **合計テスト数: 205 → 326 件 (+121 件)**
+  - **routes カバレッジ: 65% → 81% (+16%)**
 
 ---
 
@@ -127,7 +138,8 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
-[Unreleased]: https://github.com/Kensan196948G/PC-Ops-Orchestrator/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/Kensan196948G/PC-Ops-Orchestrator/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Kensan196948G/PC-Ops-Orchestrator/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Kensan196948G/PC-Ops-Orchestrator/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Kensan196948G/PC-Ops-Orchestrator/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Kensan196948G/PC-Ops-Orchestrator/compare/v0.2.0...v0.3.0
