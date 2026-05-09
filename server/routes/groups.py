@@ -2,10 +2,11 @@ import json
 from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
+from sqlalchemy import func
 
 from auth import admin_required, log_operation, login_required
 from extensions import db
-from models import PC, PCGroup, Task
+from models import PC, PCGroup, Task, pc_group_membership
 
 groups_bp = Blueprint("groups", __name__, url_prefix="/api")
 
@@ -18,9 +19,27 @@ def list_groups():
     groups = PCGroup.query.order_by(PCGroup.name).paginate(
         page=page, per_page=per_page, error_out=False
     )
+
+    # Batch load PC counts for all groups on this page (1 query instead of N)
+    group_ids = [g.id for g in groups.items]
+    if group_ids:
+        pc_counts = dict(
+            db.session.query(
+                pc_group_membership.c.group_id,
+                func.count(pc_group_membership.c.pc_id),
+            )
+            .filter(pc_group_membership.c.group_id.in_(group_ids))
+            .group_by(pc_group_membership.c.group_id)
+            .all()
+        )
+    else:
+        pc_counts = {}
+
     return jsonify(
         {
-            "groups": [g.to_dict() for g in groups.items],
+            "groups": [
+                g.to_dict(pc_count=pc_counts.get(g.id, 0)) for g in groups.items
+            ],
             "total": groups.total,
             "page": page,
             "pages": groups.pages,
@@ -65,9 +84,7 @@ def create_group():
     log_operation(
         "create_group",
         f"group:{group.id}",
-        json.dumps(
-            {"name": group.name, "pc_count": group.pcs.count()}, ensure_ascii=False
-        ),
+        json.dumps({"name": group.name, "pc_count": len(pc_names)}, ensure_ascii=False),
     )
     return jsonify(
         {"message": "グループを作成しました", "group": group.to_dict(include_pcs=True)}

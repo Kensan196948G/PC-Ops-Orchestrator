@@ -69,7 +69,7 @@ def live_server():
 @pytest.fixture()
 def page_with_login(page, live_server):
     """Return a Playwright page already logged in as admin."""
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.fill("#username", "admin")
     page.fill("#password", "admin")
     page.click("button[type=submit]")
@@ -80,7 +80,7 @@ def page_with_login(page, live_server):
 @pytest.fixture()
 def viewer_page(page, live_server):
     """Return a Playwright page logged in as viewer role."""
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.fill("#username", "viewer")
     page.fill("#password", "viewer123")
     page.click("button[type=submit]")

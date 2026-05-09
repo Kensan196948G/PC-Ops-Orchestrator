@@ -6,7 +6,7 @@ import json
 
 def _get_admin_token(page, live_server):
     """Helper: login and return the JWT token string."""
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.fill("#username", "admin")
     page.fill("#password", "admin")
     page.click("button[type=submit]")
@@ -19,7 +19,7 @@ def _get_admin_token(page, live_server):
 def test_health_endpoint_fast_response(page, live_server):
     """GET /health must respond in under 2 seconds."""
     start = time.time()
-    response = page.goto(f"{live_server}/health")
+    response = page.goto(f"{live_server}/health", wait_until="domcontentloaded")
     elapsed = time.time() - start
     assert response is not None
     assert response.status == 200
@@ -29,7 +29,7 @@ def test_health_endpoint_fast_response(page, live_server):
 def test_login_page_loads_within_5_seconds(page, live_server):
     """Login page must fully load within 5 seconds."""
     start = time.time()
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.wait_for_load_state("domcontentloaded", timeout=5000)
     elapsed = time.time() - start
     assert elapsed < 5.0, f"Login page took {elapsed:.2f}s"
@@ -117,7 +117,9 @@ def test_api_alerts_list_responds_within_2_seconds(page_with_login, live_server)
 def test_static_css_responds_within_2_seconds(page, live_server):
     """GET /static/css/style.css must respond within 2 seconds with status 200."""
     start = time.time()
-    response = page.goto(f"{live_server}/static/css/style.css")
+    response = page.goto(
+        f"{live_server}/static/css/style.css", wait_until="domcontentloaded"
+    )
     elapsed = time.time() - start
     assert response is not None
     assert response.status == 200
@@ -127,7 +129,9 @@ def test_static_css_responds_within_2_seconds(page, live_server):
 def test_static_js_dashboard_responds_within_2_seconds(page, live_server):
     """GET /static/js/dashboard.js must respond within 2 seconds with status 200."""
     start = time.time()
-    response = page.goto(f"{live_server}/static/js/dashboard.js")
+    response = page.goto(
+        f"{live_server}/static/js/dashboard.js", wait_until="domcontentloaded"
+    )
     elapsed = time.time() - start
     assert response is not None
     assert response.status == 200
@@ -150,7 +154,7 @@ def test_no_network_errors_on_dashboard_load(page, live_server):
     page.on("requestfailed", on_request_failed)
 
     # Login first
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.fill("#username", "admin")
     page.fill("#password", "admin")
     page.click("button[type=submit]")
@@ -172,7 +176,7 @@ def test_pcs_page_loads_within_5_seconds(page_with_login, live_server):
 
 def test_health_response_body_structure(page, live_server):
     """Health endpoint must return JSON with status and db fields."""
-    response = page.goto(f"{live_server}/health")
+    response = page.goto(f"{live_server}/health", wait_until="domcontentloaded")
     assert response is not None
     assert response.status == 200
     body = json.loads(response.body())

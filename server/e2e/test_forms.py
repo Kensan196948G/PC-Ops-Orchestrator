@@ -10,7 +10,7 @@ import json
 
 def test_login_empty_username_blocked_by_html5(page, live_server):
     """Submitting with empty username must not navigate away (HTML5 required)."""
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     # Leave username empty, fill only password
     page.fill("#password", "somepass")
     page.click("button[type=submit]")
@@ -20,7 +20,7 @@ def test_login_empty_username_blocked_by_html5(page, live_server):
 
 def test_login_empty_password_blocked_by_html5(page, live_server):
     """Submitting with empty password must not navigate away (HTML5 required)."""
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.fill("#username", "admin")
     # Leave password blank
     page.click("button[type=submit]")
@@ -29,7 +29,7 @@ def test_login_empty_password_blocked_by_html5(page, live_server):
 
 def test_login_both_empty_stays_on_page(page, live_server):
     """Submitting with both fields empty must stay on the login page."""
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.click("button[type=submit]")
     assert "/login" in page.url, "Both fields empty must keep user on login page"
 
@@ -115,7 +115,7 @@ def test_api_login_error_response_has_error_field(page, live_server):
 
 def test_login_invalid_credentials_shows_error_message(page, live_server):
     """Invalid credentials must display an error in the #login-error-box element."""
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.fill("#username", "admin")
     page.fill("#password", "completely_wrong_password")
     page.click("button[type=submit]")
@@ -127,7 +127,7 @@ def test_login_invalid_credentials_shows_error_message(page, live_server):
 
 def test_login_error_element_empty_on_page_load(page, live_server):
     """#login-error-box must not have .show class when the page first loads."""
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     assert page.locator("#login-error-box.show").count() == 0, (
         "#login-error-box must not be visible on initial load"
     )
@@ -138,7 +138,7 @@ def test_login_button_disabled_during_submission(page, live_server):
     The submit button must be disabled while the login request is in-flight.
     We intercept the network request to pause it and then check button state.
     """
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
 
     # Intercept the login API call to pause it
     with page.expect_request("**/api/auth/login") as req_info:
@@ -162,7 +162,7 @@ def test_login_button_disabled_during_submission(page, live_server):
 
 def test_login_button_re_enabled_after_error(page, live_server):
     """Submit button must be re-enabled after a failed login attempt."""
-    page.goto(f"{live_server}/login")
+    page.goto(f"{live_server}/login", wait_until="domcontentloaded")
     page.fill("#username", "admin")
     page.fill("#password", "wrong")
     page.click("button[type=submit]")

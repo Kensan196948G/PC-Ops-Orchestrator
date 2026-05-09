@@ -26,12 +26,12 @@ class PCGroup(db.Model):
         "PC", secondary=pc_group_membership, backref="groups", lazy="dynamic"
     )
 
-    def to_dict(self, include_pcs=False):
+    def to_dict(self, include_pcs=False, pc_count=None):
         d = {
             "id": self.id,
             "name": self.name,
             "description": self.description,
-            "pc_count": self.pcs.count(),
+            "pc_count": pc_count if pc_count is not None else self.pcs.count(),
             "created_by": self.created_by,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -92,6 +92,9 @@ class PC(db.Model):
     )
     scheduled_tasks = db.relationship(
         "ScheduledTask", backref="pc", lazy="dynamic", cascade="all, delete-orphan"
+    )
+    alerts = db.relationship(
+        "Alert", backref="pc", lazy="dynamic", cascade="all, delete-orphan"
     )
 
     def to_dict(self):

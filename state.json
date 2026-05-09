@@ -38,14 +38,14 @@
   },
   "execution": {
     "max_duration_minutes": 300,
-    "loop_count": 4,
+    "loop_count": 5,
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-06T19:00:01+09:00",
+    "current_session_start_at": "2026-05-09T19:00:01+09:00",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "cron",
-    "last_cron_session_id": "20260506-190001-PC-Ops-Orchestrator"
+    "last_cron_session_id": "20260509-190001-PC-Ops-Orchestrator"
   },
   "status": {
     "current_phase": "improve",
@@ -83,14 +83,13 @@
       125,
       129,
       130
-    ],
-    "pending_prs": []
+    ]
   },
   "priority": {
     "score": 0
   },
   "open_issues": {
-    "note": "M6進行中: PR #129 (CSP Phase 2) MERGED。PR #130 (N+1修正) MERGED。Issue #121 残: v1.0.0 Release準備・groups.py N+1・style-src Phase 3。"
+    "note": "M6進行中: PR #131 (groups N+1 + Alert.pc fix + test +108件) CI待ち。style-src Phase 3 未着手。v0.6.0 GitHub Release 未作成。"
   },
   "milestones": {
     "M1": {
@@ -150,37 +149,34 @@
     }
   },
   "session_summary": {
-    "id": "20260506-220001-PC-Ops-Orchestrator",
-    "loop_phase": "Monitor → Verify (CI修復) → Build (CSP Phase 2 + N+1修正) → Improve (state/Memory)",
-    "duration_minutes": 245,
-    "prs_merged": [
-      129
+    "id": "20260509-190001-PC-Ops-Orchestrator",
+    "loop_phase": "Monitor → Build (groups N+1 / Alert.pc relationship fix) → Verify (test +102件) → Improve (E2E CDN fix / カバレッジ)",
+    "duration_minutes": 85,
+    "prs_merged": [],
+    "prs_pending": [
+      131
     ],
-    "prs_pending": [130],
-    "issues_closed": [128],
+    "issues_closed": [],
     "issues_opened": [],
     "completed": [
-      "PR #129 MERGED: CSP Phase 2 — 全 16 テンプレートのインラインハンドラを addEventListener に移行、'unsafe-inline' 除去",
-      "stub-actions.js 新規作成 — data-stub-alert パターンで alert() スタブを共通管理",
-      "test_csp_script_src_uses_nonce_not_unsafe_inline (strict 版) 追加",
-      "PR #130 作成中 (CI待ち): N+1 クエリ修正 — alerts/tasks CSV エクスポートに joinedload 追加 (5001→2クエリ)",
-      "CHANGELOG.md 更新 — CSP Phase 2 / N+1 修正 追記",
-      "Issue #121 進捗コメント追加",
-      "Issue #128 (stale CI failure) クローズ",
-      "Memory 更新: project_m6_in_progress.md / feedback_csp_phase2_migration.md"
+      "PR #131 作成中: groups N+1 解消 (list_groups IN バルク COUNT), Alert.pc relationship バグ修正",
+      "test_coverage_boost.py 新規作成: +108 テスト (alerts/tasks/groups/pcs/alert_rules/scheduled_tasks/auth)",
+      "テスト総数: 205 → 313 件 (+108件)",
+      "routes カバレッジ: ~65% → 80% (+15%)",
+      "E2E CDN タイムアウト修正: page.goto に wait_until='domcontentloaded' 全面適用",
+      "CHANGELOG.md 更新: PR #131 内容追記"
     ],
-    "ci_status": "GREEN — PR #129 MERGED / PR #130 CI待ち (PowerShell tests pending)",
+    "ci_status": "PENDING — PR #131 CI 実行中 (fix/groups-n1-query)",
     "verification": {
-      "pytest_unit": "164 passed (全テストスイート: test_api + test_api_extended + test_security_backend + test_reports + test_user_security)",
+      "pytest_unit": "313 passed, 0 failed",
       "ruff_check": "All checks passed",
-      "ruff_format": "48 files already formatted",
-      "github_ci": "PR #129 全 CI SUCCESS → MERGED (squash)",
-      "csp_nonce": "Phase 2 完了: script-src から 'unsafe-inline' 除去。inline handlers = 0"
+      "ruff_format": "All files formatted",
+      "github_ci": "PR #131 lint: pass / E2E: pending"
     },
     "resume_point": {
-      "next_action": "Issue #121 残課題: groups.py N+1修正 (PCGroup.pcs.count() → subquery) + style-src 'unsafe-inline' Phase 3 + v1.0.0 リリース最終準備",
-      "blocker": "なし",
-      "notes": "CSP Phase 2 完了: script-src 'unsafe-inline' 除去でXSS耐性大幅向上。PR #130 N+1修正MERGED。GitHub Release v0.6.0-beta 作成済み。164 tests passed。次セッション優先: groups.py N+1修正 + Issue #121 完全クローズ + style-src Phase 3 (CSS 'unsafe-inline' 除去) + v1.0.0 本番リリース最終準備。"
+      "next_action": "PR #131 CI 完了後 merge → v0.6.0 GitHub Release 作成 → style-src Phase 3 評価 → v1.0.0 最終リリース準備",
+      "blocker": "PR #131 CI 待ち",
+      "notes": "今セッションの主成果: groups N+1修正 + Alert.pc relationship バグ修正 (本番で CSV エクスポートが 500 Error になっていた潜在バグ) + テスト313件 (routes カバレッジ 80%)。E2E CDN タイムアウト修正も完了。次セッション: PR #131 merge確認 → v0.6.0 Release → style-src Phase 3 検討。"
     }
   },
   "learning": {

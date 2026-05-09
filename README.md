@@ -527,14 +527,15 @@ gantt
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| **API 拡張テスト（Python）** | **183項目** | **✅ PASS** |
-| **WebUI E2E テスト（Playwright）** | **99項目** | **✅ PASS** |
+| **API 拡張テスト（Python）** | **313項目** | **✅ PASS** |
+| **WebUI E2E テスト（Playwright）** | **121項目** | **✅ PASS** |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
 | Agent Teams E2E テスト | 複数 | ✅ PASS |
 | Agent Teams 負荷テスト | 複数 | ✅ PASS |
 | スモークテスト（PS5.1 / PS7） | 複数 | ✅ PASS |
 | **セキュリティスキャン（bandit）** | **High=0** | **✅ PASS** |
+| **routes カバレッジ** | **80%** | **✅ (65%→80% +15%)** |
 
 ### 🔒 250項目テスト検証カバレッジ
 

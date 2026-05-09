@@ -20,10 +20,25 @@ Versioning: [Semantic Versioning](https://semver.org/)
 - **N+1 クエリ解消** (Issue #121, PR #130)
   - `alerts.py` / `tasks.py` CSV エクスポートで `joinedload(*.pc)` 追加
   - 最大 5000 行エクスポート時のクエリ数: 5001 → 2 に削減
+- **groups.py N+1 解消** (PR #131)
+  - `GET /api/groups` で N グループ × 1 COUNT クエリ → 2 クエリに削減
+  - `PCGroup.to_dict()` に `pc_count` オプション引数を追加
+  - `create_group()` のログ内 `group.pcs.count()` を `len(pc_names)` に置換
+- **Alert.pc relationship 欠落バグ修正** (PR #131)
+  - `PC.alerts` relationship (backref="pc") を追加
+  - `joinedload(Alert.pc)` が AttributeError になる本番バグを解消
+
+### Added
+- **テストカバレッジ拡張** (PR #131): `test_coverage_boost.py` — 46 件追加
+  - alerts CSV エクスポート (BOM・Content-Type・フィルタ)
+  - tasks CSV エクスポート
+  - groups CRUD エラーケース (400/404/409)
+  - セキュリティヘッダ検証 (CSP strict, X-Frame-Options, Referrer-Policy)
+  - 合計テスト数: 205 → 251 件
 
 ### Planned
-- CHANGELOG / GitHub Release v1.0.0 タグ
-- パフォーマンス詳細最適化 (groups.py N+1, lazy="dynamic" 見直し)
+- CHANGELOG / GitHub Release v0.6.0 タグ
+- style-src 'unsafe-inline' Phase 3 (CSS inline style 外部化)
 
 ---
 
