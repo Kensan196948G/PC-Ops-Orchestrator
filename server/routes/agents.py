@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from auth import login_required
-from models import PC
+from extensions import db
+from models import PC, SystemSnapshot
 
 agents_bp = Blueprint("agents", __name__, url_prefix="/api")
 
@@ -22,6 +23,26 @@ def list_agents():
 
     now = datetime.now(timezone.utc)
 
+    pc_ids = [pc.id for pc in pagination.items]
+    # Fetch latest snapshot per PC in one query to avoid N+1
+    latest_snaps = {}
+    if pc_ids:
+        subq = (
+            db.session.query(
+                SystemSnapshot.pc_id,
+                db.func.max(SystemSnapshot.collected_at).label("max_at"),
+            )
+            .filter(SystemSnapshot.pc_id.in_(pc_ids))
+            .group_by(SystemSnapshot.pc_id)
+            .subquery()
+        )
+        for snap in db.session.query(SystemSnapshot).join(
+            subq,
+            (SystemSnapshot.pc_id == subq.c.pc_id)
+            & (SystemSnapshot.collected_at == subq.c.max_at),
+        ):
+            latest_snaps[snap.pc_id] = snap
+
     def agent_dict(pc):
         last_seen_dt = None
         if pc.last_seen:
@@ -30,14 +51,20 @@ def list_agents():
             else:
                 last_seen_dt = pc.last_seen
         online = last_seen_dt is not None and (now - last_seen_dt).total_seconds() < 300
+        snap = latest_snaps.get(pc.id)
+        cpu_usage = snap.cpu_usage if snap else None
+        memory_usage = None
+        if pc.memory_total_gb and pc.memory_available_gb is not None:
+            used = pc.memory_total_gb - pc.memory_available_gb
+            memory_usage = round(used / pc.memory_total_gb * 100, 1)
         return {
             "id": pc.id,
             "pc_name": pc.pc_name,
             "ip_address": pc.ip_address,
             "os_version": pc.os_version,
             "agent_version": pc.agent_version or "—",
-            "cpu_usage": pc.cpu_usage,
-            "memory_usage": pc.memory_usage,
+            "cpu_usage": cpu_usage,
+            "memory_usage": memory_usage,
             "status": pc.status,
             "online": online,
             "last_seen": pc.last_seen.isoformat() if pc.last_seen else None,
