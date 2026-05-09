@@ -512,3 +512,80 @@ def test_pcs_pagination():
     assert r.status_code == 200
     data = json.loads(r.data)
     assert len(data["pcs"]) <= 5
+
+
+# ── Tasks endpoint error cases ────────────────────────────────────────
+
+
+def test_tasks_create_no_body():
+    r = req("POST", "/api/tasks", token=_operator_token)
+    assert r.status_code == 400
+
+
+def test_tasks_create_missing_task_type():
+    r = req("POST", "/api/tasks", token=_operator_token, data={"pc_name": "test-pc"})
+    assert r.status_code == 400
+
+
+def test_tasks_create_invalid_task_type():
+    r = req(
+        "POST",
+        "/api/tasks",
+        token=_operator_token,
+        data={"task_type": "invalid_xyz"},
+    )
+    assert r.status_code == 400
+
+
+def test_tasks_create_nonexistent_pc():
+    r = req(
+        "POST",
+        "/api/tasks",
+        token=_operator_token,
+        data={"task_type": "cleanup", "pc_name": "nonexistent-pc-zzz"},
+    )
+    assert r.status_code == 404
+
+
+def test_tasks_create_command_too_long():
+    r = req(
+        "POST",
+        "/api/tasks",
+        token=_operator_token,
+        data={"task_type": "custom", "command": "x" * 513},
+    )
+    assert r.status_code == 400
+
+
+def test_tasks_viewer_cannot_create():
+    r = req("POST", "/api/tasks", token=_viewer_token, data={"task_type": "cleanup"})
+    assert r.status_code == 403
+
+
+def test_tasks_delete_nonexistent():
+    r = req("DELETE", "/api/tasks/999999", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_tasks_list_with_status_filter():
+    r = req("GET", "/api/tasks?status=pending", token=_admin_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert "tasks" in data
+
+
+def test_tasks_list_with_type_filter():
+    r = req("GET", "/api/tasks?task_type=cleanup", token=_admin_token)
+    assert r.status_code == 200
+
+
+def test_tasks_pagination():
+    r = req("GET", "/api/tasks?page=1&per_page=5", token=_admin_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert len(data["tasks"]) <= 5
+
+
+def test_tasks_viewer_can_list():
+    r = req("GET", "/api/tasks", token=_viewer_token)
+    assert r.status_code == 200
