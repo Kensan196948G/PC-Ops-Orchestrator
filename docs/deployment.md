@@ -242,8 +242,54 @@ curl -s http://localhost:5300/health | python3 -m json.tool
 
 ```bash
 # 前のリリースタグに戻す例
-git checkout v0.4.0
+git checkout v0.6.0
 cd server
 pip install -r requirements.txt
 sudo systemctl reload pc-ops
 ```
+
+---
+
+## 13. v1.0.0 リリース前最終チェックリスト
+
+### セキュリティ
+- [ ] CSP Phase 3 完了 — `style-src 'self'` のみ (PR #139)
+- [ ] `script-src 'unsafe-inline'` 除去済み (Phase 2: PR #129)
+- [ ] 9 CVE 解消済み (PR #100/#105)
+- [ ] `pip-audit` で HIGH/CRITICAL 脆弱性ゼロを確認
+  ```bash
+  pip-audit --require-hashes -r requirements.txt
+  ```
+- [ ] `SECRET_KEY` を本番用 32 文字以上に設定
+- [ ] `SWAGGER_ENABLED=false`
+
+### 品質
+- [ ] pytest 全テスト通過 (`pytest -q` → 0 failed)
+- [ ] routes カバレッジ 80% 以上確認
+- [ ] ruff check + format が GREEN
+- [ ] E2E テスト通過 (Playwright)
+
+### DB マイグレーション (v1.0.0 では新 3 モデル追加)
+```bash
+# NotificationChannel / Certificate / License テーブルが存在しない場合
+FLASK_APP=app flask db migrate -m "add notification_channels certificates licenses"
+FLASK_APP=app flask db upgrade
+```
+または `db.create_all()` で自動作成:
+```bash
+python3 -c "
+from app import create_app; from extensions import db
+app = create_app('production')
+with app.app_context(): db.create_all(); print('OK')
+"
+```
+
+### ドキュメント
+- [ ] CHANGELOG.md の `[Unreleased]` を `[1.0.0]` に昇格
+- [ ] README.md のバージョンバッジ / テスト件数を更新
+- [ ] GitHub Release v1.0.0 タグ作成
+
+### 運用
+- [ ] systemd user サービス (`~/.config/systemd/user/pc-ops-orchestrator.service`) が起動中
+- [ ] Nginx リバースプロキシ + SSL/TLS 設定確認
+- [ ] `/health` エンドポイントが `{"status":"ok"}` を返すことを確認
