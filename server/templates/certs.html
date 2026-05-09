@@ -3,88 +3,87 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">証明書管理</h2>
-    <p class="page-description">TLS / SSL 証明書、クライアント証明書、コード署名証明書の有効期限監視（ダミーデータ）。</p>
-    <button class="btn btn-primary" type="button" data-stub-alert="証明書追加（次マイルストーン実装予定）">+ 証明書を登録</button>
-</div>
-
-<div class="stats-grid">
-    <div class="stat-card stat-online">
-        <div class="stat-value">28</div>
-        <div class="stat-label">登録証明書</div>
-    </div>
-    <div class="stat-card stat-task">
-        <div class="stat-value">22</div>
-        <div class="stat-label">有効 (90 日以上)</div>
-    </div>
-    <div class="stat-card stat-warning">
-        <div class="stat-value">4</div>
-        <div class="stat-label">期限 90 日以内</div>
-    </div>
-    <div class="stat-card stat-critical">
-        <div class="stat-value">2</div>
-        <div class="stat-label">期限 30 日以内 ⚠️</div>
-    </div>
+    <p class="page-description">SSL/TLS・クライアント・コード署名証明書の有効期限を一元管理。</p>
+    <button class="btn btn-primary role-admin-only" id="btn-add-cert">+ 証明書を登録</button>
 </div>
 
 <div class="card">
-    <h3 class="card-title">TLS / SSL 証明書一覧</h3>
+    <h3 class="card-title">🔒 証明書一覧</h3>
     <table class="table">
         <thead>
             <tr>
-                <th>CN (ホスト)</th>
+                <th>ドメイン / 名前</th>
                 <th>発行者</th>
                 <th>発行日</th>
                 <th>有効期限</th>
-                <th>残日数</th>
+                <th>残り日数</th>
                 <th>状態</th>
-                <th>自動更新</th>
                 <th>操作</th>
             </tr>
         </thead>
-        <tbody>
-            <tr><td>pc-ops.example.com</td><td>Let's Encrypt R3</td><td>2026-04-01</td><td>2026-06-30</td><td>55 日</td><td><span class="badge badge-warning">期限 90 日以内</span></td><td>✓ ACME</td><td><button class="btn btn-secondary" style="font-size:0.75rem;">詳細</button></td></tr>
-            <tr><td>api.pc-ops.example.com</td><td>Let's Encrypt R3</td><td>2026-04-01</td><td>2026-06-30</td><td>55 日</td><td><span class="badge badge-warning">期限 90 日以内</span></td><td>✓ ACME</td><td><button class="btn btn-secondary" style="font-size:0.75rem;">詳細</button></td></tr>
-            <tr><td>pc-ops-stg.example.com</td><td>Let's Encrypt R3</td><td>2026-02-01</td><td>2026-05-30</td><td>24 日</td><td><span class="badge badge-danger">期限 30 日以内 ⚠️</span></td><td>✓ ACME</td><td><button class="btn btn-secondary" style="font-size:0.75rem;">詳細</button></td></tr>
-            <tr><td>*.internal.example.com</td><td>Internal CA</td><td>2026-01-15</td><td>2027-01-15</td><td>254 日</td><td><span class="badge badge-success">有効</span></td><td>✗ 手動更新</td><td><button class="btn btn-secondary" style="font-size:0.75rem;">詳細</button></td></tr>
+        <tbody id="certs-body">
+            <tr><td colspan="7" class="text-center">読み込み中...</td></tr>
         </tbody>
     </table>
 </div>
 
-<div class="charts-grid">
-    <div class="card">
-        <h3 class="card-title">クライアント証明書</h3>
-        <table class="table">
-            <thead><tr><th>名前</th><th>用途</th><th>有効期限</th><th>状態</th></tr></thead>
-            <tbody>
-                <tr><td>agent-mtls-2026</td><td>Agent ↔ Server mTLS</td><td>2027-04-28</td><td><span class="badge badge-success">有効</span></td></tr>
-                <tr><td>backup-mtls-2026</td><td>バックアップ通信</td><td>2026-05-31</td><td><span class="badge badge-danger">期限 25 日</span></td></tr>
-                <tr><td>siem-mtls-2026</td><td>SIEM 連携</td><td>2027-04-28</td><td><span class="badge badge-success">有効</span></td></tr>
-            </tbody>
-        </table>
-    </div>
-    <div class="card">
-        <h3 class="card-title">コード署名証明書</h3>
-        <table class="table">
-            <thead><tr><th>名前</th><th>用途</th><th>有効期限</th><th>状態</th></tr></thead>
-            <tbody>
-                <tr><td>PC-Ops-Code-Sign-EV</td><td>Agent インストーラ署名</td><td>2027-09-30</td><td><span class="badge badge-success">有効</span></td></tr>
-                <tr><td>PC-Ops-Module-Sign</td><td>PowerShell モジュール署名</td><td>2026-08-15</td><td><span class="badge badge-warning">期限 100 日</span></td></tr>
-            </tbody>
-        </table>
+<!-- Cert Modal -->
+<div id="cert-modal" class="modal-overlay">
+    <div class="modal-container modal-560">
+        <div class="modal-header">
+            <h3 class="modal-title" id="cert-modal-title">証明書を登録</h3>
+            <button class="modal-close" id="btn-close-cert-modal" aria-label="閉じる">×</button>
+        </div>
+        <div class="modal-body">
+            <form id="cert-form">
+                <div class="form-group">
+                    <label class="form-label">名前（管理用）</label>
+                    <input type="text" id="cert-name" class="form-input" placeholder="例: API サーバー証明書">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ドメイン <span class="required">*</span></label>
+                    <input type="text" id="cert-domain" class="form-input" placeholder="例: api.pc-ops.example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">発行者</label>
+                    <input type="text" id="cert-issuer" class="form-input" placeholder="例: Let's Encrypt R3">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">種別</label>
+                    <select id="cert-type" class="form-input">
+                        <option value="server">サーバー証明書</option>
+                        <option value="client">クライアント証明書</option>
+                        <option value="code">コード署名</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">発行日</label>
+                    <input type="date" id="cert-issued-at" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">有効期限 <span class="required">*</span></label>
+                    <input type="date" id="cert-expires-at" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="cert-auto-renew" checked>
+                        自動更新（ACME）
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">メモ</label>
+                    <textarea id="cert-notes" class="form-input" rows="2" placeholder="備考など"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-close-cert-modal-foot">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+{% endblock %}
 
-<div class="card">
-    <h3 class="card-title">有効期限アラート設定</h3>
-    <p style="color:var(--text-secondary);">下記タイミングで管理者へ通知します。設定編集は次マイルストーンで実装予定。</p>
-    <table class="table">
-        <thead><tr><th>タイミング</th><th>通知先</th><th>状態</th></tr></thead>
-        <tbody>
-            <tr><td>有効期限 90 日前</td><td>email + Slack #pc-ops</td><td><span class="badge badge-success">有効</span></td></tr>
-            <tr><td>有効期限 60 日前</td><td>email + Slack #pc-ops</td><td><span class="badge badge-success">有効</span></td></tr>
-            <tr><td>有効期限 30 日前</td><td>email + Slack #pc-ops + PagerDuty</td><td><span class="badge badge-success">有効</span></td></tr>
-            <tr><td>有効期限切れ</td><td>email + Slack #pc-ops + PagerDuty (Critical)</td><td><span class="badge badge-success">有効</span></td></tr>
-        </tbody>
-    </table>
-</div>
+{% block scripts %}
+<script nonce="{{ csp_nonce }}" src="/static/js/certificates.js"></script>
 {% endblock %}

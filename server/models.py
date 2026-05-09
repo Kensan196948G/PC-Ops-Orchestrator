@@ -451,6 +451,100 @@ class ScheduledTask(db.Model):
         return f"<ScheduledTask {self.id}:{self.name}>"
 
 
+class NotificationChannel(db.Model):
+    __tablename__ = "notification_channels"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    channel_type = db.Column(db.String(20), nullable=False)  # slack/teams/email/webhook
+    target = db.Column(db.String(500), nullable=False)  # URL or email
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "channel_type": self.channel_type,
+            "target": self.target,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+    def __repr__(self):
+        return f"<NotificationChannel {self.name}>"
+
+
+class Certificate(db.Model):
+    __tablename__ = "certificates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    domain = db.Column(db.String(200), nullable=False)
+    issuer = db.Column(db.String(200))
+    cert_type = db.Column(db.String(50), default="server")  # server/client/code
+    issued_at = db.Column(db.Date)
+    expires_at = db.Column(db.Date, nullable=False)
+    auto_renew = db.Column(db.Boolean, default=True)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        from datetime import date
+
+        today = date.today()
+        days_left = (self.expires_at - today).days if self.expires_at else None
+        return {
+            "id": self.id,
+            "name": self.name,
+            "domain": self.domain,
+            "issuer": self.issuer,
+            "cert_type": self.cert_type,
+            "issued_at": self.issued_at.isoformat() if self.issued_at else None,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "days_left": days_left,
+            "auto_renew": self.auto_renew,
+            "notes": self.notes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+    def __repr__(self):
+        return f"<Certificate {self.name}>"
+
+
+class License(db.Model):
+    __tablename__ = "licenses"
+
+    id = db.Column(db.Integer, primary_key=True)
+    product_name = db.Column(db.String(200), nullable=False)
+    vendor = db.Column(db.String(200))
+    license_type = db.Column(
+        db.String(50), default="subscription"
+    )  # subscription/perpetual/volume
+    seat_count = db.Column(db.Integer)
+    unit_price = db.Column(db.Integer)  # yen
+    expires_at = db.Column(db.Date)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "product_name": self.product_name,
+            "vendor": self.vendor,
+            "license_type": self.license_type,
+            "seat_count": self.seat_count,
+            "unit_price": self.unit_price,
+            "total_cost": (self.seat_count or 0) * (self.unit_price or 0),
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "notes": self.notes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+    def __repr__(self):
+        return f"<License {self.product_name}>"
+
+
 class User(db.Model):
     __tablename__ = "users"
 
