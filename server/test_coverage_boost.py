@@ -1042,3 +1042,49 @@ def test_update_user_invalid_role():
     assert r.status_code == 400
 
     req("DELETE", f"/api/auth/users/{user_id}", token=_admin_token)
+
+
+# ── Audit logs endpoint tests ─────────────────────────────────────────
+
+
+def test_audit_logs_list_returns_200():
+    r = req("GET", "/api/audit/logs", token=_admin_token)
+    assert r.status_code == 200
+    data = json.loads(r.data)
+    assert "logs" in data
+
+
+def test_audit_logs_requires_auth():
+    r = req("GET", "/api/audit/logs")
+    assert r.status_code == 401
+
+
+def test_audit_logs_filter_by_created_by():
+    r = req("GET", "/api/audit/logs?created_by=admin", token=_admin_token)
+    assert r.status_code == 200
+
+
+def test_audit_logs_filter_by_action():
+    r = req("GET", "/api/audit/logs?action=login", token=_admin_token)
+    assert r.status_code == 200
+
+
+def test_audit_logs_filter_by_from_date():
+    r = req("GET", "/api/audit/logs?from_date=2026-01-01", token=_admin_token)
+    assert r.status_code == 200
+
+
+def test_audit_logs_filter_by_to_date():
+    r = req("GET", "/api/audit/logs?to_date=2026-12-31", token=_admin_token)
+    assert r.status_code == 200
+
+
+def test_audit_logs_csv_export():
+    r = req("GET", "/api/audit/export.csv", token=_admin_token)
+    assert r.status_code == 200
+    assert "text/csv" in r.headers.get("Content-Type", "")
+
+
+def test_audit_logs_viewer_cannot_access():
+    r = req("GET", "/api/audit/logs", token=_viewer_token)
+    assert r.status_code == 403
