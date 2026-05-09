@@ -4,9 +4,9 @@
 <div class="page-header">
     <h2 class="page-title">レポート・分析</h2>
     <p class="page-description">健全性トレンド・タスク分析・アラート分析・月次レポートの可視化。</p>
-    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-        <label style="font-size:0.9rem;">対象月:
-            <input type="month" id="reportMonth" class="form-control" style="display:inline-block;width:auto;margin-left:0.4rem;">
+    <div class="d-flex-wrap">
+        <label class="text-sm">対象月:
+            <input type="month" id="reportMonth" class="form-control p-month">
         </label>
         <button class="btn btn-secondary" type="button" id="btnCsvExport">📊 CSV エクスポート</button>
         <button class="btn btn-primary" type="button" id="btnPdfExport">📄 月次 PDF レポート</button>

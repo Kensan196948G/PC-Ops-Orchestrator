@@ -10,7 +10,7 @@
 <div class="charts-grid">
     <div class="card">
         <h3 class="card-title">⚙️ 全般設定</h3>
-        <div style="display:grid;gap:0.75rem;">
+        <div class="d-grid-form">
             <label>タイムゾーン<br><select disabled><option>Asia/Tokyo (UTC+9)</option><option>UTC</option><option>America/Los_Angeles</option></select></label>
             <label>表示言語<br><select disabled><option>日本語</option><option>English</option></select></label>
             <label>ログレベル<br><select disabled><option>INFO</option><option>WARNING</option><option>ERROR</option><option>DEBUG</option></select></label>
@@ -19,7 +19,7 @@
     </div>
     <div class="card">
         <h3 class="card-title">🔐 認証設定</h3>
-        <div style="display:grid;gap:0.75rem;">
+        <div class="d-grid-form">
             <label>JWT 有効期限 (時間)<br><input type="number" value="8" disabled></label>
             <label>リフレッシュトークン (日)<br><input type="number" value="30" disabled></label>
             <label>パスワード最小長<br><input type="number" value="8" disabled></label>
@@ -32,7 +32,7 @@
 <div class="charts-grid">
     <div class="card">
         <h3 class="card-title">📡 Agent 通信設定</h3>
-        <div style="display:grid;gap:0.75rem;">
+        <div class="d-grid-form">
             <label>heartbeat 間隔 (秒)<br><input type="number" value="60" disabled></label>
             <label>通信タイムアウト (秒)<br><input type="number" value="30" disabled></label>
             <label>収集間隔 (分)<br><input type="number" value="5" disabled></label>
@@ -41,7 +41,7 @@
     </div>
     <div class="card">
         <h3 class="card-title">🗄️ DB 接続設定</h3>
-        <div style="display:grid;gap:0.75rem;">
+        <div class="d-grid-form">
             <label>プライマリ DB<br><input type="text" value="postgresql://pc-ops-db:5432/pcops" disabled></label>
             <label>read replica<br><input type="text" value="postgresql://pc-ops-db-replica:5432/pcops" disabled></label>
             <label>バックアップ保存先<br><input type="text" value="s3://pc-ops-backups/" disabled></label>
@@ -61,13 +61,13 @@
                 <tr><td>https://pc-ops-stg.example.com</td><td>ステージング</td><td><span class="badge badge-success">✓</span></td></tr>
             </tbody>
         </table>
-        <div style="margin-top:0.75rem;text-align:right;">
-            <button class="btn btn-primary" style="font-size:0.8rem;" data-stub-alert="オリジン追加（次マイルストーン実装予定）">+ オリジン追加</button>
+        <div class="mt-actions">
+            <button class="btn btn-primary text-sm" data-stub-alert="オリジン追加（次マイルストーン実装予定）">+ オリジン追加</button>
         </div>
     </div>
     <div class="card">
         <h3 class="card-title">⚡ レート制限設定</h3>
-        <div style="display:grid;gap:0.75rem;">
+        <div class="d-grid-form">
             <label>WebUI / 分<br><input type="number" value="200" disabled></label>
             <label>Agent API / 分<br><input type="number" value="600" disabled></label>
             <label>auth /login / 分<br><input type="number" value="10" disabled></label>

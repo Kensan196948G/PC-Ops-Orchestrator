@@ -163,11 +163,11 @@ function openCreateModal() {
     document.getElementById('new-role').value = 'operator';
     const bar = document.getElementById('new-strength');
     if (bar) bar.replaceChildren();
-    document.getElementById('create-modal').style.display = 'flex';
+    document.getElementById('create-modal').classList.remove('hidden');
 }
 
 function closeCreateModal() {
-    document.getElementById('create-modal').style.display = 'none';
+    document.getElementById('create-modal').classList.add('hidden');
 }
 
 async function submitCreate() {
@@ -204,11 +204,11 @@ function openEditModal(user) {
     document.getElementById('edit-password').value = '';
     const bar = document.getElementById('edit-strength');
     if (bar) bar.replaceChildren();
-    document.getElementById('edit-modal').style.display = 'flex';
+    document.getElementById('edit-modal').classList.remove('hidden');
 }
 
 function closeEditModal() {
-    document.getElementById('edit-modal').style.display = 'none';
+    document.getElementById('edit-modal').classList.add('hidden');
 }
 
 async function submitEdit() {

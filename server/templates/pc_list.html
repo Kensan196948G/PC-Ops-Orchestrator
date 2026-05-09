@@ -21,8 +21,7 @@
             <option value="macOS">macOS</option>
         </select>
         <button class="btn btn-secondary" id="btn-export-pcs-csv">&#8595; CSV</button>
-        <button id="bulk-task-btn" class="btn btn-primary role-operator-or-admin"
-                style="display:none;">
+        <button id="bulk-task-btn" class="btn btn-primary role-operator-or-admin hidden">
             &#9654; 一括タスク実行 (<span id="bulk-count">0</span>台)
         </button>
     </div>
@@ -32,7 +31,7 @@
     <table class="table" id="pc-table">
         <thead>
             <tr>
-                <th style="width:40px;">
+                <th class="w-40">
                     <input type="checkbox" id="select-all-cb"
                            title="全選択/全解除">
                 </th>
@@ -57,16 +56,16 @@
 
 <!-- 一括タスク実行モーダル -->
 <div id="bulk-modal" class="modal-overlay">
-    <div class="modal-container" style="max-width:480px;">
+    <div class="modal-container modal-sm">
         <div class="modal-header">
             <h3 class="modal-title">一括タスク実行</h3>
             <button class="modal-close" id="btn-close-bulk-modal">&#215;</button>
         </div>
         <div class="modal-body">
-            <p id="bulk-target-info" style="margin-bottom:1rem;color:var(--text-secondary);"></p>
+            <p id="bulk-target-info" class="text-secondary mb-md"></p>
             <form id="bulk-form">
                 <div class="form-group">
-                    <label>タスク種別 <span style="color:var(--danger);">*</span></label>
+                    <label>タスク種別 <span class="text-danger-marker">*</span></label>
                     <select id="bulk-task-type" class="form-input" required>
                         <option value="">選択してください</option>
                         <option value="cleanup">cleanup（一時ファイル削除）</option>
@@ -76,12 +75,12 @@
                         <option value="custom">custom（カスタムコマンド）</option>
                     </select>
                 </div>
-                <div class="form-group" id="bulk-command-group" style="display:none;">
+                <div class="form-group hidden" id="bulk-command-group">
                     <label>コマンド</label>
                     <input type="text" id="bulk-command" class="form-input"
                            placeholder="実行するコマンドを入力" maxlength="512">
                 </div>
-                <div class="modal-footer" style="padding:0;margin-top:1rem;">
+                <div class="modal-footer modal-footer-reset">
                     <button type="button" class="btn btn-secondary" id="btn-cancel-bulk-modal">キャンセル</button>
                     <button type="submit" class="btn btn-primary" id="bulk-submit-btn">実行</button>
                 </div>
@@ -92,7 +91,7 @@
 
 <!-- 一括実行結果モーダル -->
 <div id="bulk-result-modal" class="modal-overlay">
-    <div class="modal-container" style="max-width:480px;">
+    <div class="modal-container modal-sm">
         <div class="modal-header">
             <h3 class="modal-title">実行結果</h3>
             <button class="modal-close" id="btn-close-bulk-result-modal">&#215;</button>

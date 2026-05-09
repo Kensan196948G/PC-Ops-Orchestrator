@@ -3,16 +3,12 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">操作ログ（監査ログ）</h2>
-    <div class="page-actions" style="flex-wrap:wrap;gap:0.5rem;">
-        <input type="text" id="user-filter" class="form-input" placeholder="実行者で絞り込み"
-               style="width:140px;">
-        <input type="text" id="action-filter" class="form-input" placeholder="操作内容で絞り込み"
-               style="width:160px;">
-        <input type="date" id="from-date" class="form-input" title="開始日（この日以降）"
-               style="width:140px;">
-        <span style="align-self:center;color:var(--text-secondary);">〜</span>
-        <input type="date" id="to-date" class="form-input" title="終了日（この日以前）"
-               style="width:140px;">
+    <div class="page-actions d-flex-wrap">
+        <input type="text" id="user-filter" class="form-input w-140" placeholder="実行者で絞り込み">
+        <input type="text" id="action-filter" class="form-input w-160" placeholder="操作内容で絞り込み">
+        <input type="date" id="from-date" class="form-input w-140" title="開始日（この日以降）">
+        <span class="align-center text-secondary">〜</span>
+        <input type="date" id="to-date" class="form-input w-140" title="終了日（この日以前）">
         <button class="btn btn-secondary" id="btn-refresh-audit">&#8635; 更新</button>
         <button class="btn btn-secondary role-operator-or-admin" id="btn-export-audit-csv" title="フィルタ条件で CSV 出力">&#8659; CSV</button>
     </div>

@@ -46,17 +46,17 @@
                 <a href="/pcs" class="nav-item" data-page="pcs">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
                     <span class="nav-label">PC一覧</span>
-                    <span id="pcs-badge" class="nav-badge muted" style="display:none;">0</span>
+                    <span id="pcs-badge" class="nav-badge muted hidden">0</span>
                 </a>
                 <a href="/tasks" class="nav-item" data-page="tasks">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
                     <span class="nav-label">タスク管理</span>
-                    <span id="tasks-badge" class="nav-badge muted" style="display:none;">0</span>
+                    <span id="tasks-badge" class="nav-badge muted hidden">0</span>
                 </a>
                 <a href="/alerts" class="nav-item" data-page="alerts">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
                     <span class="nav-label">アラート</span>
-                    <span id="alerts-badge" class="nav-badge" style="display:none;">0</span>
+                    <span id="alerts-badge" class="nav-badge hidden">0</span>
                 </a>
                 <a href="/reports" class="nav-item" data-page="reports">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></span>
@@ -86,7 +86,7 @@
                 <a href="/agents" class="nav-item" data-page="agents">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
                     <span class="nav-label">Agent管理</span>
-                    <span id="agents-badge" class="nav-badge muted" style="display:none;">0</span>
+                    <span id="agents-badge" class="nav-badge muted hidden">0</span>
                 </a>
                     </div>
                 </div>
@@ -97,31 +97,31 @@
                         <svg class="nav-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                     </button>
                     <div class="nav-section-items" id="nav-section-admin-items">
-                <a href="/users" class="nav-item" data-page="users" id="nav-users" style="display:none;">
+                <a href="/users" class="nav-item hidden" data-page="users" id="nav-users">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
                     <span class="nav-label">ユーザー管理</span>
                 </a>
-                <a href="/audit" class="nav-item" data-page="audit" id="nav-audit" style="display:none;">
+                <a href="/audit" class="nav-item hidden" data-page="audit" id="nav-audit">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
                     <span class="nav-label">監査ログ</span>
                 </a>
-                <a href="/settings" class="nav-item" data-page="settings" id="nav-settings" style="display:none;">
+                <a href="/settings" class="nav-item hidden" data-page="settings" id="nav-settings">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
                     <span class="nav-label">システム設定</span>
                 </a>
-                <a href="/certs" class="nav-item" data-page="certs" id="nav-certs" style="display:none;">
+                <a href="/certs" class="nav-item hidden" data-page="certs" id="nav-certs">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
                     <span class="nav-label">証明書管理</span>
                 </a>
-                <a href="/backups" class="nav-item" data-page="backups" id="nav-backups" style="display:none;">
+                <a href="/backups" class="nav-item hidden" data-page="backups" id="nav-backups">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span>
                     <span class="nav-label">バックアップ管理</span>
                 </a>
-                <a href="/notifications-config" class="nav-item" data-page="notifications-config" id="nav-notif-cfg" style="display:none;">
+                <a href="/notifications-config" class="nav-item hidden" data-page="notifications-config" id="nav-notif-cfg">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg></span>
                     <span class="nav-label">通知設定</span>
                 </a>
-                <a href="/licenses" class="nav-item" data-page="licenses" id="nav-licenses" style="display:none;">
+                <a href="/licenses" class="nav-item hidden" data-page="licenses" id="nav-licenses">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="12" cy="15" r="2"/><path d="M12 12v1"/><path d="M12 17v1"/></svg></span>
                     <span class="nav-label">ライセンス管理</span>
                 </a>
@@ -133,7 +133,7 @@
                 <div class="user-meta">
                     <div class="user-name">
                         <span id="user-info">---</span>
-                        <span class="role-pill admin" id="role-pill" style="display:none;"></span>
+                        <span class="role-pill admin hidden" id="role-pill"></span>
                     </div>
                     <div class="user-role" id="user-role-text"></div>
                 </div>
@@ -171,7 +171,7 @@
                     </button>
                     <a class="icon-btn" href="/alerts" id="topbar-bell" title="通知" aria-label="通知">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                        <span id="topbar-bell-badge" class="topbar-bell-badge" style="display:none;">0</span>
+                        <span id="topbar-bell-badge" class="topbar-bell-badge hidden">0</span>
                     </a>
                     <a class="icon-btn" href="/settings" id="topbar-cog" title="設定" aria-label="設定">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -240,12 +240,12 @@
                 const badge = document.getElementById('alerts-badge');
                 if (badge) {
                     badge.textContent = count;
-                    badge.style.display = count > 0 ? 'inline-block' : 'none';
+                    count > 0 ? badge.classList.remove('hidden') : badge.classList.add('hidden');
                 }
                 const topbarBadge = document.getElementById('topbar-bell-badge');
                 if (topbarBadge) {
                     topbarBadge.textContent = count > 99 ? '99+' : count;
-                    topbarBadge.style.display = count > 0 ? 'inline-block' : 'none';
+                    count > 0 ? topbarBadge.classList.remove('hidden') : topbarBadge.classList.add('hidden');
                 }
             } catch (e) {
                 if (throwOnError) throw e;
@@ -282,9 +282,9 @@
                 if (!el) return;
                 if (count > 0) {
                     el.textContent = count > 99 ? '99+' : count;
-                    el.style.display = 'inline-block';
+                    el.classList.remove('hidden');
                 } else {
-                    el.style.display = 'none';
+                    el.classList.add('hidden');
                 }
             };
             const fetchCount = async (path, key) => {
@@ -380,23 +380,23 @@
                 if (rolePill && user.role) {
                     rolePill.textContent = user.role;
                     rolePill.className = 'role-pill ' + user.role;
-                    rolePill.style.display = '';
+                    rolePill.classList.remove('hidden');
                 }
                 if (roleText && user.role) {
                     roleText.textContent = roleLabels[user.role] || user.role;
                 }
                 window.CURRENT_USER_ROLE = user.role || null;
                 const navUsers = document.getElementById('nav-users');
-                if (navUsers && user.role === 'admin') navUsers.style.display = '';
+                if (navUsers && user.role === 'admin') navUsers.classList.remove('hidden');
                 const navAudit = document.getElementById('nav-audit');
                 if (navAudit && (user.role === 'admin' || user.role === 'operator')) {
-                    navAudit.style.display = '';
+                    navAudit.classList.remove('hidden');
                 }
                 // ADMIN-only sections (settings/certs/backups/notif-cfg/licenses)
                 if (user.role === 'admin') {
                     ['nav-settings', 'nav-certs', 'nav-backups', 'nav-notif-cfg', 'nav-licenses'].forEach((id) => {
                         const el = document.getElementById(id);
-                        if (el) el.style.display = '';
+                        if (el) el.classList.remove('hidden');
                     });
                 }
                 // Hide write-only actions for viewers (best-effort UX; API enforces auth)
