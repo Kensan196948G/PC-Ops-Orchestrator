@@ -1255,6 +1255,32 @@ def test_delete_alert_rule(token):
     print(f"  [PASS] Deleted alert rule not found: id={_rule_id}")
 
 
+def test_get_settings(token):
+    r = request("GET", "/api/settings", token=token)
+    assert r.status_code == 200, f"Get settings failed: {r.status_code}"
+    data = json.loads(r.data)
+    assert "settings" in data
+    assert "timezone" in data["settings"]
+    assert "jwt_expiry_hours" in data["settings"]
+    print(f"  [PASS] Get settings: keys={len(data['settings'])}")
+
+
+def test_update_settings(token):
+    payload = {"session_timeout_minutes": "45", "log_level": "WARNING"}
+    r = request("PUT", "/api/settings", token=token, data=payload)
+    assert r.status_code == 200, f"Update settings failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert data["settings"]["session_timeout_minutes"] == "45"
+    assert data["settings"]["log_level"] == "WARNING"
+    print("  [PASS] Update settings")
+
+
+def test_update_settings_unknown_key(token):
+    r = request("PUT", "/api/settings", token=token, data={"unknown_key": "val"})
+    assert r.status_code == 400, f"Expected 400 for unknown key: {r.status_code}"
+    print("  [PASS] Reject unknown settings key")
+
+
 _apikey_id = None
 
 
@@ -1372,6 +1398,9 @@ def run_all():
     test_toggle_alert_rule(token)
     test_alert_rule_invalid_metric(token)
     test_delete_alert_rule(token)
+    test_get_settings(token)
+    test_update_settings(token)
+    test_update_settings_unknown_key(token)
     test_create_api_key(token)
     test_list_api_keys(token)
     test_rotate_api_key(token)

@@ -608,3 +608,25 @@ class ApiKey(db.Model):
 
     def __repr__(self) -> str:
         return f"<ApiKey {self.name}>"
+
+
+class SystemSetting(db.Model):
+    __tablename__ = "system_settings"
+
+    key = db.Column(db.String(100), primary_key=True)
+    value = db.Column(db.Text, nullable=True)
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    def to_dict(self) -> dict:
+        return {
+            "key": self.key,
+            "value": self.value,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    def __repr__(self) -> str:
+        return f"<SystemSetting {self.key}={self.value!r}>"

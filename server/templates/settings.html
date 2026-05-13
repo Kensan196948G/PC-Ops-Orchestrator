@@ -3,28 +3,52 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">システム設定</h2>
-    <p class="page-description">サーバー全体の設定（CORS / JWT 有効期限 / Agent 通信間隔 / DB 接続先 等）。値はダミー表示。実保存は次マイルストーンで実装予定。</p>
-    <button class="btn btn-primary" type="button" data-stub-alert="保存（次マイルストーン実装予定）">💾 全設定を保存</button>
+    <p class="page-description">サーバー全体の設定（タイムゾーン / JWT 有効期限 / Agent 通信間隔 等）。</p>
+    <button class="btn btn-primary role-admin-only" type="button" id="btn-save-settings">💾 全設定を保存</button>
 </div>
 
 <div class="charts-grid">
     <div class="card">
         <h3 class="card-title">⚙️ 全般設定</h3>
         <div class="d-grid-form">
-            <label>タイムゾーン<br><select disabled><option>Asia/Tokyo (UTC+9)</option><option>UTC</option><option>America/Los_Angeles</option></select></label>
-            <label>表示言語<br><select disabled><option>日本語</option><option>English</option></select></label>
-            <label>ログレベル<br><select disabled><option>INFO</option><option>WARNING</option><option>ERROR</option><option>DEBUG</option></select></label>
-            <label>セッションタイムアウト (分)<br><input type="number" value="30" disabled></label>
+            <label>タイムゾーン<br>
+                <select id="setting-timezone" class="form-input">
+                    <option value="Asia/Tokyo">Asia/Tokyo (UTC+9)</option>
+                    <option value="UTC">UTC</option>
+                    <option value="America/Los_Angeles">America/Los_Angeles</option>
+                </select>
+            </label>
+            <label>表示言語<br>
+                <select id="setting-language" class="form-input">
+                    <option value="ja">日本語</option>
+                    <option value="en">English</option>
+                </select>
+            </label>
+            <label>ログレベル<br>
+                <select id="setting-log_level" class="form-input">
+                    <option value="INFO">INFO</option>
+                    <option value="WARNING">WARNING</option>
+                    <option value="ERROR">ERROR</option>
+                    <option value="DEBUG">DEBUG</option>
+                </select>
+            </label>
+            <label>セッションタイムアウト (分)<br><input type="number" id="setting-session_timeout_minutes" class="form-input" min="5" max="1440"></label>
         </div>
     </div>
     <div class="card">
         <h3 class="card-title">🔐 認証設定</h3>
         <div class="d-grid-form">
-            <label>JWT 有効期限 (時間)<br><input type="number" value="8" disabled></label>
-            <label>リフレッシュトークン (日)<br><input type="number" value="30" disabled></label>
-            <label>パスワード最小長<br><input type="number" value="8" disabled></label>
-            <label>ログイン試行ロック (失敗回数)<br><input type="number" value="5" disabled></label>
-            <label>多要素認証 (MFA)<br><select disabled><option>無効</option><option>必須</option><option>任意</option></select></label>
+            <label>JWT 有効期限 (時間)<br><input type="number" id="setting-jwt_expiry_hours" class="form-input" min="1" max="168"></label>
+            <label>リフレッシュトークン (日)<br><input type="number" id="setting-refresh_token_days" class="form-input" min="1" max="365"></label>
+            <label>パスワード最小長<br><input type="number" id="setting-password_min_length" class="form-input" min="6" max="64"></label>
+            <label>ログイン試行ロック (失敗回数)<br><input type="number" id="setting-login_lock_threshold" class="form-input" min="3" max="20"></label>
+            <label>多要素認証 (MFA)<br>
+                <select id="setting-mfa_mode" class="form-input">
+                    <option value="disabled">無効</option>
+                    <option value="required">必須</option>
+                    <option value="optional">任意</option>
+                </select>
+            </label>
         </div>
     </div>
 </div>
@@ -33,10 +57,15 @@
     <div class="card">
         <h3 class="card-title">📡 Agent 通信設定</h3>
         <div class="d-grid-form">
-            <label>heartbeat 間隔 (秒)<br><input type="number" value="60" disabled></label>
-            <label>通信タイムアウト (秒)<br><input type="number" value="30" disabled></label>
-            <label>収集間隔 (分)<br><input type="number" value="5" disabled></label>
-            <label>未承認 Agent 自動承認<br><select disabled><option>無効 (admin 手動承認)</option><option>有効</option></select></label>
+            <label>heartbeat 間隔 (秒)<br><input type="number" id="setting-heartbeat_interval_seconds" class="form-input" min="10" max="600"></label>
+            <label>通信タイムアウト (秒)<br><input type="number" id="setting-agent_timeout_seconds" class="form-input" min="5" max="120"></label>
+            <label>収集間隔 (分)<br><input type="number" id="setting-collection_interval_minutes" class="form-input" min="1" max="60"></label>
+            <label>未承認 Agent 自動承認<br>
+                <select id="setting-agent_auto_approve" class="form-input">
+                    <option value="false">無効 (admin 手動承認)</option>
+                    <option value="true">有効</option>
+                </select>
+            </label>
         </div>
     </div>
     <div class="card">
@@ -61,9 +90,7 @@
                 <tr><td>https://pc-ops-stg.example.com</td><td>ステージング</td><td><span class="badge badge-success">✓</span></td></tr>
             </tbody>
         </table>
-        <div class="mt-actions">
-            <button class="btn btn-primary text-sm" data-stub-alert="オリジン追加（次マイルストーン実装予定）">+ オリジン追加</button>
-        </div>
+        <p class="text-secondary text-xs mt-sm">CORS オリジンの追加は設定ファイル変更が必要です。</p>
     </div>
     <div class="card">
         <h3 class="card-title">⚡ レート制限設定</h3>
@@ -86,6 +113,7 @@
 </div>
 {% endblock %}
 {% block scripts %}
+<script src="/static/js/settings.js"></script>
 <script nonce="{{ csp_nonce }}">
 document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('btn-seed-demo');

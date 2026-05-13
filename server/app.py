@@ -93,6 +93,7 @@ def create_app(config_name=None):
     from routes.certificates import certificates_bp
     from routes.licenses import licenses_bp
     from routes.api_keys import api_keys_bp
+    from routes.settings import settings_bp
     from routes.seed import seed_bp
 
     app.register_blueprint(auth_bp)
@@ -112,6 +113,7 @@ def create_app(config_name=None):
     app.register_blueprint(certificates_bp)
     app.register_blueprint(licenses_bp)
     app.register_blueprint(api_keys_bp)
+    app.register_blueprint(settings_bp)
     app.register_blueprint(seed_bp, url_prefix="/api")
 
     # Rate limiter -> /metrics integration:
