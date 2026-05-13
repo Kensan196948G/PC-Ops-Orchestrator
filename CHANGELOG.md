@@ -9,7 +9,27 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
-(次リリース予定なし — v1.0.0 リリース済み)
+### Added (PR #147 — CI 実行中)
+- **API キー管理 CRUD** — `ApiKey` モデル追加
+  - `GET/POST /api/api-keys`, `POST /api/api-keys/<id>/rotate`, `DELETE /api/api-keys/<id>`
+  - agents.html 内に API キー一覧テーブル・作成モーダル・ローテートモーダル追加
+  - 全操作 admin_required (キーは機密情報)
+- **システム設定 CRUD** — `SystemSetting` モデル追加 (key-value テーブル)
+  - `GET /api/settings`, `PUT /api/settings` (13 設定キー対応)
+  - settings.html: フォーム入力有効化、設定保存ボタン実機能化
+- **バックアップ管理** — `BackupJob` モデル追加
+  - `GET /api/backups` (履歴一覧 + 統計), `POST /api/backups/trigger` (即時バックアップ)
+  - `POST /api/backups/integrity-check` (SQLite PRAGMA integrity_check)
+  - backups.html: 動的テーブル・stat カード・整合性チェック・リストア確認フロー
+- **証明書 stat カード動的更新** — certificates.js で期限警戒件数をリアルタイム集計
+- **E2E テスト追加** — 6 新規ページ (agents/certs/licenses/notifications/backups/settings) を E2E カバレッジに追加
+- **RBAC テスト強化** — 新規 API 7 件を RBAC matrix テストに追加
+
+### Changed (PR #147)
+- 全テンプレートから `data-stub-alert` 完全削除 (0 件達成)
+- `/api/api-keys` GET: `login_required` → `admin_required` (セキュリティ強化)
+- certificates.js: `actionTd.style.display/gap` → `actionTd.className = 'd-flex-gap'` (CSP Phase 3 維持)
+- テスト: 333 → 343 件 (+10: API キー 4 + バックアップ 3 + 設定 3)
 
 ---
 
