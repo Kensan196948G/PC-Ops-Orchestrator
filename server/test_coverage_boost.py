@@ -1133,3 +1133,23 @@ def test_backups_list():
 def test_backups_integrity_check():
     r = req("POST", "/api/backups/integrity-check", token=_admin_token)
     assert r.status_code == 200
+
+
+def test_api_key_create_missing_name():
+    r = req("POST", "/api/api-keys", token=_admin_token, data={"name": ""})
+    assert r.status_code == 400
+
+
+def test_api_key_rotate_not_found():
+    r = req("POST", "/api/api-keys/99999/rotate", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_api_key_delete_not_found():
+    r = req("DELETE", "/api/api-keys/99999", token=_admin_token)
+    assert r.status_code == 404
+
+
+def test_settings_put_unknown_key_400():
+    r = req("PUT", "/api/settings", token=_admin_token, data={"bad_key_xyz": "val"})
+    assert r.status_code == 400
