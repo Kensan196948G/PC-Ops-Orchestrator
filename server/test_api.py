@@ -1255,6 +1255,30 @@ def test_delete_alert_rule(token):
     print(f"  [PASS] Deleted alert rule not found: id={_rule_id}")
 
 
+def test_list_backups(token):
+    r = request("GET", "/api/backups", token=token)
+    assert r.status_code == 200, f"List backups failed: {r.status_code}"
+    data = json.loads(r.data)
+    assert "backups" in data
+    print(f"  [PASS] List backups: count={len(data['backups'])}")
+
+
+def test_trigger_backup(token):
+    r = request("POST", "/api/backups/trigger", token=token)
+    assert r.status_code == 201, f"Trigger backup failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert data["backup"]["status"] == "success"
+    print("  [PASS] Trigger backup")
+
+
+def test_integrity_check(token):
+    r = request("POST", "/api/backups/integrity-check", token=token)
+    assert r.status_code == 200, f"Integrity check failed: {r.status_code}"
+    data = json.loads(r.data)
+    assert data["ok"] is True
+    print("  [PASS] Integrity check: OK")
+
+
 def test_get_settings(token):
     r = request("GET", "/api/settings", token=token)
     assert r.status_code == 200, f"Get settings failed: {r.status_code}"
@@ -1398,6 +1422,9 @@ def run_all():
     test_toggle_alert_rule(token)
     test_alert_rule_invalid_metric(token)
     test_delete_alert_rule(token)
+    test_list_backups(token)
+    test_trigger_backup(token)
+    test_integrity_check(token)
     test_get_settings(token)
     test_update_settings(token)
     test_update_settings_unknown_key(token)
