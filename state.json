@@ -90,7 +90,7 @@
     "score": 0
   },
   "open_issues": {
-    "note": "PR #139 MERGED (CSP Phase 3 完了)。v0.7.0 / v1.0.0 GitHub Release 作成完了。329 tests PASS。M6 全完了。次: 改善フェーズ or 次バージョン機能検討。"
+    "note": "PR #147 (全スタブ機能実機能化) CI実行中。343 tests PASS。data-stub-alert=0 達成。API キー/バックアップ/設定/証明書 CRUD 完了。次: PR #147 マージ後 v1.1.0 タグ検討。"
   },
   "milestones": {
     "M1": {
@@ -150,38 +150,42 @@
     }
   },
   "session_summary": {
-    "id": "20260513-190001-PC-Ops-Orchestrator",
-    "loop_phase": "Monitor → Build (PR #139 rebase + inline style 除去) → Verify (CI全PASS) → Improve (README/CHANGELOG/v1.0.0 release)",
-    "duration_minutes": 120,
+    "id": "20260513-190001-v2-PC-Ops-Orchestrator",
+    "loop_phase": "Monitor → Build (全スタブ機能実機能化) → Verify (343 tests PASS) → Improve (README/state更新)",
+    "duration_minutes": 180,
     "prs_merged": [139],
-    "prs_pending": [],
-    "issues_closed": [141, 142, 145],
+    "prs_pending": [147],
+    "issues_closed": [],
     "issues_opened": [],
     "completed": [
-      "Issue #141/#142/#145 クローズ (PR #140/#143/#144 マージ済みのため解消)",
-      "PR #139 rebase on main (PR #143/#144 の変更と統合)",
-      "コンフリクト解消: style.css / backups.html / dashboard.html",
-      "dashboard.html 残存インラインスタイル12箇所 → CSS クラスに置換 (style=\"\" = 0件達成)",
-      "CSS ユーティリティクラス追加: mb-lg / w-auto / text-loading / ring-canvas-wrap / swatch-*",
-      "CSPセキュリティテスト追加: test_csp_style_src_no_unsafe_inline + test_no_inline_style_in_templates",
-      "PR #139 CI 全14チェック PASS → squash merge 完了",
-      "v0.7.0 GitHub Release 作成 (PR #140/#143/#144)",
-      "v1.0.0 GitHub Release 作成 (CSP Phase 3 完了)",
-      "CHANGELOG.md: [1.0.0] セクション作成",
-      "README.md: M6 完了・テスト329件更新",
-      "テスト: 329 passed 0 failed / E2E: 121 passed 0 failed"
+      "certs.html: ダミー行削除、登録/編集/削除モーダル実装、stat カード動的更新",
+      "certificates.js: inline style → d-flex-gap (CSP Phase 3 維持)",
+      "agents.html: API キー CRUD 実装 (一覧/作成/ローテート/削除/結果表示モーダル)",
+      "routes/api_keys.py: GET/POST/rotate/DELETE 4 エンドポイント",
+      "models.py: ApiKey モデル追加 (key_prefix + key_value, generate classmethod)",
+      "routes/settings.py: GET/PUT /api/settings (13 キー, key-value DB 保存)",
+      "models.py: SystemSetting モデル追加",
+      "settings.html: data-stub-alert 削除、フォーム入力有効化、settings.js 連携",
+      "routes/backups.py: GET /api/backups, POST /api/backups/trigger, POST /api/backups/integrity-check",
+      "models.py: BackupJob モデル追加",
+      "backups.html: 全 data-stub-alert 削除、動的テーブル + stat カード",
+      "backups.js: loadBackups / trigger / integrity-check / restore確認フロー",
+      "test_api.py: +10 テスト追加 (API キー 4 + バックアップ 3 + 設定 3 = 343 tests PASS)",
+      "data-stub-alert: 全テンプレートから完全削除 (0 件達成)",
+      "README.md: WebUI 機能一覧・API エンドポイント・テスト件数・M6 進捗更新",
+      "PR #147 作成・プッシュ (CI 実行中)"
     ],
-    "ci_status": "STABLE — PR #139 全14チェック PASS。main ブランチ安定。v1.0.0 リリース済み。",
+    "ci_status": "PR #147 CI 実行中。ローカルテスト 343 passed, 0 failed。",
     "verification": {
-      "pytest_unit": "329 passed, 0 failed",
+      "pytest_unit": "343 passed, 0 failed",
       "ruff_check": "All checks passed",
       "ruff_format": "All files formatted",
-      "github_ci": "PR #139 全チェック pass (Lint/Flask API/E2E/PowerShell)"
+      "data_stub_alert": "0 件 (全テンプレートから削除完了)"
     },
     "resume_point": {
-      "next_action": "次フェーズ: 改善・追加機能検討 / 残 5 ヶ月で v2.0 に向けた計画",
+      "next_action": "PR #147 CI PASS 確認後マージ → v1.1.0 タグ → 次: reports/dashboard 改善",
       "blocker": "なし",
-      "notes": "今セッション主成果: PR #139 MERGED (CSP Phase 3 完了) + v0.7.0/v1.0.0 Release作成。M6全完了。テスト329件。CSP全3フェーズ完了でXSS攻撃面を最小化。"
+      "notes": "今セッション主成果: 全スタブ機能 (certs/agents API キー/backups/settings) 実機能化完了。data-stub-alert=0 達成。343 tests PASS。PR #147 CI実行中。"
     }
   },
   "learning": {
