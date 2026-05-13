@@ -484,8 +484,10 @@ gantt
     M5-3 月次レポート (#76)       :done, m53, 2026-05-06, 1d
     M5-4 ダークモード (#77)       :done, m54, 2026-05-06, 1d
     M5-5 ユーザー管理強化 (#78)   :done, m55, 2026-05-06, 1d
-    section M6 リリース準備
-    Verify / Bug修正              :m6v, 2026-09-01, 30d
+    section M6 リリース準備 (進行中)
+    CSP/N+1/実機能化             :done, m6a, 2026-05-09, 4d
+    WebUI刷新 / 327テスト        :done, m6b, 2026-05-13, 1d
+    CSP Phase 3 / 最終品質      :active, m6c, 2026-05-13, 30d
     本番リリース                  :crit, m6r, 2026-10-28, 1d
 ```
 
@@ -496,7 +498,7 @@ gantt
 | 🗓️ **M3** | スケジュール・グループ・Swagger | ✅ 完了 | APScheduler / PCグループ / OpenAPI 3.0 |
 | 🔐 **M4** | RBAC・通知・E2E | ✅ 完了 | admin/operator/viewer / Slack/Teams/Email / Playwright 94 tests |
 | ✅ **M5** | 監査ログ✅ / 一括実行✅ / Topbar+Badge✅ / ダーク+a11y✅ / **月次レポート API+PDF✅(PR#116)** / **ユーザー管理強化✅(PR#117)** / XSS防御✅(PR#114) | ✅ 完了 | 全 9 Issue クローズ |
-| 🚀 **M6** | リリース準備・本番移行 | 🔜 計画中 | CHANGELOG・タグ付け・本番デプロイ |
+| 🚀 **M6** | セキュリティ強化・WebUI 刷新・リリース準備 | 🔄 進行中 | CSP Phase 1〜3 / N+1修正 / 実機能化 / WebUI刷新 / 327テスト |
 
 ### ✅ M5 完了サマリー (2026-05-06)
 
@@ -515,11 +517,16 @@ gantt
 
 ### 🔐 M6 進行中サマリー (2026-05-06〜)
 
-| Issue / PR | 内容 | 主な変更 |
-|---|---|---|
-| 🔑 **#121 / PR #125** | **CSP Phase 1** — nonce 方式導入 | `g.csp_nonce` + 全 `<script>` に `nonce="{{ csp_nonce }}"` |
-| 🔑 **#121 / PR #129** | **CSP Phase 2** — `'unsafe-inline'` 完全除去 | 16 テンプレートの全インラインハンドラ → `addEventListener`、`stub-actions.js` 新規 |
-| ⚡ **#121 / PR #130** | **N+1 クエリ修正** — CSV エクスポート高速化 | `joinedload(Alert.pc)` / `joinedload(Task.pc)` (5001→2 クエリ) |
+| Issue / PR | 内容 | 状態 | 主な変更 |
+|---|---|:---:|---|
+| 🔑 **#121 / PR #125** | **CSP Phase 1** — nonce 方式導入 | ✅ MERGED | `g.csp_nonce` + 全 `<script>` に nonce |
+| 🔑 **#121 / PR #129** | **CSP Phase 2** — `script-src 'unsafe-inline'` 除去 | ✅ MERGED | 16 テンプレートの全インラインハンドラ → `addEventListener` |
+| ⚡ **#121 / PR #130** | **N+1 クエリ修正** — CSV 高速化 | ✅ MERGED | `joinedload` 適用 (5001→2 クエリ) |
+| 🐛 **PR #131** | **N+1 groups / Alert.pc relationship 修正** | ✅ MERGED | groups IN バルク COUNT + PC.alerts backref |
+| 🎨 **PR #136** | **UI フィルタ横並び修正** | ✅ MERGED | PC一覧・アラートのフィルタ flex レイアウト |
+| 🔧 **PR #140** | **Agent/通知/証明書/ライセンス 実機能化** | ✅ MERGED | /api/agents + NotificationChannel/Certificate/License CRUD |
+| 🎨 **PR #143/#144** | **WebUI 刷新** — KPI/フィード/モーダル | ✅ MERGED | ダッシュボード KPI グリッド・健全性リング・全ページシード |
+| 🔒 **PR #139** | **CSP Phase 3** — `style-src 'unsafe-inline'` 除去 | 🔄 CI 実行中 | 全 16 テンプレートの inline style=0 件 |
 
 ---
 
@@ -527,7 +534,7 @@ gantt
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| **API 拡張テスト（Python）** | **313項目** | **✅ PASS** |
+| **API 拡張テスト（Python）** | **327項目** | **✅ PASS** |
 | **WebUI E2E テスト（Playwright）** | **121項目** | **✅ PASS** |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
@@ -535,7 +542,7 @@ gantt
 | Agent Teams 負荷テスト | 複数 | ✅ PASS |
 | スモークテスト（PS5.1 / PS7） | 複数 | ✅ PASS |
 | **セキュリティスキャン（bandit）** | **High=0** | **✅ PASS** |
-| **routes カバレッジ** | **80%** | **✅ (65%→80% +15%)** |
+| **routes カバレッジ** | **81%** | **✅ (65%→81% +16%)** |
 
 ### 🔒 250項目テスト検証カバレッジ
 

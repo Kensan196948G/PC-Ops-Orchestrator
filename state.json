@@ -31,8 +31,8 @@
     "week": 2
   },
   "kpi": {
-    "ci_success_rate": 1.0,
-    "test_pass_rate": 1.0,
+    "ci_success_rate": 1,
+    "test_pass_rate": 1,
     "review_blocker_count": 0,
     "security_issue_count": 0
   },
@@ -42,10 +42,10 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-09T19:00:01+09:00",
+    "current_session_start_at": "2026-05-13T10:00:02.406Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "cron",
-    "last_cron_session_id": "20260509-190001-PC-Ops-Orchestrator"
+    "last_cron_session_id": "20260513-190001-PC-Ops-Orchestrator"
   },
   "status": {
     "current_phase": "improve",
@@ -89,7 +89,7 @@
     "score": 0
   },
   "open_issues": {
-    "note": "PR #136 MERGED (UI横並び修正)。PR #139 (CSP Phase 3 style-src unsafe-inline除去) CI待ち。PR #140 (WebUI: Agent管理/通知/証明書/ライセンス実機能化) CI待ち。v1.0.0 本番リリース最終準備・deployment.md 整備が次主要タスク。"
+    "note": "PR #139 (CSP Phase 3 style-src unsafe-inline除去) CI実行中 (rebase+インラインスタイル完全除去修正済み)。PR #140/#143/#144 MERGED。v0.7.0 GitHub Release作成 + v1.0.0 最終準備が次タスク。Issue #141/#142/#145 クローズ済み。"
   },
   "milestones": {
     "M1": {
@@ -149,34 +149,36 @@
     }
   },
   "session_summary": {
-    "id": "20260509-190001-PC-Ops-Orchestrator",
-    "loop_phase": "Monitor → Build (groups N+1 / Alert.pc relationship fix) → Verify (test +102件) → Improve (E2E CDN fix / カバレッジ)",
-    "duration_minutes": 85,
+    "id": "20260513-190001-PC-Ops-Orchestrator",
+    "loop_phase": "Monitor → Build (PR #139 rebase + inline style fix) → Verify (CI確認中)",
+    "duration_minutes": 60,
     "prs_merged": [],
     "prs_pending": [
-      131
+      139
     ],
-    "issues_closed": [],
+    "issues_closed": [141, 142, 145],
     "issues_opened": [],
     "completed": [
-      "PR #131 作成中: groups N+1 解消 (list_groups IN バルク COUNT), Alert.pc relationship バグ修正",
-      "test_coverage_boost.py 新規作成: +108 テスト (alerts/tasks/groups/pcs/alert_rules/scheduled_tasks/auth)",
-      "テスト総数: 205 → 313 件 (+108件)",
-      "routes カバレッジ: ~65% → 80% (+15%)",
-      "E2E CDN タイムアウト修正: page.goto に wait_until='domcontentloaded' 全面適用",
-      "CHANGELOG.md 更新: PR #131 内容追記"
+      "Issue #141/#142/#145 クローズ (PR #140/#143/#144 マージ済みのため解消)",
+      "PR #139 rebase on main (PR #143/#144 の変更と統合)",
+      "コンフリクト解消: style.css (両方保持) / backups.html (HEAD採用) / dashboard.html (HEAD+CSP)",
+      "dashboard.html 残存インラインスタイル12箇所 → CSS クラスに置換 (0件達成)",
+      "CSS ユーティリティクラス追加: mb-lg / w-auto / text-loading / text-muted-label / ring-canvas-wrap / swatch-*/",
+      "テスト: 327 passed 0 failed / E2E: 121 passed 0 failed",
+      "CHANGELOG.md 更新: v0.7.0 セクション追加 (PR #140/#143/#144)",
+      "README.md 更新: マイルストーン M6 進行中サマリー + テスト327件に更新"
     ],
-    "ci_status": "PENDING — PR #131 CI 実行中 (fix/groups-n1-query)",
+    "ci_status": "PR #139 CI 実行中 (56f3bc6 — inline style 修正後の再実行)",
     "verification": {
-      "pytest_unit": "313 passed, 0 failed",
+      "pytest_unit": "327 passed, 0 failed",
       "ruff_check": "All checks passed",
       "ruff_format": "All files formatted",
-      "github_ci": "PR #131 lint: pass / E2E: pending"
+      "github_ci": "PR #139 CI 実行中 (lint: 通過見込み / E2E: 修正済み)"
     },
     "resume_point": {
-      "next_action": "PR #131 CI 完了後 merge → v0.6.0 GitHub Release 作成 → style-src Phase 3 評価 → v1.0.0 最終リリース準備",
-      "blocker": "PR #131 CI 待ち",
-      "notes": "今セッション主成果: PR #131 MERGED (groups N+1+Alert.pc+テスト326件+E2E CDN修正) → v0.6.0 GitHub Release作成 → PR #136 MERGED (UIフィルタ横並び修正) → PR #139作成 (CSP Phase 3: style-src unsafe-inline完全除去、全16テンプレートinline style=0件) → PR #140作成 (WebUI実機能化: /api/agents + 通知/証明書/ライセンスCRUD)。テスト215件通過。CI待ち: PR #139/#140。次: 両PR merge → deployment.md → v1.0.0 Release準備。"
+      "next_action": "PR #139 CI 完了 → merge → v0.7.0 GitHub Release 作成 → v1.0.0 最終準備",
+      "blocker": "PR #139 CI 待ち (残り E2E / PowerShell テスト)",
+      "notes": "今セッション: PR #139 rebase + CSP inline style 完全除去 + Issue クリーンアップ完了。CI再実行中。"
     }
   },
   "learning": {

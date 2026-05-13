@@ -9,7 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
-### Security (PR #139 — CI 確認中)
+### Security (PR #139 — CI 実行中)
 - **CSP Phase 3** — `style-src 'unsafe-inline'` 完全除去
   - 全 16 テンプレートのインライン `style=""` 属性をゼロに削減
   - `login.html` の `<style>` ブロック (~200行) を外部 `style.css` に完全移行
@@ -17,15 +17,31 @@ Versioning: [Semantic Versioning](https://semver.org/)
   - JS 7 ファイルで `style.display` → `classList.toggle/add/remove` に統一
   - `style-src 'self'` のみに更新 (XSS 攻撃面をさらに削減)
 
-### Added (PR #140 — CI 確認中)
+### Planned
+- v1.0.0 本番リリース最終準備
+
+---
+
+## [0.7.0] — 2026-05-13 — WebUI 刷新・Agent/通知/証明書/ライセンス実機能化
+
+### Added (PR #140 MERGED)
 - **Agent管理 実機能化** — `/api/agents` 新規実装
   - PC モデルからエージェント一覧 (CPU/メモリ/バージョン/heartbeat) をリアルタイム表示
 - **通知設定 CRUD** — `NotificationChannel` モデル + CRUD API + チャネル追加/編集/削除モーダル
 - **証明書管理 CRUD** — `Certificate` モデル + CRUD API + 登録/編集/削除モーダル + 残り日数バッジ
 - **ライセンス管理 CRUD** — `License` モデル + CRUD API + 登録/編集/削除 + 合計コスト自動集計
 
-### Planned
-- v1.0.0 本番リリース最終準備 (deployment.md 整備)
+### Changed (PR #143/#144 MERGED)
+- **WebUI 刷新** — KPI カード・フィード・モーダル UI の改善
+  - Dashboard: KPI グリッド・健全性リング・OS 内訳チャート・最近のタスク/監査フィード
+  - Agent 管理: CPU/メモリ リアルタイムバー・ハートビートバッジ
+  - レポート: 月次レポート PDF/CSV エクスポートボタン修正
+  - 全ページ対応ダミーデータシード (`/api/seed` エンドポイント)
+- **スタブボタン修正** — `data-stub-alert` 属性統一・Agent CPU バグ修正
+
+### Fixed (PR #143 MERGED)
+- Agent 一覧 CPU 利用率計算バグ修正
+- デモデータシードルート修正 (POST /api/seed)
 
 ---
 
