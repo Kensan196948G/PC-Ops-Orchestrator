@@ -805,3 +805,32 @@ class TestSqlInjection:
                 f"SQL injection in username creation caused 500: {r.data}"
             )
         print("  [PASS] 141: SQL injection in username creation does not cause 500")
+
+    def test_api_key_name_sql_injection(self):
+        """SQL injection in the API key name field must not cause a 500."""
+        token = _admin_token()
+        for payload in self._SQL_PAYLOADS:
+            r = _json_request(
+                "POST",
+                "/api/api-keys",
+                token=token,
+                data={"name": payload},
+            )
+            assert r.status_code != 500, (
+                f"SQL injection in api key name caused 500: {r.data}"
+            )
+        print("  [PASS] 141: SQL injection in api key name does not cause 500")
+
+    def test_settings_rejects_unknown_keys(self):
+        """PUT /api/settings must reject unknown keys with 400."""
+        token = _admin_token()
+        r = _json_request(
+            "PUT",
+            "/api/settings",
+            token=token,
+            data={"__proto__": "polluted", "constructor": "evil"},
+        )
+        assert r.status_code == 400, (
+            f"Unknown settings keys should return 400, got {r.status_code}: {r.data}"
+        )
+        print("  [PASS] Settings endpoint rejects unknown/prototype pollution keys")
