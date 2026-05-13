@@ -490,6 +490,54 @@ def test_rbac_role_matrix(token):
                 200,
                 "監査ログは viewer 不可、operator は閲覧可",
             ),
+            (
+                "GET",
+                "/api/api-keys",
+                None,
+                403,
+                403,
+                "API キー一覧は admin 専用",
+            ),
+            (
+                "GET",
+                "/api/settings",
+                None,
+                200,
+                200,
+                "設定参照は全ロール可",
+            ),
+            (
+                "PUT",
+                "/api/settings",
+                {"log_level": "INFO"},
+                403,
+                403,
+                "設定保存は admin 専用",
+            ),
+            (
+                "GET",
+                "/api/backups",
+                None,
+                200,
+                200,
+                "バックアップ履歴参照は全ロール可",
+            ),
+            (
+                "POST",
+                "/api/backups/trigger",
+                {},
+                403,
+                403,
+                "即時バックアップは admin 専用",
+            ),
+            (
+                "POST",
+                "/api/backups/integrity-check",
+                {},
+                200,
+                200,
+                "整合性チェックは全ロール可",
+            ),
         ]
 
         for method, path, body, viewer_expect, op_expect, desc in cases:
@@ -1097,6 +1145,58 @@ def test_delete_group(token):
 _rule_id = None
 
 
+def test_notification_channel_test_send_email(token):
+    """Test-send on an email channel returns simulated message (no SMTP)."""
+    # Create an email channel first
+    body = {
+        "name": "test-email-ch",
+        "channel_type": "email",
+        "target": "test@example.com",
+    }
+    r = request("POST", "/api/notification-channels", token=token, data=body)
+    assert r.status_code == 201, f"Create channel failed: {r.status_code} {r.data}"
+    ch_id = json.loads(r.data)["channel"]["id"]
+
+    r2 = request("POST", f"/api/notification-channels/{ch_id}/test-send", token=token)
+    assert r2.status_code == 200, f"Test-send failed: {r2.status_code} {r2.data}"
+    data2 = json.loads(r2.data)
+    assert "message" in data2
+    assert "SMTP" in data2["message"] or "シミュレート" in data2["message"]
+    print(f"  [PASS] Notification channel test-send (email): id={ch_id}")
+
+    # Cleanup
+    request("DELETE", f"/api/notification-channels/{ch_id}", token=token)
+
+
+def test_notification_channel_test_send_not_found(token):
+    """Test-send on non-existent channel returns 404."""
+    r = request("POST", "/api/notification-channels/999999/test-send", token=token)
+    assert r.status_code == 404, f"Expected 404, got {r.status_code}"
+    print("  [PASS] Notification channel test-send 404")
+
+
+def test_licenses_export_csv(token):
+    """License CSV export returns BOM-prefixed CSV."""
+    r = request("GET", "/api/licenses/export.csv", token=token)
+    assert r.status_code == 200, f"License CSV export failed: {r.status_code} {r.data}"
+    assert "text/csv" in r.headers.get("Content-Type", "")
+    assert "attachment" in r.headers.get("Content-Disposition", "")
+    content = r.data.decode("utf-8-sig")
+    assert "製品名" in content
+    print("  [PASS] Licenses export CSV")
+
+
+def test_agents_export_csv(token):
+    """Agent CSV export returns BOM-prefixed CSV."""
+    r = request("GET", "/api/agents/export.csv", token=token)
+    assert r.status_code == 200, f"Agents CSV export failed: {r.status_code} {r.data}"
+    assert "text/csv" in r.headers.get("Content-Type", "")
+    assert "attachment" in r.headers.get("Content-Disposition", "")
+    content = r.data.decode("utf-8-sig")
+    assert "ホスト名" in content
+    print("  [PASS] Agents export CSV")
+
+
 def test_create_alert_rule(token):
     global _rule_id
     body = {
@@ -1203,6 +1303,97 @@ def test_delete_alert_rule(token):
     print(f"  [PASS] Deleted alert rule not found: id={_rule_id}")
 
 
+def test_list_backups(token):
+    r = request("GET", "/api/backups", token=token)
+    assert r.status_code == 200, f"List backups failed: {r.status_code}"
+    data = json.loads(r.data)
+    assert "backups" in data
+    print(f"  [PASS] List backups: count={len(data['backups'])}")
+
+
+def test_trigger_backup(token):
+    r = request("POST", "/api/backups/trigger", token=token)
+    assert r.status_code == 201, f"Trigger backup failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert data["backup"]["status"] == "success"
+    print("  [PASS] Trigger backup")
+
+
+def test_integrity_check(token):
+    r = request("POST", "/api/backups/integrity-check", token=token)
+    assert r.status_code == 200, f"Integrity check failed: {r.status_code}"
+    data = json.loads(r.data)
+    assert data["ok"] is True
+    print("  [PASS] Integrity check: OK")
+
+
+def test_get_settings(token):
+    r = request("GET", "/api/settings", token=token)
+    assert r.status_code == 200, f"Get settings failed: {r.status_code}"
+    data = json.loads(r.data)
+    assert "settings" in data
+    assert "timezone" in data["settings"]
+    assert "jwt_expiry_hours" in data["settings"]
+    print(f"  [PASS] Get settings: keys={len(data['settings'])}")
+
+
+def test_update_settings(token):
+    payload = {"session_timeout_minutes": "45", "log_level": "WARNING"}
+    r = request("PUT", "/api/settings", token=token, data=payload)
+    assert r.status_code == 200, f"Update settings failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert data["settings"]["session_timeout_minutes"] == "45"
+    assert data["settings"]["log_level"] == "WARNING"
+    print("  [PASS] Update settings")
+
+
+def test_update_settings_unknown_key(token):
+    r = request("PUT", "/api/settings", token=token, data={"unknown_key": "val"})
+    assert r.status_code == 400, f"Expected 400 for unknown key: {r.status_code}"
+    print("  [PASS] Reject unknown settings key")
+
+
+_apikey_id = None
+
+
+def test_create_api_key(token):
+    global _apikey_id
+    r = request("POST", "/api/api-keys", token=token, data={"name": "test-key"})
+    assert r.status_code == 201, f"Create API key failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert "api_key" in data
+    assert "key_value" in data["api_key"]
+    assert len(data["api_key"]["key_value"]) > 10
+    _apikey_id = data["api_key"]["id"]
+    print(f"  [PASS] Create API key: id={_apikey_id}")
+
+
+def test_list_api_keys(token):
+    r = request("GET", "/api/api-keys", token=token)
+    assert r.status_code == 200, f"List API keys failed: {r.status_code}"
+    data = json.loads(r.data)
+    assert "api_keys" in data
+    assert any(k["id"] == _apikey_id for k in data["api_keys"])
+    print(f"  [PASS] List API keys: count={len(data['api_keys'])}")
+
+
+def test_rotate_api_key(token):
+    r = request("POST", f"/api/api-keys/{_apikey_id}/rotate", token=token)
+    assert r.status_code == 200, f"Rotate API key failed: {r.status_code} {r.data}"
+    data = json.loads(r.data)
+    assert "api_key" in data and "key_value" in data["api_key"]
+    print(f"  [PASS] Rotate API key: id={_apikey_id}")
+
+
+def test_delete_api_key(token):
+    r = request("DELETE", f"/api/api-keys/{_apikey_id}", token=token)
+    assert r.status_code == 200, f"Delete API key failed: {r.status_code} {r.data}"
+    r2 = request("GET", "/api/api-keys", token=token)
+    data = json.loads(r2.data)
+    assert not any(k["id"] == _apikey_id for k in data["api_keys"])
+    print(f"  [PASS] Delete API key: id={_apikey_id}")
+
+
 def run_all():
     print("=== PC-Ops Orchestrator API Tests ===\n")
     setup_module()
@@ -1268,6 +1459,10 @@ def run_all():
     test_create_group_task(token)
     test_remove_pc_from_group(token)
     test_delete_group(token)
+    test_notification_channel_test_send_email(token)
+    test_notification_channel_test_send_not_found(token)
+    test_licenses_export_csv(token)
+    test_agents_export_csv(token)
     test_create_alert_rule(token)
     test_list_alert_rules(token)
     test_get_alert_rule(token)
@@ -1275,6 +1470,16 @@ def run_all():
     test_toggle_alert_rule(token)
     test_alert_rule_invalid_metric(token)
     test_delete_alert_rule(token)
+    test_list_backups(token)
+    test_trigger_backup(token)
+    test_integrity_check(token)
+    test_get_settings(token)
+    test_update_settings(token)
+    test_update_settings_unknown_key(token)
+    test_create_api_key(token)
+    test_list_api_keys(token)
+    test_rotate_api_key(token)
+    test_delete_api_key(token)
 
     print("\n=== All tests PASSED ===")
 

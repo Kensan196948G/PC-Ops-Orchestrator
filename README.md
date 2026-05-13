@@ -173,6 +173,12 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | ⚠️ アラート管理 | アラート確認・解決・同期、重大度フィルタ、**CSVエクスポート**（30秒自動更新） |
 | 🛎️ アラートルール設定 | **しきい値・通知先（Webhook 等）の管理**、有効/無効トグル、テスト通知 |
 | 📝 操作ログ | WebUIおよびAgent操作の監査ログ、ユーザー/操作種別フィルタ |
+| 🔔 通知チャネル設定 | Slack/Teams/Email/Webhook チャネル CRUD・テスト送信・有効/無効切替 |
+| 📜 証明書管理 | TLS/クライアント/コード署名証明書の登録・編集・削除・期限アラート |
+| 📦 ライセンス管理 | ソフトウェアライセンス CRUD・年間コスト集計・CSV エクスポート |
+| 🔑 API キー管理 | Agent 認証 API キーの作成・ローテート・削除 (agents.html 内) |
+| 💾 バックアップ管理 | 即時バックアップ・整合性チェック・履歴一覧・リストア確認 |
+| ⚙️ システム設定 | 全般/認証/Agent 通信設定の保存 (GET/PUT /api/settings) |
 | 📚 API ドキュメント | **Swagger UI** (`/api/docs/`) でブラウザから API 仕様確認・試行 |
 
 ---
@@ -226,6 +232,23 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | GET | `/api/reports/monthly/list` | JWT | 過去 N ヶ月レポート一覧 |
 | GET | `/api/reports/monthly/export.csv` | JWT(admin+) | 月次レポート CSV ダウンロード |
 | GET | `/api/reports/monthly/export.pdf` | JWT(admin+) | 月次レポート PDF ダウンロード |
+| GET/POST | `/api/notification-channels` | JWT | 通知チャネル一覧・作成 |
+| GET/PUT/DELETE | `/api/notification-channels/<id>` | JWT(admin) | チャネル更新・削除 |
+| POST | `/api/notification-channels/<id>/test-send` | JWT(admin) | テスト送信 |
+| GET/POST | `/api/certificates` | JWT | 証明書一覧・作成 |
+| PUT/DELETE | `/api/certificates/<id>` | JWT(admin) | 証明書更新・削除 |
+| GET/POST | `/api/licenses` | JWT | ライセンス一覧・作成 |
+| GET | `/api/licenses/export.csv` | JWT | ライセンス CSV エクスポート |
+| PUT/DELETE | `/api/licenses/<id>` | JWT(admin) | ライセンス更新・削除 |
+| GET | `/api/api-keys` | JWT | API キー一覧 |
+| POST | `/api/api-keys` | JWT(admin) | API キー作成 |
+| POST | `/api/api-keys/<id>/rotate` | JWT(admin) | API キーローテート |
+| DELETE | `/api/api-keys/<id>` | JWT(admin) | API キー削除 |
+| GET/PUT | `/api/settings` | JWT / JWT(admin) | システム設定取得・保存 |
+| GET | `/api/backups` | JWT | バックアップ履歴一覧 |
+| POST | `/api/backups/trigger` | JWT(admin) | 即時バックアップ実行 |
+| POST | `/api/backups/integrity-check` | JWT | DB 整合性チェック |
+| GET | `/api/agents/export.csv` | JWT | Agent 一覧 CSV エクスポート |
 | GET | `/api/docs/` | - | **Swagger UI（OpenAPI 3.0 ドキュメント）** |
 | GET | `/api/openapi.yaml` | - | OpenAPI 3.0 仕様 (YAML) |
 
@@ -498,7 +521,7 @@ gantt
 | 🗓️ **M3** | スケジュール・グループ・Swagger | ✅ 完了 | APScheduler / PCグループ / OpenAPI 3.0 |
 | 🔐 **M4** | RBAC・通知・E2E | ✅ 完了 | admin/operator/viewer / Slack/Teams/Email / Playwright 94 tests |
 | ✅ **M5** | 監査ログ✅ / 一括実行✅ / Topbar+Badge✅ / ダーク+a11y✅ / **月次レポート API+PDF✅(PR#116)** / **ユーザー管理強化✅(PR#117)** / XSS防御✅(PR#114) | ✅ 完了 | 全 9 Issue クローズ |
-| 🚀 **M6** | セキュリティ強化・WebUI 刷新・**v1.0.0 リリース** | ✅ 完了 | CSP Phase 1〜3 完了 / N+1修正 / 実機能化 / WebUI刷新 / **329テスト** |
+| 🚀 **M6** | セキュリティ強化・WebUI 刷新・**v1.0.0 リリース** | 🔄 進行中 | CSP Phase 1〜3 完了 / N+1修正 / 実機能化 / WebUI刷新 / **343テスト** |
 
 ### ✅ M5 完了サマリー (2026-05-06)
 
@@ -526,7 +549,8 @@ gantt
 | 🎨 **PR #136** | **UI フィルタ横並び修正** | ✅ MERGED | PC一覧・アラートのフィルタ flex レイアウト |
 | 🔧 **PR #140** | **Agent/通知/証明書/ライセンス 実機能化** | ✅ MERGED | /api/agents + NotificationChannel/Certificate/License CRUD |
 | 🎨 **PR #143/#144** | **WebUI 刷新** — KPI/フィード/モーダル | ✅ MERGED | ダッシュボード KPI グリッド・健全性リング・全ページシード |
-| 🔒 **PR #139** | **CSP Phase 3** — `style-src 'unsafe-inline'` 除去 | 🔄 CI 実行中 | 全 16 テンプレートの inline style=0 件 |
+| 🔒 **PR #139** | **CSP Phase 3** — `style-src 'unsafe-inline'` 除去 | ✅ MERGED | 全 16 テンプレートの inline style=0 件 |
+| 🔧 **PR #147** | **全スタブ機能の実機能化** — API キー/バックアップ/設定管理 | 🔄 CI 実行中 | 証明書/バックアップ/設定/API キー CRUD + 343 tests |
 
 ---
 
@@ -534,7 +558,7 @@ gantt
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| **API 拡張テスト（Python）** | **329項目** | **✅ PASS** |
+| **API 拡張テスト（Python）** | **343項目** | **✅ PASS** |
 | **WebUI E2E テスト（Playwright）** | **121項目** | **✅ PASS** |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |

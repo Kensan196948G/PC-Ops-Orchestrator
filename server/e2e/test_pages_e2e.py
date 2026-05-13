@@ -12,6 +12,12 @@ SIDEBAR_PAGES = [
     ("/scheduled-tasks", "scheduled-tasks"),
     ("/groups", "groups"),
     ("/alert-rules", "alert-rules"),
+    ("/agents", "agents"),
+    ("/certs", "certs"),
+    ("/licenses", "licenses"),
+    ("/notifications-config", "notifications-config"),
+    ("/backups", "backups"),
+    ("/settings", "settings"),
 ]
 
 

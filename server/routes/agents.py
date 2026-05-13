@@ -1,11 +1,99 @@
+import csv
+import io
 from datetime import datetime, timezone
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, make_response, request
 from sqlalchemy import case
 from auth import login_required
 from extensions import db
 from models import PC, SystemSnapshot
 
 agents_bp = Blueprint("agents", __name__, url_prefix="/api")
+
+
+@agents_bp.route("/agents/export.csv", methods=["GET"])
+@login_required
+def export_agents_csv():
+    """Export all PCs as agent entries in CSV format."""
+    now = datetime.now(timezone.utc)
+    pcs = (
+        PC.query.order_by(
+            case((PC.last_seen.is_(None), 1), else_=0), PC.last_seen.desc()
+        )
+        .limit(5000)
+        .all()
+    )
+
+    # Fetch latest snapshot per PC to avoid N+1
+    pc_ids = [pc.id for pc in pcs]
+    latest_snaps: dict = {}
+    if pc_ids:
+        subq = (
+            db.session.query(
+                SystemSnapshot.pc_id,
+                db.func.max(SystemSnapshot.collected_at).label("max_at"),
+            )
+            .filter(SystemSnapshot.pc_id.in_(pc_ids))
+            .group_by(SystemSnapshot.pc_id)
+            .subquery()
+        )
+        for snap in db.session.query(SystemSnapshot).join(
+            subq,
+            (SystemSnapshot.pc_id == subq.c.pc_id)
+            & (SystemSnapshot.collected_at == subq.c.max_at),
+        ):
+            latest_snaps[snap.pc_id] = snap
+
+    buf = io.StringIO()
+    buf.write("﻿")  # BOM for Excel (utf-8-sig)
+    writer = csv.writer(buf)
+    writer.writerow(
+        [
+            "ホスト名",
+            "OSバージョン",
+            "IPアドレス",
+            "CPU使用率",
+            "メモリ使用率",
+            "Agentバージョン",
+            "最終heartbeat",
+            "状態",
+        ]
+    )
+    for pc in pcs:
+        last_seen_dt = None
+        if pc.last_seen:
+            if pc.last_seen.tzinfo is None:
+                last_seen_dt = pc.last_seen.replace(tzinfo=timezone.utc)
+            else:
+                last_seen_dt = pc.last_seen
+
+        online = last_seen_dt is not None and (now - last_seen_dt).total_seconds() < 300
+        status_label = "オンライン" if online else (pc.status or "不明")
+
+        snap = latest_snaps.get(pc.id)
+        cpu_usage = snap.cpu_usage if snap else None
+
+        memory_usage = None
+        if pc.memory_total_gb and pc.memory_available_gb is not None:
+            used = pc.memory_total_gb - pc.memory_available_gb
+            memory_usage = round(used / pc.memory_total_gb * 100, 1)
+
+        writer.writerow(
+            [
+                pc.pc_name or "",
+                pc.os_version or "",
+                pc.ip_address or "",
+                f"{cpu_usage:.1f}" if cpu_usage is not None else "",
+                f"{memory_usage:.1f}" if memory_usage is not None else "",
+                pc.agent_version or "",
+                pc.last_seen.isoformat() if pc.last_seen else "",
+                status_label,
+            ]
+        )
+
+    response = make_response(buf.getvalue())
+    response.headers["Content-Type"] = "text/csv; charset=utf-8-sig"
+    response.headers["Content-Disposition"] = 'attachment; filename="agents.csv"'
+    return response
 
 
 @agents_bp.route("/agents", methods=["GET"])

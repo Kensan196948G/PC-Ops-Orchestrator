@@ -22,11 +22,23 @@ async function loadCerts() {
     try {
         const data = await apiFetch('/certificates');
         tbody.replaceChildren();
-        if (!data.certificates || data.certificates.length === 0) {
+        const certs = data.certificates || [];
+
+        // Update stat cards
+        const countEl = document.getElementById('cert-stat-count');
+        if (countEl) countEl.textContent = certs.length;
+        const validEl = document.getElementById('cert-stat-valid');
+        if (validEl) validEl.textContent = certs.filter(c => c.days_left == null || c.days_left > 90).length;
+        const expiringEl = document.getElementById('cert-stat-expiring');
+        if (expiringEl) expiringEl.textContent = certs.filter(c => c.days_left != null && c.days_left > 30 && c.days_left <= 90).length;
+        const criticalEl = document.getElementById('cert-stat-critical');
+        if (criticalEl) criticalEl.textContent = certs.filter(c => c.days_left != null && c.days_left <= 30).length;
+
+        if (certs.length === 0) {
             tbody.appendChild(_makeErrorRow('証明書が登録されていません。+ 証明書を登録から追加してください。', 7));
             return;
         }
-        data.certificates.forEach(c => {
+        certs.forEach(c => {
             const tr = document.createElement('tr');
             const td = t => { const el = document.createElement('td'); el.textContent = t ?? '—'; return el; };
             tr.appendChild(td(c.domain));
@@ -39,7 +51,7 @@ async function loadCerts() {
             if (badge) statusTd.appendChild(badge);
             tr.appendChild(statusTd);
             const actionTd = document.createElement('td');
-            actionTd.style.display = 'flex'; actionTd.style.gap = '4px';
+            actionTd.className = 'd-flex-gap';
             const editBtn = document.createElement('button');
             editBtn.className = 'btn btn-secondary text-xs role-admin-only';
             editBtn.textContent = '編集';
