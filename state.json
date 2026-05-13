@@ -177,15 +177,15 @@
     ],
     "ci_status": "PR #147 CI 実行中。ローカルテスト 343 passed, 0 failed。",
     "verification": {
-      "pytest_unit": "343 passed, 0 failed",
+      "pytest_unit": "355 passed, 0 failed",
       "ruff_check": "All checks passed",
       "ruff_format": "All files formatted",
       "data_stub_alert": "0 件 (全テンプレートから削除完了)"
     },
     "resume_point": {
-      "next_action": "PR #147 CI PASS 確認後マージ → v1.1.0 タグ → 次: reports/dashboard 改善",
+      "next_action": "PR #147 CI 全 PASS 確認後 merge → v1.1.0 タグ → 次: reports/dashboard 改善",
       "blocker": "なし",
-      "notes": "今セッション主成果: 全スタブ機能 (certs/agents API キー/backups/settings) 実機能化完了。data-stub-alert=0 達成。343 tests PASS。PR #147 CI実行中。"
+      "notes": "今セッション主成果: 全スタブ機能 (certs/agents API キー/backups/settings) 実機能化完了。data-stub-alert=0 達成。355 tests PASS。requirements.txt に requests 追加 (CI 修正)。PR #147 CI 13/13 PASS (run 25796484990)。"
     }
   },
   "learning": {
