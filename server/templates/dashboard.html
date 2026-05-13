@@ -8,7 +8,7 @@
         <p class="page-description" id="last-update">読み込み中...</p>
     </div>
     <div class="page-actions">
-        <select class="form-input" id="dashboard-range" style="width:auto;">
+        <select class="form-input w-auto" id="dashboard-range">
             <option value="24h">過去 24時間</option>
             <option value="7d">過去 7日間</option>
             <option value="30d">過去 30日間</option>
@@ -26,7 +26,7 @@
 
 <!-- KPI Grid -->
 <div class="kpi-grid" id="kpi-grid">
-    <div class="kpi accent" id="kpi-total" style="cursor:pointer;" title="PC一覧へ">
+    <div class="kpi accent cursor-pointer" id="kpi-total" title="PC一覧へ">
         <div class="kpi-head">
             <span class="kpi-label">総PC数</span>
             <span class="kpi-icon">
@@ -121,7 +121,7 @@
 </div>
 
 <!-- Charts row: Health ring + OS breakdown -->
-<div class="charts-grid" style="margin-bottom:1.5rem;">
+<div class="charts-grid mb-lg">
     <div class="card card-framed">
         <div class="card-header">
             <div class="card-title">
@@ -132,14 +132,14 @@
         </div>
         <div class="card-body">
             <div class="ring-summary">
-                <div style="width:140px;height:140px;flex-shrink:0;position:relative;">
+                <div class="ring-canvas-wrap">
                     <canvas id="healthChart" width="140" height="140"></canvas>
                 </div>
                 <div class="ring-stats">
-                    <div class="ring-stat"><span class="swatch" style="background:#2ed573;border-radius:2px;"></span><span class="label">正常</span><span class="value" id="ring-healthy">—</span></div>
-                    <div class="ring-stat"><span class="swatch" style="background:#ffa502;border-radius:2px;"></span><span class="label">要注意</span><span class="value" id="ring-warning">—</span></div>
-                    <div class="ring-stat"><span class="swatch" style="background:#ff4757;border-radius:2px;"></span><span class="label">危険</span><span class="value" id="ring-critical">—</span></div>
-                    <div class="ring-stat"><span class="swatch" style="background:#8b91a8;border-radius:2px;"></span><span class="label">オフライン</span><span class="value" id="ring-offline">—</span></div>
+                    <div class="ring-stat"><span class="swatch swatch-success"></span><span class="label">正常</span><span class="value" id="ring-healthy">—</span></div>
+                    <div class="ring-stat"><span class="swatch swatch-warning"></span><span class="label">要注意</span><span class="value" id="ring-warning">—</span></div>
+                    <div class="ring-stat"><span class="swatch swatch-danger"></span><span class="label">危険</span><span class="value" id="ring-critical">—</span></div>
+                    <div class="ring-stat"><span class="swatch swatch-offline"></span><span class="label">オフライン</span><span class="value" id="ring-offline">—</span></div>
                 </div>
             </div>
         </div>
@@ -154,14 +154,14 @@
         </div>
         <div class="card-body">
             <div class="os-bars" id="os-bars-body">
-                <p style="color:var(--text-muted);font-size:0.82rem;">読み込み中...</p>
+                <p class="text-loading">読み込み中...</p>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Active alerts -->
-<div class="card card-framed" style="margin-bottom:1.5rem;">
+<div class="card card-framed mb-lg">
     <div class="card-header">
         <div class="card-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -199,7 +199,7 @@
             <a href="/tasks" class="btn btn-secondary btn-sm">全て見る</a>
         </div>
         <div class="feed" id="recent-tasks-feed">
-            <div class="feed-item"><div class="feed-body"><span class="feed-title" style="color:var(--text-muted);">読み込み中...</span></div></div>
+            <div class="feed-item"><div class="feed-body"><span class="feed-title text-muted-label">読み込み中...</span></div></div>
         </div>
     </div>
     <div class="card card-framed">
@@ -211,7 +211,7 @@
             <a href="/audit" class="btn btn-secondary btn-sm">全て見る</a>
         </div>
         <div class="feed" id="recent-ops-feed">
-            <div class="feed-item"><div class="feed-body"><span class="feed-title" style="color:var(--text-muted);">読み込み中...</span></div></div>
+            <div class="feed-item"><div class="feed-body"><span class="feed-title text-muted-label">読み込み中...</span></div></div>
         </div>
     </div>
 </div>

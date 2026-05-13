@@ -1919,21 +1919,34 @@ body.role-operator .role-admin-only {
 
 /* Additional utility */
 .mb-sm { margin-bottom: 0.75rem; }
+.mb-md { margin-bottom: 1rem; }
+.mb-lg { margin-bottom: 1.5rem; }
 .d-flex-wrap { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .d-flex-gap-md { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
 .cursor-pointer { cursor: pointer; }
+.w-auto { width: auto; }
 .text-danger-marker { color: var(--danger); }
 .align-center { align-self: center; }
 .text-muted-sm { font-size: 0.85rem; color: var(--text-secondary); font-weight: normal; }
+.text-loading { color: var(--text-muted); font-size: 0.82rem; }
+.text-muted-label { color: var(--text-muted); }
 .mt-label { margin-top: 8px; }
 .w-140 { width: 140px; }
 .w-160 { width: 160px; }
+.w-40 { width: 40px; }
 .p-month { display: inline-block; width: auto; margin-left: 0.4rem; }
 .modal-sm { max-width: 480px; }
 .modal-560 { max-width: 560px; }
-.mb-md { margin-bottom: 1rem; }
 .modal-footer-reset { padding: 0; margin-top: 1rem; }
-.w-40 { width: 40px; }
+
+/* Ring chart canvas wrapper */
+.ring-canvas-wrap { width: 140px; height: 140px; flex-shrink: 0; position: relative; }
+
+/* Ring color swatches */
+.swatch-success { background: #2ed573; }
+.swatch-warning { background: #ffa502; }
+.swatch-danger  { background: #ff4757; }
+.swatch-offline { background: #8b91a8; }
 
 /* Login page — extracted from login.html <style> block */
 body.login-page {
