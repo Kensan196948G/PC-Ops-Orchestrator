@@ -1153,3 +1153,18 @@ def test_api_key_delete_not_found():
 def test_settings_put_unknown_key_400():
     r = req("PUT", "/api/settings", token=_admin_token, data={"bad_key_xyz": "val"})
     assert r.status_code == 400
+
+
+def test_api_key_create_name_too_long():
+    r = req("POST", "/api/api-keys", token=_admin_token, data={"name": "x" * 201})
+    assert r.status_code == 400
+
+
+def test_backups_trigger():
+    r = req("POST", "/api/backups/trigger", token=_admin_token)
+    assert r.status_code == 201
+
+
+def test_api_key_create_no_body():
+    r = req("POST", "/api/api-keys", token=_admin_token, data=None)
+    assert r.status_code == 400
