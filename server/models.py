@@ -630,3 +630,39 @@ class SystemSetting(db.Model):
 
     def __repr__(self) -> str:
         return f"<SystemSetting {self.key}={self.value!r}>"
+
+
+class BackupJob(db.Model):
+    __tablename__ = "backup_jobs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    backup_type = db.Column(
+        db.String(20), nullable=False, default="full"
+    )  # full/incremental
+    target = db.Column(db.String(100), default="DB + config")
+    status = db.Column(
+        db.String(20), nullable=False, default="running"
+    )  # running/success/failed
+    size_bytes = db.Column(db.BigInteger, nullable=True)
+    duration_seconds = db.Column(db.Integer, nullable=True)
+    storage_path = db.Column(db.String(500), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    started_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    finished_at = db.Column(db.DateTime, nullable=True)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "backup_type": self.backup_type,
+            "target": self.target,
+            "status": self.status,
+            "size_bytes": self.size_bytes,
+            "duration_seconds": self.duration_seconds,
+            "storage_path": self.storage_path,
+            "notes": self.notes,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "finished_at": self.finished_at.isoformat() if self.finished_at else None,
+        }
+
+    def __repr__(self) -> str:
+        return f"<BackupJob {self.id} {self.backup_type} {self.status}>"

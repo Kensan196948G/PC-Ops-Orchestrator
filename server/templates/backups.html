@@ -5,32 +5,32 @@
     <h2 class="page-title">バックアップ管理</h2>
     <p class="page-description">DB / 設定ファイルのバックアップスケジュール・履歴・リストア。</p>
     <div class="d-flex-gap">
-        <button class="btn btn-secondary" type="button" data-stub-alert="整合性チェック（次マイルストーン実装予定）">🩺 整合性チェック</button>
-        <button class="btn btn-primary role-admin-only" type="button" data-stub-alert="即時バックアップ（次マイルストーン実装予定）">▶ 即時バックアップ</button>
+        <button class="btn btn-secondary" type="button" id="btn-integrity-check">🩺 整合性チェック</button>
+        <button class="btn btn-primary role-admin-only" type="button" id="btn-trigger-backup">▶ 即時バックアップ</button>
     </div>
 </div>
 
 <div class="stats-grid">
     <div class="stat-card stat-online">
-        <div class="stat-value">7</div>
+        <div class="stat-value" id="backup-stat-success7d">—</div>
         <div class="stat-label">直近 7 日成功</div>
     </div>
     <div class="stat-card stat-task">
-        <div class="stat-value">14.2 GB</div>
-        <div class="stat-label">合計サイズ</div>
+        <div class="stat-value" id="backup-stat-total">—</div>
+        <div class="stat-label">合計バックアップ数</div>
     </div>
     <div class="stat-card stat-warning">
-        <div class="stat-value">0</div>
+        <div class="stat-value" id="backup-stat-failed7d">—</div>
         <div class="stat-label">直近 7 日失敗</div>
     </div>
     <div class="stat-card stat-total">
-        <div class="stat-value">2026-05-09 03:00</div>
+        <div class="stat-value" id="backup-stat-last">—</div>
         <div class="stat-label">最後の成功</div>
     </div>
 </div>
 
 <div class="card">
-    <h3 class="card-title">バックアップ履歴 (直近 14 日)</h3>
+    <h3 class="card-title">バックアップ履歴 (直近 30 件)</h3>
     <table class="table">
         <thead>
             <tr>
@@ -41,17 +41,9 @@
                 <th>所要時間</th>
                 <th>保管先</th>
                 <th>状態</th>
-                <th>操作</th>
             </tr>
         </thead>
-        <tbody>
-            <tr><td>2026-05-09 03:00</td><td>full</td><td>DB + config</td><td>2.2 GB</td><td>4 分 28 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary text-xs role-admin-only" data-stub-alert="リストア確認モーダル（次マイルストーン実装予定）">リストア</button></td></tr>
-            <tr><td>2026-05-08 03:00</td><td>incremental</td><td>DB</td><td>156 MB</td><td>1 分 08 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary text-xs role-admin-only" data-stub-alert="リストア確認モーダル（次マイルストーン実装予定）">リストア</button></td></tr>
-            <tr><td>2026-05-07 03:00</td><td>incremental</td><td>DB</td><td>139 MB</td><td>1 分 01 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary text-xs role-admin-only" data-stub-alert="リストア確認モーダル（次マイルストーン実装予定）">リストア</button></td></tr>
-            <tr><td>2026-05-06 03:00</td><td>incremental</td><td>DB</td><td>148 MB</td><td>1 分 02 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary text-xs role-admin-only" data-stub-alert="リストア確認モーダル（次マイルストーン実装予定）">リストア</button></td></tr>
-            <tr><td>2026-05-05 03:00</td><td>incremental</td><td>DB</td><td>132 MB</td><td>0 分 58 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary text-xs role-admin-only" data-stub-alert="リストア確認モーダル（次マイルストーン実装予定）">リストア</button></td></tr>
-            <tr><td>2026-05-04 03:00</td><td>incremental</td><td>DB</td><td>119 MB</td><td>0 分 51 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary text-xs role-admin-only" data-stub-alert="リストア確認モーダル（次マイルストーン実装予定）">リストア</button></td></tr>
-            <tr><td>2026-05-02 03:00</td><td>full</td><td>DB + config</td><td>2.0 GB</td><td>4 分 18 秒</td><td>s3://pc-ops-backups/</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-secondary text-xs role-admin-only" data-stub-alert="リストア確認モーダル（次マイルストーン実装予定）">リストア</button></td></tr>
+        <tbody id="backups-body">
         </tbody>
     </table>
 </div>
@@ -60,16 +52,14 @@
     <div class="card">
         <h3 class="card-title">⏰ スケジュール設定</h3>
         <table class="table">
-            <thead><tr><th>名前</th><th>cron 式</th><th>種別</th><th>状態</th><th>操作</th></tr></thead>
+            <thead><tr><th>名前</th><th>cron 式</th><th>種別</th><th>状態</th></tr></thead>
             <tbody>
-                <tr><td>毎日 03:00 増分</td><td>0 3 * * 1-6</td><td>incremental</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-secondary text-xs" data-stub-alert="スケジュール編集（次マイルストーン実装予定）">編集</button></td></tr>
-                <tr><td>毎週日曜 03:00 フル</td><td>0 3 * * 0</td><td>full</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-secondary text-xs" data-stub-alert="スケジュール編集（次マイルストーン実装予定）">編集</button></td></tr>
-                <tr><td>毎月 1 日 02:00 フル + 保管</td><td>0 2 1 * *</td><td>full + glacier</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-secondary text-xs" data-stub-alert="スケジュール編集（次マイルストーン実装予定）">編集</button></td></tr>
+                <tr><td>毎日 03:00 増分</td><td>0 3 * * 1-6</td><td>incremental</td><td><span class="badge badge-success">有効</span></td></tr>
+                <tr><td>毎週日曜 03:00 フル</td><td>0 3 * * 0</td><td>full</td><td><span class="badge badge-success">有効</span></td></tr>
+                <tr><td>毎月 1 日 02:00 フル + 保管</td><td>0 2 1 * *</td><td>full + glacier</td><td><span class="badge badge-success">有効</span></td></tr>
             </tbody>
         </table>
-        <div class="mt-actions">
-            <button class="btn btn-primary text-sm role-admin-only" data-stub-alert="スケジュール追加（次マイルストーン実装予定）">+ スケジュール追加</button>
-        </div>
+        <p class="text-secondary text-xs mt-sm">スケジュール設定の変更は設定ファイルで管理されます。</p>
     </div>
     <div class="card">
         <h3 class="card-title">🗄️ 保管先設定</h3>
@@ -88,9 +78,16 @@
     <h3 class="card-title">🔄 リストア (point-in-time recovery)</h3>
     <p class="text-secondary mb-sm">指定時点へ DB を復元します。実行は admin ロールのみ可能。</p>
     <div class="d-flex-gap-md">
-        <label>復元日時<br><input type="datetime-local" class="form-input" value="2026-05-09T03:00"></label>
-        <label>復元先<br><select class="form-input"><option>staging-restore</option><option>production (要確認)</option></select></label>
-        <button class="btn btn-warning role-admin-only" type="button" data-stub-alert="リストア実行：admin 確認モーダル（次マイルストーン実装予定）">▶ リストア実行</button>
+        <label>復元日時<br><input type="datetime-local" class="form-input" id="restore-datetime" value="2026-05-09T03:00"></label>
+        <label>復元先<br>
+            <select class="form-input" id="restore-target">
+                <option value="staging-restore">staging-restore</option>
+                <option value="production">production (要確認)</option>
+            </select>
+        </label>
+        <button class="btn btn-warning role-admin-only" type="button" id="btn-restore">▶ リストア実行</button>
     </div>
+    <p id="restore-result" class="text-secondary text-sm mt-sm"></p>
 </div>
 {% endblock %}
+{% block scripts %}<script src="/static/js/backups.js"></script>{% endblock %}
