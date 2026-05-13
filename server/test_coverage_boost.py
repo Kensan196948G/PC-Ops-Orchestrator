@@ -1098,3 +1098,38 @@ def test_audit_logs_csv_export():
 def test_audit_logs_viewer_cannot_access():
     r = req("GET", "/api/audit/logs", token=_viewer_token)
     assert r.status_code == 403
+
+
+def test_api_keys_list():
+    r = req("GET", "/api/api-keys", token=_admin_token)
+    assert r.status_code == 200
+
+
+def test_api_keys_create_and_delete():
+    r = req("POST", "/api/api-keys", token=_admin_token, data={"name": "cov-test-key"})
+    assert r.status_code == 201
+    import json
+
+    key_id = json.loads(r.data)["api_key"]["id"]
+    r2 = req("DELETE", f"/api/api-keys/{key_id}", token=_admin_token)
+    assert r2.status_code == 200
+
+
+def test_settings_get():
+    r = req("GET", "/api/settings", token=_admin_token)
+    assert r.status_code == 200
+
+
+def test_settings_put():
+    r = req("PUT", "/api/settings", token=_admin_token, data={"log_level": "INFO"})
+    assert r.status_code == 200
+
+
+def test_backups_list():
+    r = req("GET", "/api/backups", token=_admin_token)
+    assert r.status_code == 200
+
+
+def test_backups_integrity_check():
+    r = req("POST", "/api/backups/integrity-check", token=_admin_token)
+    assert r.status_code == 200
