@@ -65,10 +65,10 @@ function _updateBulkButton() {
     if (!btn) return;
     const n = _selectedPcNames.size;
     if (n > 0) {
-        btn.style.display = '';
+        btn.classList.remove('hidden');
         if (countEl) countEl.textContent = n;
     } else {
-        btn.style.display = 'none';
+        btn.classList.add('hidden');
     }
 }
 
@@ -224,7 +224,7 @@ function openBulkModal() {
     }
     document.getElementById('bulk-task-type').value = '';
     document.getElementById('bulk-command').value = '';
-    document.getElementById('bulk-command-group').style.display = 'none';
+    document.getElementById('bulk-command-group').classList.add('hidden');
     document.getElementById('bulk-modal').classList.add('open');
 }
 
@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (taskTypeEl) {
         taskTypeEl.addEventListener('change', () => {
             const grp = document.getElementById('bulk-command-group');
-            if (grp) grp.style.display = taskTypeEl.value === 'custom' ? '' : 'none';
+            if (grp) grp.classList.toggle('hidden', taskTypeEl.value !== 'custom');
         });
     }
     loadPCs(1);

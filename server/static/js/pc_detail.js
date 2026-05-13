@@ -188,7 +188,7 @@ async function executeTask() {
 
 document.getElementById('task-type-select').addEventListener('change', function() {
     const cmdInput = document.getElementById('task-command');
-    cmdInput.style.display = this.value === 'custom' ? 'inline-block' : 'none';
+    this.value === 'custom' ? cmdInput.classList.remove('hidden') : cmdInput.classList.add('hidden');
 });
 
 const _severityBadge = {

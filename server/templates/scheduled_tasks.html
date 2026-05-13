@@ -63,7 +63,7 @@
                         <option value="custom">カスタム</option>
                     </select>
                 </div>
-                <div class="form-group" id="command-group" style="display:none;">
+                <div class="form-group hidden" id="command-group">
                     <label class="form-label">コマンド</label>
                     <input type="text" id="st-command" class="form-input" placeholder="PowerShell コマンド">
                 </div>
@@ -83,11 +83,11 @@
                     <label class="form-label">間隔（分）<span class="required">*</span></label>
                     <input type="number" id="st-interval" class="form-input" min="1" value="60" placeholder="60">
                 </div>
-                <div class="form-group" id="daily-group" style="display:none;">
+                <div class="form-group hidden" id="daily-group">
                     <label class="form-label">実行時刻（HH:MM）<span class="required">*</span></label>
                     <input type="time" id="st-daily-time" class="form-input" value="02:00">
                 </div>
-                <div class="form-group" id="weekly-group" style="display:none;">
+                <div class="form-group hidden" id="weekly-group">
                     <label class="form-label">曜日 <span class="required">*</span></label>
                     <select id="st-weekly-day" class="form-input">
                         <option value="0">月曜日</option>
@@ -98,7 +98,7 @@
                         <option value="5">土曜日</option>
                         <option value="6">日曜日</option>
                     </select>
-                    <label class="form-label" style="margin-top:8px;">実行時刻（HH:MM）<span class="required">*</span></label>
+                    <label class="form-label mt-label">実行時刻（HH:MM）<span class="required">*</span></label>
                     <input type="time" id="st-weekly-time" class="form-input" value="02:00">
                 </div>
                 <div class="form-group">

@@ -31,8 +31,8 @@
     "week": 2
   },
   "kpi": {
-    "ci_success_rate": 1,
-    "test_pass_rate": 1,
+    "ci_success_rate": 1.0,
+    "test_pass_rate": 1.0,
     "review_blocker_count": 0,
     "security_issue_count": 0
   },
@@ -42,16 +42,17 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-13T10:00:02.406Z",
+    "current_session_start_at": "2026-05-09T19:00:01+09:00",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "cron",
-    "last_cron_session_id": "20260513-190001-PC-Ops-Orchestrator"
+    "last_cron_session_id": "20260509-190001-PC-Ops-Orchestrator"
   },
   "status": {
     "current_phase": "improve",
     "stable": true,
     "pending_prs": [],
     "merged_prs": [
+      136,
       36,
       38,
       40,
@@ -89,7 +90,7 @@
     "score": 0
   },
   "open_issues": {
-    "note": "PR #139 (CSP Phase 3 style-src unsafe-inline除去) CI実行中 (rebase+インラインスタイル完全除去修正済み)。PR #140/#143/#144 MERGED。v0.7.0 GitHub Release作成 + v1.0.0 最終準備が次タスク。Issue #141/#142/#145 クローズ済み。"
+    "note": "M6進行中: PR #131/#136 MERGED。style-src Phase 3 (CSS inline style外部化) 未着手。v1.0.0 本番リリース最終準備未着手。deployment.md 整備が次の主要タスク。"
   },
   "milestones": {
     "M1": {
@@ -149,36 +150,32 @@
     }
   },
   "session_summary": {
-    "id": "20260513-190001-PC-Ops-Orchestrator",
-    "loop_phase": "Monitor → Build (PR #139 rebase + inline style fix) → Verify (CI確認中)",
-    "duration_minutes": 60,
-    "prs_merged": [],
-    "prs_pending": [
-      139
-    ],
-    "issues_closed": [141, 142, 145],
+    "id": "20260509-190001-PC-Ops-Orchestrator",
+    "loop_phase": "Monitor → Build (groups N+1 / Alert.pc fix / UI横並びレイアウト) → Verify → Improve",
+    "duration_minutes": 105,
+    "prs_merged": [131, 136],
+    "prs_pending": [],
+    "issues_closed": [132, 133, 134, 135, 137, 138],
     "issues_opened": [],
     "completed": [
-      "Issue #141/#142/#145 クローズ (PR #140/#143/#144 マージ済みのため解消)",
-      "PR #139 rebase on main (PR #143/#144 の変更と統合)",
-      "コンフリクト解消: style.css (両方保持) / backups.html (HEAD採用) / dashboard.html (HEAD+CSP)",
-      "dashboard.html 残存インラインスタイル12箇所 → CSS クラスに置換 (0件達成)",
-      "CSS ユーティリティクラス追加: mb-lg / w-auto / text-loading / text-muted-label / ring-canvas-wrap / swatch-*/",
-      "テスト: 327 passed 0 failed / E2E: 121 passed 0 failed",
-      "CHANGELOG.md 更新: v0.7.0 セクション追加 (PR #140/#143/#144)",
-      "README.md 更新: マイルストーン M6 進行中サマリー + テスト327件に更新"
+      "PR #131 MERGED: groups N+1解消 + Alert.pc relationship修正 + テスト326件 + E2E CDN修正",
+      "v0.6.0 GitHub Release 作成",
+      "PR #136 MERGED: PC一覧・アラートのフィルタを横並びレイアウトに修正",
+      "style.css: .page-actions .form-input { width: auto } で縦積みを解消",
+      "pc_list.html: search input に filter-search クラス追加",
+      "stale CI失敗 Issue #132-138 クローズ"
     ],
-    "ci_status": "PR #139 CI 実行中 (56f3bc6 — inline style 修正後の再実行)",
+    "ci_status": "STABLE — PR #131/#136 全チェック PASS、main ブランチ安定",
     "verification": {
-      "pytest_unit": "327 passed, 0 failed",
+      "pytest_unit": "326 passed, 0 failed",
       "ruff_check": "All checks passed",
       "ruff_format": "All files formatted",
-      "github_ci": "PR #139 CI 実行中 (lint: 通過見込み / E2E: 修正済み)"
+      "github_ci": "PR #136 全チェック pass (Lint/Flask API/PowerShell/E2E)"
     },
     "resume_point": {
-      "next_action": "PR #139 CI 完了 → merge → v0.7.0 GitHub Release 作成 → v1.0.0 最終準備",
-      "blocker": "PR #139 CI 待ち (残り E2E / PowerShell テスト)",
-      "notes": "今セッション: PR #139 rebase + CSP inline style 完全除去 + Issue クリーンアップ完了。CI再実行中。"
+      "next_action": "style-src 'unsafe-inline' Phase 3 (CSS inline style外部化) → v1.0.0 本番リリース最終準備 (deployment.md整備)",
+      "blocker": "なし",
+      "notes": "今セッション主成果: PR #131 (groups N+1 + Alert.pc + テスト326件 + E2E CDN修正) + PR #136 (フィルタUI横並び修正) の2PR MERGED。v0.6.0 GitHub Release作成完了。次の主要タスク: style-src Phase 3 CSS inline style外部化 → v1.0.0 リリース準備。"
     }
   },
   "learning": {

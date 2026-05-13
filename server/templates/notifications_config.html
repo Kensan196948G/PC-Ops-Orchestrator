@@ -3,8 +3,27 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">通知設定</h2>
-    <p class="page-description">Slack / Teams / Email / Webhook の通知チャネル管理。</p>
-    <button class="btn btn-primary role-admin-only" id="btn-add-channel">+ チャネル追加</button>
+    <p class="page-description">Slack / Teams / Email / Webhook の通知チャネルとイベントルーティング（ダミーデータ）。</p>
+    <button class="btn btn-primary" type="button" data-stub-alert="チャネル追加（次マイルストーン実装予定）">+ チャネル追加</button>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card stat-online">
+        <div class="stat-value">5</div>
+        <div class="stat-label">有効チャネル</div>
+    </div>
+    <div class="stat-card stat-task">
+        <div class="stat-value">128</div>
+        <div class="stat-label">直近 7 日送信</div>
+    </div>
+    <div class="stat-card stat-warning">
+        <div class="stat-value">2</div>
+        <div class="stat-label">送信失敗 (再試行待ち)</div>
+    </div>
+    <div class="stat-card stat-total">
+        <div class="stat-value">99.7%</div>
+        <div class="stat-label">配信成功率</div>
+    </div>
 </div>
 
 <div class="card">
@@ -15,58 +34,58 @@
                 <th>名前</th>
                 <th>種別</th>
                 <th>送信先</th>
+                <th>直近 7 日</th>
                 <th>状態</th>
                 <th>操作</th>
             </tr>
         </thead>
-        <tbody id="notif-channels-body">
-            <tr><td colspan="5" class="text-center">読み込み中...</td></tr>
+        <tbody>
+            <tr><td>#pc-ops-critical</td><td>Slack</td><td>hooks.slack.com/services/T0***/B0***/***</td><td>12 / 0 fail</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-secondary text-xs">テスト送信</button></td></tr>
+            <tr><td>#pc-ops-warnings</td><td>Slack</td><td>hooks.slack.com/services/T0***/B0***/***</td><td>34 / 0 fail</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-secondary text-xs">テスト送信</button></td></tr>
+            <tr><td>Ops Teams</td><td>Microsoft Teams</td><td>***.webhook.office.com/...</td><td>22 / 1 fail</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-secondary text-xs">テスト送信</button></td></tr>
+            <tr><td>oncall-mail</td><td>Email</td><td>oncall@example.com</td><td>56 / 1 fail</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-secondary text-xs">テスト送信</button></td></tr>
+            <tr><td>SIEM Webhook</td><td>Webhook</td><td>https://siem.example.com/ingest</td><td>4 / 0 fail</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-secondary text-xs">テスト送信</button></td></tr>
+            <tr><td>legacy-pagerduty</td><td>Webhook</td><td>events.pagerduty.com (旧)</td><td>0 / 0</td><td><span class="badge badge-secondary">無効</span></td><td><button class="btn btn-danger text-xs">削除</button></td></tr>
         </tbody>
     </table>
 </div>
 
-<!-- Channel Modal -->
-<div id="channel-modal" class="modal-overlay">
-    <div class="modal-container modal-560">
-        <div class="modal-header">
-            <h3 class="modal-title" id="channel-modal-title">チャネル追加</h3>
-            <button class="modal-close" id="btn-close-channel-modal" aria-label="閉じる">×</button>
-        </div>
-        <div class="modal-body">
-            <form id="channel-form">
-                <div class="form-group">
-                    <label class="form-label">チャネル名 <span class="required">*</span></label>
-                    <input type="text" id="channel-name" class="form-input" placeholder="例: #pc-ops-critical" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">種別 <span class="required">*</span></label>
-                    <select id="channel-type" class="form-input">
-                        <option value="slack">Slack</option>
-                        <option value="teams">Microsoft Teams</option>
-                        <option value="email">Email</option>
-                        <option value="webhook">Webhook</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">送信先 (URL / メールアドレス) <span class="required">*</span></label>
-                    <input type="text" id="channel-target" class="form-input" placeholder="https://hooks.slack.com/... または user@example.com" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">
-                        <input type="checkbox" id="channel-active" checked>
-                        有効にする
-                    </label>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="btn-close-channel-modal-foot">キャンセル</button>
-                    <button type="submit" class="btn btn-primary">保存</button>
-                </div>
-            </form>
+<div class="charts-grid">
+    <div class="card">
+        <h3 class="card-title">🚦 イベントルーティング (severity → channel)</h3>
+        <table class="table">
+            <thead><tr><th>severity</th><th>送信先チャネル</th><th>遅延</th></tr></thead>
+            <tbody>
+                <tr><td><span class="badge badge-danger">Critical</span></td><td>#pc-ops-critical + Ops Teams + oncall-mail + SIEM</td><td>即時</td></tr>
+                <tr><td><span class="badge badge-warning">High</span></td><td>#pc-ops-warnings + Ops Teams</td><td>5 分集約</td></tr>
+                <tr><td><span class="badge badge-info">Medium</span></td><td>#pc-ops-warnings</td><td>15 分集約</td></tr>
+                <tr><td><span class="badge badge-secondary">Low</span></td><td>#pc-ops-warnings (ダイジェスト)</td><td>1 時間集約</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3 class="card-title">📨 SMTP 設定</h3>
+        <div class="d-grid-form">
+            <label>SMTP サーバー<br><input type="text" value="smtp.example.com" disabled></label>
+            <label>ポート<br><input type="number" value="587" disabled></label>
+            <label>暗号化<br><select disabled><option>STARTTLS</option><option>SSL/TLS</option></select></label>
+            <label>送信者<br><input type="email" value="pc-ops-noreply@example.com" disabled></label>
+            <label>認証ユーザー<br><input type="text" value="pc-ops-smtp" disabled></label>
+            <button class="btn btn-secondary mt-xs" type="button" data-stub-alert="テスト送信（次マイルストーン実装予定）">📧 テスト送信</button>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
-<script nonce="{{ csp_nonce }}" src="/static/js/notification_channels.js"></script>
+<div class="card">
+    <h3 class="card-title">👤 ユーザー別受信設定</h3>
+    <table class="table">
+        <thead><tr><th>ユーザー</th><th>Critical</th><th>High</th><th>Medium</th><th>静音時間帯</th></tr></thead>
+        <tbody>
+            <tr><td>admin</td><td>email + Slack DM</td><td>email</td><td>—</td><td>—</td></tr>
+            <tr><td>operator-a</td><td>email + Teams DM</td><td>Teams DM</td><td>—</td><td>22:00 - 07:00</td></tr>
+            <tr><td>operator-b</td><td>email</td><td>—</td><td>—</td><td>—</td></tr>
+            <tr><td>viewer-c</td><td>—</td><td>—</td><td>—</td><td>常時静音</td></tr>
+        </tbody>
+    </table>
+</div>
 {% endblock %}

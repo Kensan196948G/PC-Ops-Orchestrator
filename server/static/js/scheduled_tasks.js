@@ -194,14 +194,15 @@ function closeModalDirect() {
 
 function toggleScheduleFields() {
     const type = document.getElementById('st-schedule-type').value;
-    document.getElementById('interval-group').style.display = type === 'interval' ? '' : 'none';
-    document.getElementById('daily-group').style.display = type === 'daily' ? '' : 'none';
-    document.getElementById('weekly-group').style.display = type === 'weekly' ? '' : 'none';
+    const toggle = (id, show) => document.getElementById(id).classList.toggle('hidden', !show);
+    toggle('interval-group', type === 'interval');
+    toggle('daily-group', type === 'daily');
+    toggle('weekly-group', type === 'weekly');
 }
 
 function toggleCommandField() {
     const type = document.getElementById('st-task-type').value;
-    document.getElementById('command-group').style.display = type === 'custom' ? '' : 'none';
+    document.getElementById('command-group').classList.toggle('hidden', type !== 'custom');
 }
 
 async function editTask(id) {

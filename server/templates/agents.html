@@ -3,10 +3,29 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">Agent 管理</h2>
-    <p class="page-description">登録済み PowerShell Agent の一覧、API キー管理、バージョン管理。</p>
+    <p class="page-description">登録済み PowerShell Agent の一覧、API キー管理、バージョン管理（ダミーデータ）。</p>
     <div class="d-flex-gap">
         <button class="btn btn-secondary" type="button" data-stub-alert="CSV エクスポート（次マイルストーン実装予定）">📊 一覧 CSV</button>
         <button class="btn btn-primary" type="button" data-stub-alert="一括バージョン更新（次マイルストーン実装予定）">🔄 一括バージョン更新</button>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card stat-online">
+        <div class="stat-value">142</div>
+        <div class="stat-label">オンライン Agent</div>
+    </div>
+    <div class="stat-card stat-warning">
+        <div class="stat-value">6</div>
+        <div class="stat-label">オフライン (>10 分)</div>
+    </div>
+    <div class="stat-card stat-task">
+        <div class="stat-value">3</div>
+        <div class="stat-label">未承認 Agent</div>
+    </div>
+    <div class="stat-card stat-total">
+        <div class="stat-value">v2.4.1</div>
+        <div class="stat-label">最新バージョン</div>
     </div>
 </div>
 
@@ -15,21 +34,58 @@
     <table class="table">
         <thead>
             <tr>
-                <th>PC名</th>
+                <th>ホスト名</th>
                 <th>OS</th>
                 <th>CPU</th>
                 <th>メモリ</th>
                 <th>バージョン</th>
-                <th>最終heartbeat</th>
+                <th>最終 heartbeat</th>
                 <th>状態</th>
+                <th>操作</th>
             </tr>
         </thead>
-        <tbody id="agents-body">
-            <tr><td colspan="7" class="text-center">読み込み中…</td></tr>
+        <tbody>
+            <tr><td>PC-DEV-001</td><td>Windows 11 23H2</td><td>32%</td><td>54%</td><td>v2.4.1</td><td>2026-05-06 19:14</td><td><span class="badge badge-success">オンライン</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
+            <tr><td>PC-DEV-002</td><td>Windows 10 22H2</td><td>78%</td><td>83%</td><td>v2.4.0</td><td>2026-05-06 19:12</td><td><span class="badge badge-success">オンライン</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
+            <tr><td>PC-DEV-003</td><td>Windows 11 23H2</td><td>15%</td><td>42%</td><td>v2.4.1</td><td>2026-05-06 19:14</td><td><span class="badge badge-success">オンライン</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
+            <tr><td>PC-OPS-001</td><td>Windows 11 23H2</td><td>—</td><td>—</td><td>v2.3.8</td><td>2026-05-06 18:45</td><td><span class="badge badge-warning">オフライン (29m)</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
+            <tr><td>PC-MKT-001</td><td>Windows 10 22H2</td><td>22%</td><td>47%</td><td>v2.4.1</td><td>2026-05-06 19:13</td><td><span class="badge badge-success">オンライン</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
+            <tr><td>PC-MKT-002</td><td>Windows 11 23H2</td><td>9%</td><td>33%</td><td>v2.4.1</td><td>2026-05-06 19:14</td><td><span class="badge badge-success">オンライン</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
+            <tr><td>PC-FIN-001</td><td>Windows 11 23H2</td><td>—</td><td>—</td><td>v2.3.8</td><td>2026-05-04 22:01</td><td><span class="badge badge-danger">オフライン (2 日)</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
+            <tr><td>PC-NEW-???</td><td>Windows 11 24H2</td><td>—</td><td>—</td><td>v2.4.1</td><td>—</td><td><span class="badge badge-info">未承認</span></td><td><button class="btn btn-primary text-xs">承認</button></td></tr>
         </tbody>
     </table>
 </div>
-{% endblock %}
-{% block scripts %}
-<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/agents.js') }}"></script>
+
+<div class="charts-grid">
+    <div class="card">
+        <h3 class="card-title">API キー一覧</h3>
+        <table class="table">
+            <thead>
+                <tr><th>名前</th><th>作成日</th><th>最終使用</th><th>状態</th><th>操作</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>default-agent-key</td><td>2026-04-28</td><td>2026-05-06 19:14</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-warning text-xs">ローテート</button></td></tr>
+                <tr><td>backup-agent-key</td><td>2026-04-30</td><td>2026-05-04 22:01</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-warning text-xs">ローテート</button></td></tr>
+                <tr><td>legacy-key (deprecated)</td><td>2026-03-12</td><td>2026-04-15</td><td><span class="badge badge-secondary">無効</span></td><td><button class="btn btn-danger text-xs">削除</button></td></tr>
+            </tbody>
+        </table>
+        <div class="mt-actions">
+            <button class="btn btn-primary text-sm" data-stub-alert="API キー作成（次マイルストーン実装予定）">+ 新規 API キー作成</button>
+        </div>
+    </div>
+    <div class="card">
+        <h3 class="card-title">Agent バージョン分布</h3>
+        <table class="table">
+            <thead>
+                <tr><th>バージョン</th><th>台数</th><th>状態</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>v2.4.1 (latest)</td><td>118</td><td><span class="badge badge-success">最新</span></td></tr>
+                <tr><td>v2.4.0</td><td>22</td><td><span class="badge badge-info">1 patch 古い</span></td></tr>
+                <tr><td>v2.3.8</td><td>8</td><td><span class="badge badge-warning">要更新</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

@@ -9,7 +9,7 @@
     </div>
 </div>
 
-<div class="card" id="create-task-card" style="display:none;">
+<div class="card hidden" id="create-task-card">
     <h3 class="card-title">新規タスク作成</h3>
     <div class="task-form">
         <select id="new-task-type" class="form-input">
@@ -19,7 +19,7 @@
             <option value="custom">カスタム</option>
         </select>
         <input type="text" id="new-task-pc" class="form-input" placeholder="PC名 (空欄=全PC対象)">
-        <input type="text" id="new-task-command" class="form-input" placeholder="PowerShell コマンド (カスタム時)" style="display:none;">
+        <input type="text" id="new-task-command" class="form-input hidden" placeholder="PowerShell コマンド (カスタム時)">
         <div class="task-form-actions">
             <button class="btn btn-primary" id="btn-create-task">作成</button>
             <button class="btn btn-secondary" id="btn-hide-create-task">キャンセル</button>

@@ -155,7 +155,8 @@ function closeGroupTaskModalDirect() {
 
 function toggleGroupTaskCommand() {
     const type = document.getElementById('group-task-type').value;
-    document.getElementById('group-command-group').style.display = type === 'custom' ? '' : 'none';
+    const el = document.getElementById('group-command-group');
+    type === 'custom' ? el.classList.remove('hidden') : el.classList.add('hidden');
 }
 
 async function submitGroupTask(e) {

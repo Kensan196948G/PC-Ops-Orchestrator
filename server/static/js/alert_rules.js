@@ -134,7 +134,7 @@ function toggleChannelInputs() {
     const value = sel.value;
     document.querySelectorAll('[data-channel]').forEach((el) => {
         if (!value) {
-            el.style.display = '';
+            el.classList.remove('hidden');
             return;
         }
         const ch = el.dataset.channel;
@@ -143,7 +143,7 @@ function toggleChannelInputs() {
             (value === 'teams' && ch === 'teams') ||
             (value === 'generic_webhook' && ch === 'generic') ||
             (value === 'email' && ch === 'email');
-        el.style.display = visible ? '' : 'none';
+        el.classList.toggle('hidden', !visible);
     });
 }
 
@@ -157,7 +157,7 @@ function closeRuleModalDirect() {
 
 function toggleThreshold() {
     const metric = document.getElementById('rule-metric').value;
-    document.getElementById('threshold-group').style.display = metric === 'offline' ? 'none' : '';
+    document.getElementById('threshold-group').classList.toggle('hidden', metric === 'offline');
 }
 
 async function editRule(id) {

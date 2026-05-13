@@ -17,11 +17,11 @@ function formatTime(iso) {
 }
 
 function showCreateForm() {
-    document.getElementById('create-task-card').style.display = 'block';
+    document.getElementById('create-task-card').classList.remove('hidden');
 }
 
 function hideCreateForm() {
-    document.getElementById('create-task-card').style.display = 'none';
+    document.getElementById('create-task-card').classList.add('hidden');
 }
 
 async function loadTasks(page) {
@@ -212,7 +212,7 @@ async function deleteTask(taskId) {
 
 document.getElementById('new-task-type').addEventListener('change', function() {
     const cmdInput = document.getElementById('new-task-command');
-    cmdInput.style.display = this.value === 'custom' ? 'inline-block' : 'none';
+    this.value === 'custom' ? cmdInput.classList.remove('hidden') : cmdInput.classList.add('hidden');
 });
 
 async function exportTasksCSV() {
