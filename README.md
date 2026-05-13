@@ -498,7 +498,7 @@ gantt
 | 🗓️ **M3** | スケジュール・グループ・Swagger | ✅ 完了 | APScheduler / PCグループ / OpenAPI 3.0 |
 | 🔐 **M4** | RBAC・通知・E2E | ✅ 完了 | admin/operator/viewer / Slack/Teams/Email / Playwright 94 tests |
 | ✅ **M5** | 監査ログ✅ / 一括実行✅ / Topbar+Badge✅ / ダーク+a11y✅ / **月次レポート API+PDF✅(PR#116)** / **ユーザー管理強化✅(PR#117)** / XSS防御✅(PR#114) | ✅ 完了 | 全 9 Issue クローズ |
-| 🚀 **M6** | セキュリティ強化・WebUI 刷新・リリース準備 | 🔄 進行中 | CSP Phase 1〜3 / N+1修正 / 実機能化 / WebUI刷新 / 327テスト |
+| 🚀 **M6** | セキュリティ強化・WebUI 刷新・**v1.0.0 リリース** | ✅ 完了 | CSP Phase 1〜3 完了 / N+1修正 / 実機能化 / WebUI刷新 / **329テスト** |
 
 ### ✅ M5 完了サマリー (2026-05-06)
 
@@ -534,7 +534,7 @@ gantt
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| **API 拡張テスト（Python）** | **327項目** | **✅ PASS** |
+| **API 拡張テスト（Python）** | **329項目** | **✅ PASS** |
 | **WebUI E2E テスト（Playwright）** | **121項目** | **✅ PASS** |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |

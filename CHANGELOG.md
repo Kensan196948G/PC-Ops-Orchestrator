@@ -9,16 +9,20 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
-### Security (PR #139 — CI 実行中)
+(次リリース予定なし — v1.0.0 リリース済み)
+
+---
+
+## [1.0.0] — 2026-05-13 — 本番リリース: CSP Phase 3 完了
+
+### Security (PR #139)
 - **CSP Phase 3** — `style-src 'unsafe-inline'` 完全除去
-  - 全 16 テンプレートのインライン `style=""` 属性をゼロに削減
+  - 全 16 テンプレートのインライン `style=""` 属性をゼロに削減（script-src に続く最終段階）
   - `login.html` の `<style>` ブロック (~200行) を外部 `style.css` に完全移行
-  - CSS ユーティリティクラス追加 (.hidden / .d-flex-gap / .mt-actions 等)
+  - CSS ユーティリティクラス追加 (.hidden / .d-flex-gap / .mt-actions / .mb-lg / .ring-canvas-wrap / .swatch-* 等)
   - JS 7 ファイルで `style.display` → `classList.toggle/add/remove` に統一
   - `style-src 'self'` のみに更新 (XSS 攻撃面をさらに削減)
-
-### Planned
-- v1.0.0 本番リリース最終準備
+  - 回帰防止テスト追加: `test_csp_style_src_no_unsafe_inline` / `test_no_inline_style_in_templates` (329 tests)
 
 ---
 
@@ -168,7 +172,9 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
-[Unreleased]: https://github.com/Kensan196948G/PC-Ops-Orchestrator/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/Kensan196948G/PC-Ops-Orchestrator/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Kensan196948G/PC-Ops-Orchestrator/compare/v0.7.0...v1.0.0
+[0.7.0]: https://github.com/Kensan196948G/PC-Ops-Orchestrator/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Kensan196948G/PC-Ops-Orchestrator/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Kensan196948G/PC-Ops-Orchestrator/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Kensan196948G/PC-Ops-Orchestrator/compare/v0.3.0...v0.4.0

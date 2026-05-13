@@ -90,7 +90,7 @@
     "score": 0
   },
   "open_issues": {
-    "note": "M6進行中: PR #131/#136 MERGED。style-src Phase 3 (CSS inline style外部化) 未着手。v1.0.0 本番リリース最終準備未着手。deployment.md 整備が次の主要タスク。"
+    "note": "PR #139 MERGED (CSP Phase 3 完了)。v0.7.0 / v1.0.0 GitHub Release 作成完了。329 tests PASS。M6 全完了。次: 改善フェーズ or 次バージョン機能検討。"
   },
   "milestones": {
     "M1": {
@@ -150,32 +150,38 @@
     }
   },
   "session_summary": {
-    "id": "20260509-190001-PC-Ops-Orchestrator",
-    "loop_phase": "Monitor → Build (groups N+1 / Alert.pc fix / UI横並びレイアウト) → Verify → Improve",
-    "duration_minutes": 105,
-    "prs_merged": [131, 136],
+    "id": "20260513-190001-PC-Ops-Orchestrator",
+    "loop_phase": "Monitor → Build (PR #139 rebase + inline style 除去) → Verify (CI全PASS) → Improve (README/CHANGELOG/v1.0.0 release)",
+    "duration_minutes": 120,
+    "prs_merged": [139],
     "prs_pending": [],
-    "issues_closed": [132, 133, 134, 135, 137, 138],
+    "issues_closed": [141, 142, 145],
     "issues_opened": [],
     "completed": [
-      "PR #131 MERGED: groups N+1解消 + Alert.pc relationship修正 + テスト326件 + E2E CDN修正",
-      "v0.6.0 GitHub Release 作成",
-      "PR #136 MERGED: PC一覧・アラートのフィルタを横並びレイアウトに修正",
-      "style.css: .page-actions .form-input { width: auto } で縦積みを解消",
-      "pc_list.html: search input に filter-search クラス追加",
-      "stale CI失敗 Issue #132-138 クローズ"
+      "Issue #141/#142/#145 クローズ (PR #140/#143/#144 マージ済みのため解消)",
+      "PR #139 rebase on main (PR #143/#144 の変更と統合)",
+      "コンフリクト解消: style.css / backups.html / dashboard.html",
+      "dashboard.html 残存インラインスタイル12箇所 → CSS クラスに置換 (style=\"\" = 0件達成)",
+      "CSS ユーティリティクラス追加: mb-lg / w-auto / text-loading / ring-canvas-wrap / swatch-*",
+      "CSPセキュリティテスト追加: test_csp_style_src_no_unsafe_inline + test_no_inline_style_in_templates",
+      "PR #139 CI 全14チェック PASS → squash merge 完了",
+      "v0.7.0 GitHub Release 作成 (PR #140/#143/#144)",
+      "v1.0.0 GitHub Release 作成 (CSP Phase 3 完了)",
+      "CHANGELOG.md: [1.0.0] セクション作成",
+      "README.md: M6 完了・テスト329件更新",
+      "テスト: 329 passed 0 failed / E2E: 121 passed 0 failed"
     ],
-    "ci_status": "STABLE — PR #131/#136 全チェック PASS、main ブランチ安定",
+    "ci_status": "STABLE — PR #139 全14チェック PASS。main ブランチ安定。v1.0.0 リリース済み。",
     "verification": {
-      "pytest_unit": "326 passed, 0 failed",
+      "pytest_unit": "329 passed, 0 failed",
       "ruff_check": "All checks passed",
       "ruff_format": "All files formatted",
-      "github_ci": "PR #136 全チェック pass (Lint/Flask API/PowerShell/E2E)"
+      "github_ci": "PR #139 全チェック pass (Lint/Flask API/E2E/PowerShell)"
     },
     "resume_point": {
-      "next_action": "style-src 'unsafe-inline' Phase 3 (CSS inline style外部化) → v1.0.0 本番リリース最終準備 (deployment.md整備)",
+      "next_action": "次フェーズ: 改善・追加機能検討 / 残 5 ヶ月で v2.0 に向けた計画",
       "blocker": "なし",
-      "notes": "今セッション主成果: PR #131 (groups N+1 + Alert.pc + テスト326件 + E2E CDN修正) + PR #136 (フィルタUI横並び修正) の2PR MERGED。v0.6.0 GitHub Release作成完了。次の主要タスク: style-src Phase 3 CSS inline style外部化 → v1.0.0 リリース準備。"
+      "notes": "今セッション主成果: PR #139 MERGED (CSP Phase 3 完了) + v0.7.0/v1.0.0 Release作成。M6全完了。テスト329件。CSP全3フェーズ完了でXSS攻撃面を最小化。"
     }
   },
   "learning": {
