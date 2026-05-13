@@ -10,6 +10,7 @@ from extensions import db
 from models import (
     Alert,
     AlertRule,
+    BackupJob,
     Certificate,
     License,
     NotificationChannel,
@@ -1116,6 +1117,34 @@ def seed_demo():
                 )
             )
             added["licenses"] += 1
+
+    # Seed backup history (if none exist)
+    added["backups"] = 0
+    if BackupJob.query.count() == 0:
+        _backup_seeds = [
+            {"days_ago": 1, "btype": "full", "size": 2_200_000_000, "dur": 268},
+            {"days_ago": 2, "btype": "incremental", "size": 156_000_000, "dur": 68},
+            {"days_ago": 3, "btype": "incremental", "size": 139_000_000, "dur": 61},
+            {"days_ago": 4, "btype": "incremental", "size": 148_000_000, "dur": 62},
+            {"days_ago": 5, "btype": "incremental", "size": 132_000_000, "dur": 58},
+            {"days_ago": 6, "btype": "incremental", "size": 119_000_000, "dur": 51},
+            {"days_ago": 8, "btype": "full", "size": 2_000_000_000, "dur": 258},
+        ]
+        for b in _backup_seeds:
+            ts = _now - timedelta(days=b["days_ago"])
+            db.session.add(
+                BackupJob(
+                    backup_type=b["btype"],
+                    target="DB + config" if b["btype"] == "full" else "DB",
+                    status="success",
+                    size_bytes=b["size"],
+                    duration_seconds=b["dur"],
+                    storage_path="s3://pc-ops-backups/",
+                    started_at=ts,
+                    finished_at=ts,
+                )
+            )
+            added["backups"] += 1
 
     db.session.commit()
     total = sum(added.values())
