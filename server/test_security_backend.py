@@ -670,6 +670,30 @@ class TestSecurityHeaders:
         )
         print("  [PASS] CSP style-src has no 'unsafe-inline' (Phase 3 CSP hardening)")
 
+    def test_no_inline_style_in_templates(self):
+        """All HTML templates must have zero inline style= attributes (Phase 3).
+
+        This prevents regression where rebase merges re-introduce inline styles
+        that would be blocked by CSP style-src 'self'.
+        """
+        import glob
+        import pathlib
+
+        templates_dir = pathlib.Path(__file__).parent / "templates"
+        violations = []
+        for path in glob.glob(str(templates_dir / "*.html")):
+            with open(path) as f:
+                for i, line in enumerate(f, 1):
+                    if ' style="' in line:
+                        violations.append(
+                            f"{pathlib.Path(path).name}:{i}: {line.strip()[:80]}"
+                        )
+        assert not violations, (
+            f"Found {len(violations)} inline style= attribute(s) — violates CSP Phase 3:\n"
+            + "\n".join(violations[:10])
+        )
+        print("  [PASS] All HTML templates: 0 inline style= attributes (CSP Phase 3)")
+
     def test_permissions_policy_present(self):
         """Permissions-Policy should disable unused powerful features."""
         r = client.get("/health")
