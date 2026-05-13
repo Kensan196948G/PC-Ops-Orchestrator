@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from auth import admin_required, log_operation, login_required
+from auth import admin_required, log_operation
 from extensions import db
 from models import ApiKey
 
@@ -8,7 +8,7 @@ api_keys_bp = Blueprint("api_keys", __name__, url_prefix="/api")
 
 
 @api_keys_bp.route("/api-keys", methods=["GET"])
-@login_required
+@admin_required
 def list_api_keys():
     keys = ApiKey.query.order_by(ApiKey.created_at.desc()).all()
     return jsonify({"api_keys": [k.to_dict() for k in keys]})
