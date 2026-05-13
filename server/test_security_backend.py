@@ -650,6 +650,26 @@ class TestSecurityHeaders:
             "  [PASS] CSP script-src uses nonce, no 'unsafe-inline' (Phase 2 CSP hardening)"
         )
 
+    def test_csp_style_src_no_unsafe_inline(self):
+        """CSP style-src must NOT contain 'unsafe-inline' (Phase 3).
+
+        All inline style="" attributes have been migrated to external CSS
+        classes, so 'unsafe-inline' must be absent from style-src.
+        """
+        r = client.get("/health")
+        val = r.headers.get("Content-Security-Policy", "")
+        style_src = ""
+        for directive in val.split(";"):
+            directive = directive.strip()
+            if directive.startswith("style-src"):
+                style_src = directive
+                break
+        assert style_src, f"No style-src directive in CSP: {val!r}"
+        assert "'unsafe-inline'" not in style_src, (
+            f"CSP style-src must NOT contain 'unsafe-inline' (Phase 3 complete): {style_src!r}"
+        )
+        print("  [PASS] CSP style-src has no 'unsafe-inline' (Phase 3 CSP hardening)")
+
     def test_permissions_policy_present(self):
         """Permissions-Policy should disable unused powerful features."""
         r = client.get("/health")
