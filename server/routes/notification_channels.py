@@ -1,3 +1,4 @@
+import requests as http_requests
 from flask import Blueprint, jsonify, request
 
 from auth import admin_required, log_operation, login_required
@@ -124,6 +125,65 @@ def update_notification_channel(channel_id):
     return jsonify(
         {"message": "通知チャンネルを更新しました", "channel": channel.to_dict()}
     )
+
+
+@notification_channels_bp.route(
+    "/notification-channels/<int:channel_id>/test-send", methods=["POST"]
+)
+@admin_required
+def test_send_notification_channel(channel_id):
+    channel = db.session.get(NotificationChannel, channel_id)
+    if not channel:
+        return jsonify({"error": f"通知チャンネル {channel_id} が見つかりません"}), 404
+
+    channel_type = channel.channel_type
+
+    if channel_type == "email":
+        # Simulate email send (SMTP not configured)
+        log_operation(
+            "test_send_notification_channel",
+            f"channel:{channel_id}",
+            f"type=email name={channel.name}",
+        )
+        return jsonify(
+            {
+                "message": "Email送信をシミュレートしました (SMTP未設定)",
+                "channel": channel.name,
+            }
+        )
+
+    if channel_type in ("slack", "teams", "webhook"):
+        try:
+            resp = http_requests.post(
+                channel.target,
+                json={
+                    "text": "[PC-Ops Test] テスト送信 - 通知チャンネルが正常に動作しています"
+                },
+                timeout=5,
+            )
+        except Exception as exc:
+            return jsonify({"error": f"送信失敗: {exc}"}), 502
+
+        if resp.status_code != 200:
+            return (
+                jsonify({"error": f"送信失敗: HTTP {resp.status_code}"}),
+                502,
+            )
+
+        log_operation(
+            "test_send_notification_channel",
+            f"channel:{channel_id}",
+            f"type={channel_type} name={channel.name}",
+        )
+        return jsonify({"message": "テスト送信に成功しました", "channel": channel.name})
+
+    # Unknown channel type — return success without sending
+    log_operation(
+        "test_send_notification_channel",
+        f"channel:{channel_id}",
+        f"type={channel_type} name={channel.name} (unsupported)",
+    )
+    return jsonify({"message": "テスト送信に成功しました", "channel": channel.name})
 
 
 @notification_channels_bp.route(

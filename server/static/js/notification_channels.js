@@ -20,42 +20,75 @@ async function loadChannels() {
     try {
         const data = await apiFetch('/notification-channels');
         tbody.replaceChildren();
-        if (!data.channels || data.channels.length === 0) {
-            tbody.appendChild(_makeErrorRow('チャネルが登録されていません。+ チャネル追加から登録してください。', 5));
+
+        // Update stat cards
+        const channels = data.channels || [];
+        const activeCount = channels.filter(c => c.is_active).length;
+        const statActive = document.getElementById('notif-stat-active');
+        if (statActive) statActive.textContent = activeCount;
+
+        if (channels.length === 0) {
+            tbody.appendChild(_makeErrorRow('チャネルが登録されていません。+ チャネル追加から登録してください。', 6));
             return;
         }
-        data.channels.forEach(ch => {
+
+        channels.forEach(ch => {
             const tr = document.createElement('tr');
             const td = t => { const el = document.createElement('td'); el.textContent = t ?? '—'; return el; };
+
             tr.appendChild(td(ch.name));
             tr.appendChild(td(_channelTypeLabels[ch.channel_type] || ch.channel_type));
+
             const targetTd = document.createElement('td');
             targetTd.textContent = ch.target.length > 50 ? ch.target.slice(0, 50) + '…' : ch.target;
             targetTd.title = ch.target;
             tr.appendChild(targetTd);
+
+            // sent/fail stats placeholder (API does not expose per-channel counts yet)
+            tr.appendChild(td('—'));
+
             const statusTd = document.createElement('td');
             const badge = document.createElement('span');
             badge.className = 'badge ' + (ch.is_active ? 'badge-success' : 'badge-secondary');
             badge.textContent = ch.is_active ? '有効' : '無効';
             statusTd.appendChild(badge);
             tr.appendChild(statusTd);
+
             const actionTd = document.createElement('td');
-            actionTd.style.display = 'flex'; actionTd.style.gap = '4px';
+            actionTd.className = 'd-flex-gap';
+
+            const testBtn = document.createElement('button');
+            testBtn.className = 'btn btn-secondary text-xs role-admin-only';
+            testBtn.textContent = 'テスト送信';
+            testBtn.addEventListener('click', () => testSendChannel(ch.id, ch.name));
+            actionTd.appendChild(testBtn);
+
             const editBtn = document.createElement('button');
             editBtn.className = 'btn btn-secondary text-xs role-admin-only';
             editBtn.textContent = '編集';
             editBtn.addEventListener('click', () => openEditModal(ch));
             actionTd.appendChild(editBtn);
+
             const delBtn = document.createElement('button');
             delBtn.className = 'btn btn-danger text-xs role-admin-only';
             delBtn.textContent = '削除';
             delBtn.addEventListener('click', () => deleteChannel(ch.id, ch.name));
             actionTd.appendChild(delBtn);
+
             tr.appendChild(actionTd);
             tbody.appendChild(tr);
         });
-    } catch(e) {
-        if (tbody) tbody.replaceChildren(_makeErrorRow('読み込みに失敗しました', 5));
+    } catch (e) {
+        if (tbody) tbody.replaceChildren(_makeErrorRow('読み込みに失敗しました', 6));
+    }
+}
+
+async function testSendChannel(id, name) {
+    try {
+        await apiFetch(`/notification-channels/${id}/test-send`, { method: 'POST' });
+        showSuccess(`「${name}」へテスト送信しました`);
+    } catch (e) {
+        showError(`テスト送信に失敗しました: ${name}`);
     }
 }
 
@@ -102,7 +135,7 @@ async function submitChannel(e) {
         }
         closeChannelModal();
         loadChannels();
-    } catch(e) { showError('保存に失敗しました'); }
+    } catch (e) { showError('保存に失敗しました'); }
 }
 
 async function deleteChannel(id, name) {
@@ -111,7 +144,7 @@ async function deleteChannel(id, name) {
         await apiFetch(`/notification-channels/${id}`, { method: 'DELETE' });
         showSuccess('削除しました');
         loadChannels();
-    } catch(e) { showError('削除に失敗しました'); }
+    } catch (e) { showError('削除に失敗しました'); }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

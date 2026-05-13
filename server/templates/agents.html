@@ -3,29 +3,29 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">Agent 管理</h2>
-    <p class="page-description">登録済み PowerShell Agent の一覧、API キー管理、バージョン管理（ダミーデータ）。</p>
+    <p class="page-description">登録済み PowerShell Agent の一覧、API キー管理、バージョン管理。</p>
     <div class="d-flex-gap">
-        <button class="btn btn-secondary" type="button" data-stub-alert="CSV エクスポート（次マイルストーン実装予定）">📊 一覧 CSV</button>
-        <button class="btn btn-primary" type="button" data-stub-alert="一括バージョン更新（次マイルストーン実装予定）">🔄 一括バージョン更新</button>
+        <button class="btn btn-secondary" type="button" id="btn-csv-agents">📊 一覧 CSV</button>
+        <button class="btn btn-primary" type="button" id="btn-bulk-update" disabled title="一括バージョン更新（準備中）">🔄 一括バージョン更新</button>
     </div>
 </div>
 
 <div class="stats-grid">
     <div class="stat-card stat-online">
-        <div class="stat-value">142</div>
+        <div class="stat-value" id="agent-stat-online">—</div>
         <div class="stat-label">オンライン Agent</div>
     </div>
     <div class="stat-card stat-warning">
-        <div class="stat-value">6</div>
+        <div class="stat-value" id="agent-stat-offline">—</div>
         <div class="stat-label">オフライン (>10 分)</div>
     </div>
     <div class="stat-card stat-task">
-        <div class="stat-value">3</div>
+        <div class="stat-value" id="agent-stat-pending">—</div>
         <div class="stat-label">未承認 Agent</div>
     </div>
     <div class="stat-card stat-total">
-        <div class="stat-value">v2.4.1</div>
-        <div class="stat-label">最新バージョン</div>
+        <div class="stat-value" id="agent-stat-total">—</div>
+        <div class="stat-label">合計 Agent 数</div>
     </div>
 </div>
 
@@ -44,15 +44,7 @@
                 <th>操作</th>
             </tr>
         </thead>
-        <tbody>
-            <tr><td>PC-DEV-001</td><td>Windows 11 23H2</td><td>32%</td><td>54%</td><td>v2.4.1</td><td>2026-05-06 19:14</td><td><span class="badge badge-success">オンライン</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
-            <tr><td>PC-DEV-002</td><td>Windows 10 22H2</td><td>78%</td><td>83%</td><td>v2.4.0</td><td>2026-05-06 19:12</td><td><span class="badge badge-success">オンライン</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
-            <tr><td>PC-DEV-003</td><td>Windows 11 23H2</td><td>15%</td><td>42%</td><td>v2.4.1</td><td>2026-05-06 19:14</td><td><span class="badge badge-success">オンライン</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
-            <tr><td>PC-OPS-001</td><td>Windows 11 23H2</td><td>—</td><td>—</td><td>v2.3.8</td><td>2026-05-06 18:45</td><td><span class="badge badge-warning">オフライン (29m)</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
-            <tr><td>PC-MKT-001</td><td>Windows 10 22H2</td><td>22%</td><td>47%</td><td>v2.4.1</td><td>2026-05-06 19:13</td><td><span class="badge badge-success">オンライン</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
-            <tr><td>PC-MKT-002</td><td>Windows 11 23H2</td><td>9%</td><td>33%</td><td>v2.4.1</td><td>2026-05-06 19:14</td><td><span class="badge badge-success">オンライン</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
-            <tr><td>PC-FIN-001</td><td>Windows 11 23H2</td><td>—</td><td>—</td><td>v2.3.8</td><td>2026-05-04 22:01</td><td><span class="badge badge-danger">オフライン (2 日)</span></td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
-            <tr><td>PC-NEW-???</td><td>Windows 11 24H2</td><td>—</td><td>—</td><td>v2.4.1</td><td>—</td><td><span class="badge badge-info">未承認</span></td><td><button class="btn btn-primary text-xs">承認</button></td></tr>
+        <tbody id="agents-body">
         </tbody>
     </table>
 </div>
@@ -62,16 +54,13 @@
         <h3 class="card-title">API キー一覧</h3>
         <table class="table">
             <thead>
-                <tr><th>名前</th><th>作成日</th><th>最終使用</th><th>状態</th><th>操作</th></tr>
+                <tr><th>名前</th><th>プレフィックス</th><th>作成日</th><th>最終使用</th><th>状態</th><th>操作</th></tr>
             </thead>
-            <tbody>
-                <tr><td>default-agent-key</td><td>2026-04-28</td><td>2026-05-06 19:14</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-warning text-xs">ローテート</button></td></tr>
-                <tr><td>backup-agent-key</td><td>2026-04-30</td><td>2026-05-04 22:01</td><td><span class="badge badge-success">有効</span></td><td><button class="btn btn-warning text-xs">ローテート</button></td></tr>
-                <tr><td>legacy-key (deprecated)</td><td>2026-03-12</td><td>2026-04-15</td><td><span class="badge badge-secondary">無効</span></td><td><button class="btn btn-danger text-xs">削除</button></td></tr>
+            <tbody id="apikeys-body">
             </tbody>
         </table>
         <div class="mt-actions">
-            <button class="btn btn-primary text-sm" data-stub-alert="API キー作成（次マイルストーン実装予定）">+ 新規 API キー作成</button>
+            <button class="btn btn-primary text-sm role-admin-only" id="btn-add-apikey">+ 新規 API キー作成</button>
         </div>
     </div>
     <div class="card">
@@ -81,11 +70,45 @@
                 <tr><th>バージョン</th><th>台数</th><th>状態</th></tr>
             </thead>
             <tbody>
-                <tr><td>v2.4.1 (latest)</td><td>118</td><td><span class="badge badge-success">最新</span></td></tr>
-                <tr><td>v2.4.0</td><td>22</td><td><span class="badge badge-info">1 patch 古い</span></td></tr>
-                <tr><td>v2.3.8</td><td>8</td><td><span class="badge badge-warning">要更新</span></td></tr>
+                <tr><td colspan="3" class="text-center">Agent 一覧から集計されます</td></tr>
             </tbody>
         </table>
     </div>
 </div>
+
+<div id="apikey-modal" class="modal">
+  <div class="modal-container modal-md">
+    <div class="modal-header">
+      <span>API キー作成</span>
+      <button class="modal-close" id="btn-close-apikey-modal">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="apikey-form" class="d-grid-form">
+        <label>名前 *<br><input type="text" id="apikey-name" class="form-input" required></label>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-close-apikey-modal-foot">キャンセル</button>
+      <button class="btn btn-primary" form="apikey-form" type="submit">作成</button>
+    </div>
+  </div>
+</div>
+
+<div id="apikey-result-modal" class="modal">
+  <div class="modal-container modal-md">
+    <div class="modal-header">
+      <span>API キー — 一度のみ表示</span>
+      <button class="modal-close" id="btn-close-apikey-result">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-secondary mb-sm">このキーは今後表示されません。必ずコピーしてください。</p>
+      <input type="text" id="apikey-result-value" class="form-input" readonly>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-copy-apikey">コピー</button>
+      <button class="btn btn-primary" id="btn-close-apikey-result-foot">閉じる</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
+{% block scripts %}<script src="/static/js/agents.js"></script>{% endblock %}

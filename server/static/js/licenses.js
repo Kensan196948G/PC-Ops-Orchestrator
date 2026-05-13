@@ -17,51 +17,76 @@ function _formatYen(v) {
 async function loadLicenses() {
     const tbody = document.getElementById('licenses-body');
     if (!tbody) return;
-    let total = 0;
     try {
         const data = await apiFetch('/licenses');
         tbody.replaceChildren();
-        if (!data.licenses || data.licenses.length === 0) {
-            tbody.appendChild(_makeErrorRow('ライセンスが登録されていません。+ ライセンス登録から追加してください。', 7));
-            return;
+
+        const licenses = data.licenses || [];
+
+        if (licenses.length === 0) {
+            tbody.appendChild(_makeErrorRow('ライセンスが登録されていません。+ ライセンス登録から追加してください。', 8));
+        } else {
+            licenses.forEach(lic => {
+                const tr = document.createElement('tr');
+                const td = t => { const el = document.createElement('td'); el.textContent = t ?? '—'; return el; };
+                tr.appendChild(td(lic.product_name));
+                tr.appendChild(td(lic.vendor));
+                tr.appendChild(td(_licenseTypeLabels[lic.license_type] || lic.license_type));
+                tr.appendChild(td(lic.seat_count != null ? lic.seat_count + ' 席' : '—'));
+                tr.appendChild(td(_formatYen(lic.unit_price)));
+                tr.appendChild(td(_formatYen(lic.total_cost)));
+                tr.appendChild(td(lic.expires_at || '永続'));
+
+                const actionTd = document.createElement('td');
+                actionTd.className = 'd-flex-gap';
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn btn-secondary text-xs role-admin-only';
+                editBtn.textContent = '編集';
+                editBtn.addEventListener('click', () => openEditLicenseModal(lic));
+                actionTd.appendChild(editBtn);
+                const delBtn = document.createElement('button');
+                delBtn.className = 'btn btn-danger text-xs role-admin-only';
+                delBtn.textContent = '削除';
+                delBtn.addEventListener('click', () => deleteLicense(lic.id, lic.product_name));
+                actionTd.appendChild(delBtn);
+                tr.appendChild(actionTd);
+                tbody.appendChild(tr);
+            });
         }
-        data.licenses.forEach(lic => {
-            total += lic.total_cost || 0;
-            const tr = document.createElement('tr');
-            const td = t => { const el = document.createElement('td'); el.textContent = t ?? '—'; return el; };
-            tr.appendChild(td(lic.product_name));
-            tr.appendChild(td(lic.vendor));
-            tr.appendChild(td(_licenseTypeLabels[lic.license_type] || lic.license_type));
-            tr.appendChild(td(lic.seat_count != null ? lic.seat_count + ' 席' : '—'));
-            tr.appendChild(td(_formatYen(lic.unit_price)));
-            tr.appendChild(td(_formatYen(lic.total_cost)));
-            tr.appendChild(td(lic.expires_at || '永続'));
-            const actionTd = document.createElement('td');
-            actionTd.style.display = 'flex'; actionTd.style.gap = '4px';
-            const editBtn = document.createElement('button');
-            editBtn.className = 'btn btn-secondary text-xs role-admin-only';
-            editBtn.textContent = '編集';
-            editBtn.addEventListener('click', () => openEditLicenseModal(lic));
-            actionTd.appendChild(editBtn);
-            const delBtn = document.createElement('button');
-            delBtn.className = 'btn btn-danger text-xs role-admin-only';
-            delBtn.textContent = '削除';
-            delBtn.addEventListener('click', () => deleteLicense(lic.id, lic.product_name));
-            actionTd.appendChild(delBtn);
-            tr.appendChild(actionTd);
-            tbody.appendChild(tr);
-        });
+
+        // Update stat cards
+        const countEl = document.getElementById('lic-stat-count');
+        if (countEl) countEl.textContent = licenses.length;
+
+        const totalCost = licenses.reduce((s, l) => s + (l.total_cost || 0), 0);
+        const costEl = document.getElementById('lic-stat-cost');
+        if (costEl) costEl.textContent = _formatYen(totalCost);
+
+        const now = new Date();
+        const in90 = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+        const expiringCount = licenses.filter(l => {
+            if (!l.expires_at) return false;
+            const d = new Date(l.expires_at);
+            return d >= now && d <= in90;
+        }).length;
+        const expiringEl = document.getElementById('lic-stat-expiring');
+        if (expiringEl) expiringEl.textContent = expiringCount;
+
+        // "over" stat is not available from API; show placeholder
+        const overEl = document.getElementById('lic-stat-over');
+        if (overEl) overEl.textContent = '—';
+
         const totalEl = document.getElementById('licenses-total');
-        if (totalEl) totalEl.textContent = _formatYen(total);
-    } catch(e) {
-        if (tbody) tbody.replaceChildren(_makeErrorRow('読み込みに失敗しました', 7));
+        if (totalEl) totalEl.textContent = _formatYen(totalCost);
+    } catch (e) {
+        if (tbody) tbody.replaceChildren(_makeErrorRow('読み込みに失敗しました', 8));
     }
 }
 
 function openCreateLicenseModal() {
     _editLicenseId = null;
     document.getElementById('license-modal-title').textContent = 'ライセンス登録';
-    ['license-product','license-vendor','license-seats','license-price','license-expires','license-notes'].forEach(id => {
+    ['license-product', 'license-vendor', 'license-seats', 'license-price', 'license-expires', 'license-notes'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
@@ -108,7 +133,7 @@ async function submitLicense(e) {
         }
         closeLicenseModal();
         loadLicenses();
-    } catch(e) { showError('保存に失敗しました'); }
+    } catch (e) { showError('保存に失敗しました'); }
 }
 
 async function deleteLicense(id, name) {
@@ -117,17 +142,34 @@ async function deleteLicense(id, name) {
         await apiFetch(`/licenses/${id}`, { method: 'DELETE' });
         showSuccess('削除しました');
         loadLicenses();
-    } catch(e) { showError('削除に失敗しました'); }
+    } catch (e) { showError('削除に失敗しました'); }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     loadLicenses();
+
     const addBtn = document.getElementById('btn-add-license');
     if (addBtn) addBtn.addEventListener('click', openCreateLicenseModal);
+
     ['btn-close-license-modal', 'btn-close-license-modal-foot'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('click', closeLicenseModal);
     });
+
     const form = document.getElementById('license-form');
     if (form) form.addEventListener('submit', submitLicense);
+
+    document.getElementById('btn-csv-licenses')?.addEventListener('click', async () => {
+        try {
+            const res = await apiFetchRaw('/licenses/export.csv');
+            if (!res.ok) { showError('CSVダウンロードに失敗しました'); return; }
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'licenses.csv'; a.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            showError('CSVダウンロードに失敗しました');
+        }
+    });
 });

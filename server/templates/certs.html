@@ -3,31 +3,31 @@
 {% block content %}
 <div class="page-header">
     <h2 class="page-title">証明書管理</h2>
-    <p class="page-description">TLS / SSL 証明書、クライアント証明書、コード署名証明書の有効期限監視（ダミーデータ）。</p>
-    <button class="btn btn-primary" type="button" data-stub-alert="証明書追加（次マイルストーン実装予定）">+ 証明書を登録</button>
+    <p class="page-description">TLS / SSL 証明書、クライアント証明書、コード署名証明書の有効期限監視。</p>
+    <button class="btn btn-primary" type="button" id="btn-add-cert">+ 証明書を登録</button>
 </div>
 
 <div class="stats-grid">
     <div class="stat-card stat-online">
-        <div class="stat-value">28</div>
+        <div class="stat-value" id="cert-stat-count">—</div>
         <div class="stat-label">登録証明書</div>
     </div>
     <div class="stat-card stat-task">
-        <div class="stat-value">22</div>
+        <div class="stat-value" id="cert-stat-valid">—</div>
         <div class="stat-label">有効 (90 日以上)</div>
     </div>
     <div class="stat-card stat-warning">
-        <div class="stat-value">4</div>
+        <div class="stat-value" id="cert-stat-expiring">—</div>
         <div class="stat-label">期限 90 日以内</div>
     </div>
     <div class="stat-card stat-critical">
-        <div class="stat-value">2</div>
+        <div class="stat-value" id="cert-stat-critical">—</div>
         <div class="stat-label">期限 30 日以内 ⚠️</div>
     </div>
 </div>
 
 <div class="card">
-    <h3 class="card-title">TLS / SSL 証明書一覧</h3>
+    <h3 class="card-title">証明書一覧</h3>
     <table class="table">
         <thead>
             <tr>
@@ -37,46 +37,17 @@
                 <th>有効期限</th>
                 <th>残日数</th>
                 <th>状態</th>
-                <th>自動更新</th>
                 <th>操作</th>
             </tr>
         </thead>
-        <tbody>
-            <tr><td>pc-ops.example.com</td><td>Let's Encrypt R3</td><td>2026-04-01</td><td>2026-06-30</td><td>55 日</td><td><span class="badge badge-warning">期限 90 日以内</span></td><td>✓ ACME</td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
-            <tr><td>api.pc-ops.example.com</td><td>Let's Encrypt R3</td><td>2026-04-01</td><td>2026-06-30</td><td>55 日</td><td><span class="badge badge-warning">期限 90 日以内</span></td><td>✓ ACME</td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
-            <tr><td>pc-ops-stg.example.com</td><td>Let's Encrypt R3</td><td>2026-02-01</td><td>2026-05-30</td><td>24 日</td><td><span class="badge badge-danger">期限 30 日以内 ⚠️</span></td><td>✓ ACME</td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
-            <tr><td>*.internal.example.com</td><td>Internal CA</td><td>2026-01-15</td><td>2027-01-15</td><td>254 日</td><td><span class="badge badge-success">有効</span></td><td>✗ 手動更新</td><td><button class="btn btn-secondary text-xs">詳細</button></td></tr>
+        <tbody id="certs-body">
         </tbody>
     </table>
 </div>
 
-<div class="charts-grid">
-    <div class="card">
-        <h3 class="card-title">クライアント証明書</h3>
-        <table class="table">
-            <thead><tr><th>名前</th><th>用途</th><th>有効期限</th><th>状態</th></tr></thead>
-            <tbody>
-                <tr><td>agent-mtls-2026</td><td>Agent ↔ Server mTLS</td><td>2027-04-28</td><td><span class="badge badge-success">有効</span></td></tr>
-                <tr><td>backup-mtls-2026</td><td>バックアップ通信</td><td>2026-05-31</td><td><span class="badge badge-danger">期限 25 日</span></td></tr>
-                <tr><td>siem-mtls-2026</td><td>SIEM 連携</td><td>2027-04-28</td><td><span class="badge badge-success">有効</span></td></tr>
-            </tbody>
-        </table>
-    </div>
-    <div class="card">
-        <h3 class="card-title">コード署名証明書</h3>
-        <table class="table">
-            <thead><tr><th>名前</th><th>用途</th><th>有効期限</th><th>状態</th></tr></thead>
-            <tbody>
-                <tr><td>PC-Ops-Code-Sign-EV</td><td>Agent インストーラ署名</td><td>2027-09-30</td><td><span class="badge badge-success">有効</span></td></tr>
-                <tr><td>PC-Ops-Module-Sign</td><td>PowerShell モジュール署名</td><td>2026-08-15</td><td><span class="badge badge-warning">期限 100 日</span></td></tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
 <div class="card">
     <h3 class="card-title">有効期限アラート設定</h3>
-    <p class="text-secondary">下記タイミングで管理者へ通知します。設定編集は次マイルストーンで実装予定。</p>
+    <p class="text-secondary">下記タイミングで管理者へ通知します。</p>
     <table class="table">
         <thead><tr><th>タイミング</th><th>通知先</th><th>状態</th></tr></thead>
         <tbody>
@@ -87,4 +58,36 @@
         </tbody>
     </table>
 </div>
+
+<div id="cert-modal" class="modal">
+  <div class="modal-container modal-md">
+    <div class="modal-header">
+      <span id="cert-modal-title">証明書を登録</span>
+      <button class="modal-close" id="btn-close-cert-modal">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="cert-form" class="d-grid-form">
+        <label>名前<br><input type="text" id="cert-name" class="form-input"></label>
+        <label>ドメイン / CN *<br><input type="text" id="cert-domain" class="form-input" required></label>
+        <label>種別<br>
+          <select id="cert-type" class="form-input">
+            <option value="server">サーバー証明書</option>
+            <option value="client">クライアント証明書</option>
+            <option value="code">コード署名証明書</option>
+          </select>
+        </label>
+        <label>発行者<br><input type="text" id="cert-issuer" class="form-input"></label>
+        <label>発行日 (YYYY-MM-DD)<br><input type="date" id="cert-issued-at" class="form-input"></label>
+        <label>有効期限 (YYYY-MM-DD) *<br><input type="date" id="cert-expires-at" class="form-input" required></label>
+        <label class="d-flex-gap"><input type="checkbox" id="cert-auto-renew" checked> 自動更新 (ACME)</label>
+        <label>備考<br><textarea id="cert-notes" class="form-input" rows="2"></textarea></label>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-close-cert-modal-foot">キャンセル</button>
+      <button class="btn btn-primary" form="cert-form" type="submit">保存</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
+{% block scripts %}<script src="/static/js/certificates.js"></script>{% endblock %}

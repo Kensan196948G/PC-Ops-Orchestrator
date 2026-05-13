@@ -1,6 +1,8 @@
+import csv
+import io
 from datetime import date
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, make_response, request
 
 from auth import admin_required, log_operation, login_required
 from extensions import db
@@ -25,6 +27,47 @@ def _parse_date(value, field_name):
             jsonify({"error": f"{field_name} は YYYY-MM-DD 形式で指定してください"}),
             400,
         )
+
+
+@licenses_bp.route("/licenses/export.csv", methods=["GET"])
+@login_required
+def export_licenses_csv():
+    licenses = License.query.order_by(License.product_name).all()
+
+    buf = io.StringIO()
+    buf.write("﻿")  # BOM for Excel (utf-8-sig)
+    writer = csv.writer(buf)
+    writer.writerow(
+        [
+            "製品名",
+            "ベンダー",
+            "ライセンス種別",
+            "契約席数",
+            "単価",
+            "合計金額",
+            "有効期限",
+            "備考",
+        ]
+    )
+    for lic in licenses:
+        total_cost = (lic.seat_count or 0) * (lic.unit_price or 0)
+        writer.writerow(
+            [
+                lic.product_name or "",
+                lic.vendor or "",
+                lic.license_type or "",
+                lic.seat_count if lic.seat_count is not None else "",
+                lic.unit_price if lic.unit_price is not None else "",
+                total_cost,
+                lic.expires_at.isoformat() if lic.expires_at else "",
+                lic.notes or "",
+            ]
+        )
+
+    response = make_response(buf.getvalue())
+    response.headers["Content-Type"] = "text/csv; charset=utf-8-sig"
+    response.headers["Content-Disposition"] = 'attachment; filename="licenses.csv"'
+    return response
 
 
 @licenses_bp.route("/licenses", methods=["GET"])
