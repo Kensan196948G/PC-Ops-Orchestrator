@@ -32,11 +32,13 @@ def setup_module():
         db.create_all()
         username = f"admin_auth_{_unique}"
         if not User.query.filter_by(username=username).first():
-            db.session.add(User(
-                username=username,
-                password_hash=hash_password("AdminAuth1!"),
-                role="admin",
-            ))
+            db.session.add(
+                User(
+                    username=username,
+                    password_hash=hash_password("AdminAuth1!"),
+                    role="admin",
+                )
+            )
         db.session.commit()
     _admin_token = _login(f"admin_auth_{_unique}", "AdminAuth1!")
 
@@ -87,19 +89,27 @@ def test_login_missing_fields():
 
 def test_login_wrong_password():
     """POST /api/auth/login with wrong password → 401."""
-    r = req("POST", "/api/auth/login", data={
-        "username": f"admin_auth_{_unique}",
-        "password": "WrongPassword1!",
-    })
+    r = req(
+        "POST",
+        "/api/auth/login",
+        data={
+            "username": f"admin_auth_{_unique}",
+            "password": "WrongPassword1!",
+        },
+    )
     assert r.status_code == 401
 
 
 def test_login_nonexistent_user():
     """POST /api/auth/login with nonexistent user → 401."""
-    r = req("POST", "/api/auth/login", data={
-        "username": f"nobody_{_unique}",
-        "password": "SomePass1!",
-    })
+    r = req(
+        "POST",
+        "/api/auth/login",
+        data={
+            "username": f"nobody_{_unique}",
+            "password": "SomePass1!",
+        },
+    )
     assert r.status_code == 401
 
 
@@ -115,10 +125,14 @@ def test_login_inactive_account():
         )
         db.session.add(u)
         db.session.commit()
-    r = req("POST", "/api/auth/login", data={
-        "username": username,
-        "password": "InactivePass1!",
-    })
+    r = req(
+        "POST",
+        "/api/auth/login",
+        data={
+            "username": username,
+            "password": "InactivePass1!",
+        },
+    )
     assert r.status_code == 403
     assert "無効" in json.loads(r.data)["error"]
 
@@ -135,10 +149,14 @@ def test_login_locked_account():
         )
         db.session.add(u)
         db.session.commit()
-    r = req("POST", "/api/auth/login", data={
-        "username": username,
-        "password": "LockedPass1!",
-    })
+    r = req(
+        "POST",
+        "/api/auth/login",
+        data={
+            "username": username,
+            "password": "LockedPass1!",
+        },
+    )
     assert r.status_code == 403
     assert "ロック" in json.loads(r.data)["error"]
 
@@ -214,10 +232,14 @@ def test_setup_success():
 
 def test_setup_already_initialized():
     """POST /api/auth/setup when users exist → 400 (line 81)."""
-    r = req("POST", "/api/auth/setup", data={
-        "username": "admin2",
-        "password": "Admin2!@#$",
-    })
+    r = req(
+        "POST",
+        "/api/auth/setup",
+        data={
+            "username": "admin2",
+            "password": "Admin2!@#$",
+        },
+    )
     assert r.status_code == 400
     assert "初期設定済み" in json.loads(r.data)["error"]
 
@@ -237,22 +259,32 @@ def test_create_user_no_body():
 
 def test_create_user_invalid_role():
     """POST /api/auth/users with invalid role → 400 (line 141)."""
-    r = req("POST", "/api/auth/users", token=_admin_token, data={
-        "username": f"badroler_{_unique}",
-        "password": "ValidPass1!",
-        "role": "superuser",
-    })
+    r = req(
+        "POST",
+        "/api/auth/users",
+        token=_admin_token,
+        data={
+            "username": f"badroler_{_unique}",
+            "password": "ValidPass1!",
+            "role": "superuser",
+        },
+    )
     assert r.status_code == 400
     assert "role" in json.loads(r.data)["error"]
 
 
 def test_create_user_role_not_string():
     """POST /api/auth/users with role as int → 400."""
-    r = req("POST", "/api/auth/users", token=_admin_token, data={
-        "username": f"badroletype_{_unique}",
-        "password": "ValidPass1!",
-        "role": 123,
-    })
+    r = req(
+        "POST",
+        "/api/auth/users",
+        token=_admin_token,
+        data={
+            "username": f"badroletype_{_unique}",
+            "password": "ValidPass1!",
+            "role": 123,
+        },
+    )
     assert r.status_code == 400
     assert "role" in json.loads(r.data)["error"]
 
@@ -260,22 +292,32 @@ def test_create_user_role_not_string():
 def test_create_user_duplicate_username():
     """POST /api/auth/users with existing username → 409 (line 150)."""
     existing = f"admin_auth_{_unique}"
-    r = req("POST", "/api/auth/users", token=_admin_token, data={
-        "username": existing,
-        "password": "ValidPass1!",
-        "role": "viewer",
-    })
+    r = req(
+        "POST",
+        "/api/auth/users",
+        token=_admin_token,
+        data={
+            "username": existing,
+            "password": "ValidPass1!",
+            "role": "viewer",
+        },
+    )
     assert r.status_code == 409
     assert "使用されています" in json.loads(r.data)["error"]
 
 
 def test_create_user_weak_password():
     """POST /api/auth/users with weak password → 400."""
-    r = req("POST", "/api/auth/users", token=_admin_token, data={
-        "username": f"weakpw_{_unique}",
-        "password": "weakpassword",
-        "role": "viewer",
-    })
+    r = req(
+        "POST",
+        "/api/auth/users",
+        token=_admin_token,
+        data={
+            "username": f"weakpw_{_unique}",
+            "password": "weakpassword",
+            "role": "viewer",
+        },
+    )
     assert r.status_code == 400
     assert "パスワード" in json.loads(r.data)["error"]
 
@@ -283,11 +325,16 @@ def test_create_user_weak_password():
 def test_create_user_success():
     """POST /api/auth/users valid → 201."""
     username = f"newuser_{_unique}"
-    r = req("POST", "/api/auth/users", token=_admin_token, data={
-        "username": username,
-        "password": "NewUser1!@#",
-        "role": "operator",
-    })
+    r = req(
+        "POST",
+        "/api/auth/users",
+        token=_admin_token,
+        data={
+            "username": username,
+            "password": "NewUser1!@#",
+            "role": "operator",
+        },
+    )
     assert r.status_code == 201
     data = json.loads(r.data)
     assert data["user"]["username"] == username
@@ -303,11 +350,16 @@ def _create_user(suffix, role="viewer"):
     """Create a test user and return (user_id, token)."""
     username = f"usr_{suffix}_{_unique}"
     password = f"UserPass1!{suffix}"
-    r = req("POST", "/api/auth/users", token=_admin_token, data={
-        "username": username,
-        "password": password,
-        "role": role,
-    })
+    r = req(
+        "POST",
+        "/api/auth/users",
+        token=_admin_token,
+        data={
+            "username": username,
+            "password": password,
+            "role": role,
+        },
+    )
     assert r.status_code == 201, f"user create failed: {r.data}"
     user_id = json.loads(r.data)["user"]["id"]
     return user_id, username, password
@@ -318,9 +370,14 @@ def test_update_user_self_update():
     with app.app_context():
         me = User.query.filter_by(username=f"admin_auth_{_unique}").first()
         my_id = me.id
-    r = req("PATCH", f"/api/auth/users/{my_id}", token=_admin_token, data={
-        "role": "viewer",
-    })
+    r = req(
+        "PATCH",
+        f"/api/auth/users/{my_id}",
+        token=_admin_token,
+        data={
+            "role": "viewer",
+        },
+    )
     assert r.status_code == 400
     assert "自分自身" in json.loads(r.data)["error"]
 
@@ -329,9 +386,14 @@ def test_update_user_password():
     """PATCH /api/auth/users/<id> with password field → 200 and password updated (line 191)."""
     user_id, username, old_pw = _create_user("pwupd")
     new_pw = "NewPass2@#$"
-    r = req("PATCH", f"/api/auth/users/{user_id}", token=_admin_token, data={
-        "password": new_pw,
-    })
+    r = req(
+        "PATCH",
+        f"/api/auth/users/{user_id}",
+        token=_admin_token,
+        data={
+            "password": new_pw,
+        },
+    )
     assert r.status_code == 200
     data = json.loads(r.data)
     assert "ユーザーを更新しました" in data["message"]
@@ -345,9 +407,14 @@ def test_update_user_password():
 def test_update_user_weak_new_password():
     """PATCH /api/auth/users/<id> with weak new password → 400."""
     user_id, _, _ = _create_user("wkpwupd")
-    r = req("PATCH", f"/api/auth/users/{user_id}", token=_admin_token, data={
-        "password": "weak",
-    })
+    r = req(
+        "PATCH",
+        f"/api/auth/users/{user_id}",
+        token=_admin_token,
+        data={
+            "password": "weak",
+        },
+    )
     assert r.status_code == 400
     assert "パスワード" in json.loads(r.data)["error"]
     # cleanup
@@ -357,9 +424,14 @@ def test_update_user_weak_new_password():
 def test_update_user_role():
     """PATCH /api/auth/users/<id> with valid role → 200."""
     user_id, _, _ = _create_user("roleupd")
-    r = req("PATCH", f"/api/auth/users/{user_id}", token=_admin_token, data={
-        "role": "operator",
-    })
+    r = req(
+        "PATCH",
+        f"/api/auth/users/{user_id}",
+        token=_admin_token,
+        data={
+            "role": "operator",
+        },
+    )
     assert r.status_code == 200
     assert json.loads(r.data)["user"]["role"] == "operator"
     # cleanup
@@ -369,9 +441,14 @@ def test_update_user_role():
 def test_update_user_invalid_role():
     """PATCH /api/auth/users/<id> with invalid role → 400."""
     user_id, _, _ = _create_user("invrlupd")
-    r = req("PATCH", f"/api/auth/users/{user_id}", token=_admin_token, data={
-        "role": "god",
-    })
+    r = req(
+        "PATCH",
+        f"/api/auth/users/{user_id}",
+        token=_admin_token,
+        data={
+            "role": "god",
+        },
+    )
     assert r.status_code == 400
     assert "role" in json.loads(r.data)["error"]
     # cleanup
@@ -381,9 +458,14 @@ def test_update_user_invalid_role():
 def test_update_user_is_active():
     """PATCH /api/auth/users/<id> with is_active=False → 200."""
     user_id, _, _ = _create_user("deactivate")
-    r = req("PATCH", f"/api/auth/users/{user_id}", token=_admin_token, data={
-        "is_active": False,
-    })
+    r = req(
+        "PATCH",
+        f"/api/auth/users/{user_id}",
+        token=_admin_token,
+        data={
+            "is_active": False,
+        },
+    )
     assert r.status_code == 200
     assert json.loads(r.data)["user"]["is_active"] is False
     # cleanup
@@ -392,7 +474,9 @@ def test_update_user_is_active():
 
 def test_update_user_not_found():
     """PATCH /api/auth/users/9999999 → 404."""
-    r = req("PATCH", "/api/auth/users/9999999", token=_admin_token, data={"role": "viewer"})
+    r = req(
+        "PATCH", "/api/auth/users/9999999", token=_admin_token, data={"role": "viewer"}
+    )
     assert r.status_code == 404
 
 
@@ -404,6 +488,7 @@ def test_unlock_user_success():
     user_id, _, _ = _create_user("lockme")
     with app.app_context():
         from models import User as UserModel
+
         u = db.session.get(UserModel, user_id)
         u.is_locked = True
         u.failed_login_count = 5
@@ -458,10 +543,14 @@ def test_failed_login_increments_count():
         user_id = u.id
 
     for _ in range(3):
-        req("POST", "/api/auth/login", data={
-            "username": username,
-            "password": "WrongPass1!",
-        })
+        req(
+            "POST",
+            "/api/auth/login",
+            data={
+                "username": username,
+                "password": "WrongPass1!",
+            },
+        )
 
     with app.app_context():
         u = db.session.get(User, user_id)

@@ -83,82 +83,117 @@ def _create_rule(**kwargs):
 
 def test_create_missing_name():
     """Empty name → 400 (line 24)."""
-    r = req("POST", "/api/alert-rules", token=_admin_token, data={
-        "name": "",
-        "metric": "cpu",
-        "threshold": 80,
-    })
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_admin_token,
+        data={
+            "name": "",
+            "metric": "cpu",
+            "threshold": 80,
+        },
+    )
     assert r.status_code == 400
     assert "name" in json.loads(r.data)["error"]
 
 
 def test_create_name_too_long():
     """name > 255 chars → 400 (line 26)."""
-    r = req("POST", "/api/alert-rules", token=_admin_token, data={
-        "name": "A" * 256,
-        "metric": "cpu",
-        "threshold": 80,
-    })
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_admin_token,
+        data={
+            "name": "A" * 256,
+            "metric": "cpu",
+            "threshold": 80,
+        },
+    )
     assert r.status_code == 400
     assert "name" in json.loads(r.data)["error"]
 
 
 def test_create_threshold_none_non_offline():
     """threshold is None for non-offline metric → 400 (line 52)."""
-    r = req("POST", "/api/alert-rules", token=_admin_token, data={
-        "name": f"NoThresh-{_unique}",
-        "metric": "cpu",
-        "operator": "gt",
-    })
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_admin_token,
+        data={
+            "name": f"NoThresh-{_unique}",
+            "metric": "cpu",
+            "operator": "gt",
+        },
+    )
     assert r.status_code == 400
     assert "threshold" in json.loads(r.data)["error"]
 
 
 def test_create_threshold_invalid_string():
     """threshold is non-numeric string → 400 (lines 55-56)."""
-    r = req("POST", "/api/alert-rules", token=_admin_token, data={
-        "name": f"BadThresh-{_unique}",
-        "metric": "memory",
-        "operator": "gt",
-        "threshold": "not-a-number",
-    })
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_admin_token,
+        data={
+            "name": f"BadThresh-{_unique}",
+            "metric": "memory",
+            "operator": "gt",
+            "threshold": "not-a-number",
+        },
+    )
     assert r.status_code == 400
     assert "threshold" in json.loads(r.data)["error"]
 
 
 def test_create_threshold_below_zero():
     """threshold < 0 → 400 (line 58)."""
-    r = req("POST", "/api/alert-rules", token=_admin_token, data={
-        "name": f"NegThresh-{_unique}",
-        "metric": "disk",
-        "operator": "lt",
-        "threshold": -1,
-    })
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_admin_token,
+        data={
+            "name": f"NegThresh-{_unique}",
+            "metric": "disk",
+            "operator": "lt",
+            "threshold": -1,
+        },
+    )
     assert r.status_code == 400
     assert "threshold" in json.loads(r.data)["error"]
 
 
 def test_create_threshold_above_100():
     """threshold > 100 → 400 (line 58)."""
-    r = req("POST", "/api/alert-rules", token=_admin_token, data={
-        "name": f"HighThresh-{_unique}",
-        "metric": "cpu",
-        "operator": "lt",
-        "threshold": 101,
-    })
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_admin_token,
+        data={
+            "name": f"HighThresh-{_unique}",
+            "metric": "cpu",
+            "operator": "lt",
+            "threshold": 101,
+        },
+    )
     assert r.status_code == 400
     assert "threshold" in json.loads(r.data)["error"]
 
 
 def test_create_channel_type_not_string():
     """channel_type is not a string (e.g. int) → 400 (line 63)."""
-    r = req("POST", "/api/alert-rules", token=_admin_token, data={
-        "name": f"BadChannelType-{_unique}",
-        "metric": "cpu",
-        "operator": "gt",
-        "threshold": 80,
-        "channel_type": 123,
-    })
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_admin_token,
+        data={
+            "name": f"BadChannelType-{_unique}",
+            "metric": "cpu",
+            "operator": "gt",
+            "threshold": 80,
+            "channel_type": 123,
+        },
+    )
     assert r.status_code == 400
     assert "channel_type" in json.loads(r.data)["error"]
 
@@ -189,11 +224,16 @@ def test_update_no_body():
 def test_update_validation_error():
     """PUT with invalid payload → 400 (line 153)."""
     rule_id = _create_rule()
-    r = req("PUT", f"/api/alert-rules/{rule_id}", token=_admin_token, data={
-        "name": "",
-        "metric": "cpu",
-        "threshold": 70,
-    })
+    r = req(
+        "PUT",
+        f"/api/alert-rules/{rule_id}",
+        token=_admin_token,
+        data={
+            "name": "",
+            "metric": "cpu",
+            "threshold": 70,
+        },
+    )
     assert r.status_code == 400
     assert "name" in json.loads(r.data)["error"]
     req("DELETE", f"/api/alert-rules/{rule_id}", token=_admin_token)
@@ -240,8 +280,11 @@ def test_test_notify_with_slack_success():
 def test_test_notify_with_slack_failure():
     """Rule with slack webhook: dispatch exception → results.slack = 'failed'."""
     import urllib.error
+
     rule_id = _create_rule(notify_slack_webhook="https://hooks.slack.com/fail")
-    with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("conn refused")):
+    with patch(
+        "urllib.request.urlopen", side_effect=urllib.error.URLError("conn refused")
+    ):
         r = req("POST", f"/api/alert-rules/{rule_id}/test-notify", token=_admin_token)
     assert r.status_code == 200
     data = json.loads(r.data)
@@ -256,6 +299,7 @@ def test_test_notify_channel_type_limited_skipped():
         channel_type="slack",
     )
     import urllib.error
+
     with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("no slack")):
         r = req("POST", f"/api/alert-rules/{rule_id}/test-notify", token=_admin_token)
     assert r.status_code == 200
@@ -267,12 +311,17 @@ def test_test_notify_channel_type_limited_skipped():
 
 def test_test_notify_offline_metric():
     """Alert rule for offline metric (no threshold): test_notify works."""
-    r = req("POST", "/api/alert-rules", token=_admin_token, data={
-        "name": f"OfflineRule-{_unique}",
-        "metric": "offline",
-        "operator": "gt",
-        "severity": "critical",
-    })
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_admin_token,
+        data={
+            "name": f"OfflineRule-{_unique}",
+            "metric": "offline",
+            "operator": "gt",
+            "severity": "critical",
+        },
+    )
     assert r.status_code == 201
     rule_id = json.loads(r.data)["alert_rule"]["id"]
     r2 = req("POST", f"/api/alert-rules/{rule_id}/test-notify", token=_admin_token)

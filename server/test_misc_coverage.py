@@ -46,11 +46,13 @@ def setup_module():
         db.create_all()
         username = f"admin_misc_{_unique}"
         if not User.query.filter_by(username=username).first():
-            db.session.add(User(
-                username=username,
-                password_hash=hash_password("AdminMisc1!"),
-                role="admin",
-            ))
+            db.session.add(
+                User(
+                    username=username,
+                    password_hash=hash_password("AdminMisc1!"),
+                    role="admin",
+                )
+            )
         db.session.commit()
     _admin_token = _login(f"admin_misc_{_unique}", "AdminMisc1!")
 
@@ -127,13 +129,18 @@ def test_alert_rules_create_null_body():
 
 def test_alert_rules_update_null_body():
     """PUT /api/alert-rules/<id> with null body → 400 (line 149)."""
-    r = req("POST", "/api/alert-rules", token=_admin_token, data={
-        "name": f"TestRule-{_unique}",
-        "metric": "cpu",
-        "operator": "gt",
-        "threshold": 90.0,
-        "severity": "critical",
-    })
+    r = req(
+        "POST",
+        "/api/alert-rules",
+        token=_admin_token,
+        data={
+            "name": f"TestRule-{_unique}",
+            "metric": "cpu",
+            "operator": "gt",
+            "threshold": 90.0,
+            "severity": "critical",
+        },
+    )
     assert r.status_code == 201
     rule_id = json.loads(r.data)["alert_rule"]["id"]
     r2 = _null_body("PUT", f"/api/alert-rules/{rule_id}", token=_admin_token)
@@ -155,7 +162,9 @@ def test_api_keys_create_null_body():
 
 def test_audit_invalid_to_date():
     """GET /api/audit/logs?to_date=notadate → ValueError suppressed, returns 200 (lines 36-37)."""
-    r = req("GET", "/api/audit/logs", token=_admin_token, params={"to_date": "notadate"})
+    r = req(
+        "GET", "/api/audit/logs", token=_admin_token, params={"to_date": "notadate"}
+    )
     assert r.status_code == 200
     assert "logs" in json.loads(r.data)
 
@@ -174,28 +183,43 @@ def test_auth_users_create_null_body():
 
 def test_certificates_empty_domain():
     """POST /api/certificates with empty domain → 400 (line 42)."""
-    r = req("POST", "/api/certificates", token=_admin_token, data={
-        "domain": "",
-        "expires_at": "2027-01-01",
-    })
+    r = req(
+        "POST",
+        "/api/certificates",
+        token=_admin_token,
+        data={
+            "domain": "",
+            "expires_at": "2027-01-01",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_certificates_long_domain():
     """POST /api/certificates with domain > 200 chars → 400 (line 52)."""
-    r = req("POST", "/api/certificates", token=_admin_token, data={
-        "domain": "a" * 201,
-        "expires_at": "2027-01-01",
-    })
+    r = req(
+        "POST",
+        "/api/certificates",
+        token=_admin_token,
+        data={
+            "domain": "a" * 201,
+            "expires_at": "2027-01-01",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_certificates_update_null_body():
     """PUT /api/certificates/<id> with null body → 400 (line 105)."""
-    r = req("POST", "/api/certificates", token=_admin_token, data={
-        "domain": f"misc-cert-{_unique}.example.com",
-        "expires_at": "2027-01-01",
-    })
+    r = req(
+        "POST",
+        "/api/certificates",
+        token=_admin_token,
+        data={
+            "domain": f"misc-cert-{_unique}.example.com",
+            "expires_at": "2027-01-01",
+        },
+    )
     assert r.status_code == 201
     cert_id = json.loads(r.data)["certificate"]["id"]
     r2 = _null_body("PUT", f"/api/certificates/{cert_id}", token=_admin_token)
@@ -236,10 +260,15 @@ def test_collect_trim_snapshots():
         ]
         db.session.bulk_save_objects(rows)
         db.session.commit()
-    r = req("POST", "/api/collect", agent_key=_AGENT_KEY, data={
-        "pc_name": pc_name,
-        "cpu_usage": 45.0,
-    })
+    r = req(
+        "POST",
+        "/api/collect",
+        agent_key=_AGENT_KEY,
+        data={
+            "pc_name": pc_name,
+            "cpu_usage": 45.0,
+        },
+    )
     assert r.status_code == 200
     with app.app_context():
         count = SystemSnapshot.query.filter_by(pc_id=pc_id).count()
@@ -263,10 +292,15 @@ def test_collect_unknown_operator():
         )
         db.session.add(rule)
         db.session.commit()
-    r = req("POST", "/api/collect", agent_key=_AGENT_KEY, data={
-        "pc_name": pc_name,
-        "cpu_usage": 50.0,
-    })
+    r = req(
+        "POST",
+        "/api/collect",
+        agent_key=_AGENT_KEY,
+        data={
+            "pc_name": pc_name,
+            "cpu_usage": 50.0,
+        },
+    )
     assert r.status_code == 200
     with app.app_context():
         AlertRule.query.filter_by(name=f"UnknownOpRule-{_unique}").delete()
@@ -289,9 +323,14 @@ def test_dashboard_recent_activity():
 
 
 def _create_group(suffix):
-    r = req("POST", "/api/groups", token=_admin_token, data={
-        "name": f"MiscGroup-{suffix}-{_unique}",
-    })
+    r = req(
+        "POST",
+        "/api/groups",
+        token=_admin_token,
+        data={
+            "name": f"MiscGroup-{suffix}-{_unique}",
+        },
+    )
     assert r.status_code == 201
     return json.loads(r.data)["group"]["id"]
 
@@ -308,7 +347,12 @@ def test_groups_create_task_null_body():
     """POST /api/groups/<id>/tasks with null body → 400 or 415 (line 241)."""
     _, pc_name = _create_pc("gtask")
     group_id = _create_group("task")
-    req("POST", f"/api/groups/{group_id}/pcs", token=_admin_token, data={"pc_name": pc_name})
+    req(
+        "POST",
+        f"/api/groups/{group_id}/pcs",
+        token=_admin_token,
+        data={"pc_name": pc_name},
+    )
     r = _null_body("POST", f"/api/groups/{group_id}/tasks", token=_admin_token)
     assert r.status_code in (400, 415)
     req("DELETE", f"/api/groups/{group_id}", token=_admin_token)
@@ -325,9 +369,14 @@ def test_licenses_create_null_body():
 
 def test_licenses_update_null_body():
     """PUT /api/licenses/<id> with null body → 400 (line 154)."""
-    r = req("POST", "/api/licenses", token=_admin_token, data={
-        "product_name": f"TestSW-{_unique}",
-    })
+    r = req(
+        "POST",
+        "/api/licenses",
+        token=_admin_token,
+        data={
+            "product_name": f"TestSW-{_unique}",
+        },
+    )
     assert r.status_code == 201
     lic_id = json.loads(r.data)["license"]["id"]
     r2 = _null_body("PUT", f"/api/licenses/{lic_id}", token=_admin_token)
@@ -346,11 +395,16 @@ def test_notification_channels_create_null_body():
 
 def test_notification_channels_update_null_body():
     """PUT /api/notification-channels/<id> with null body → 400 (line 84)."""
-    r = req("POST", "/api/notification-channels", token=_admin_token, data={
-        "name": f"MiscChan-{_unique}",
-        "channel_type": "slack",
-        "target": "https://hooks.slack.com/test",
-    })
+    r = req(
+        "POST",
+        "/api/notification-channels",
+        token=_admin_token,
+        data={
+            "name": f"MiscChan-{_unique}",
+            "channel_type": "slack",
+            "target": "https://hooks.slack.com/test",
+        },
+    )
     assert r.status_code == 201
     chan_id = json.loads(r.data)["channel"]["id"]
     r2 = _null_body("PUT", f"/api/notification-channels/{chan_id}", token=_admin_token)
@@ -361,18 +415,26 @@ def test_notification_channels_update_null_body():
 def test_notification_channel_unknown_type_test_send():
     """Test-send with unknown channel type → success without sending (lines 181-186)."""
     from models import NotificationChannel
-    r = req("POST", "/api/notification-channels", token=_admin_token, data={
-        "name": f"UnknownChan-{_unique}",
-        "channel_type": "slack",
-        "target": "https://hooks.slack.com/test",
-    })
+
+    r = req(
+        "POST",
+        "/api/notification-channels",
+        token=_admin_token,
+        data={
+            "name": f"UnknownChan-{_unique}",
+            "channel_type": "slack",
+            "target": "https://hooks.slack.com/test",
+        },
+    )
     assert r.status_code == 201
     chan_id = json.loads(r.data)["channel"]["id"]
     with app.app_context():
         chan = db.session.get(NotificationChannel, chan_id)
         chan.channel_type = "unknown_type"
         db.session.commit()
-    r2 = req("POST", f"/api/notification-channels/{chan_id}/test-send", token=_admin_token)
+    r2 = req(
+        "POST", f"/api/notification-channels/{chan_id}/test-send", token=_admin_token
+    )
     assert r2.status_code == 200
     assert "message" in json.loads(r2.data)
     req("DELETE", f"/api/notification-channels/{chan_id}", token=_admin_token)
@@ -389,12 +451,17 @@ def test_scheduled_tasks_create_null_body():
 
 def test_scheduled_tasks_update_null_body():
     """PUT /api/scheduled-tasks/<id> with null body → 400 or 415 (line 182)."""
-    r = req("POST", "/api/scheduled-tasks", token=_admin_token, data={
-        "name": f"MiscSched-{_unique}",
-        "task_type": "cleanup",
-        "schedule_type": "interval",
-        "interval_minutes": 60,
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"MiscSched-{_unique}",
+            "task_type": "cleanup",
+            "schedule_type": "interval",
+            "interval_minutes": 60,
+        },
+    )
     assert r.status_code == 201
     task_id = json.loads(r.data)["scheduled_task"]["id"]
     r2 = _null_body("PUT", f"/api/scheduled-tasks/{task_id}", token=_admin_token)
@@ -413,9 +480,14 @@ def test_settings_update_null_body():
 
 def test_settings_update_unknown_key():
     """PUT /api/settings with unknown key → 400 (line 70)."""
-    r = req("PUT", "/api/settings", token=_admin_token, data={
-        "some_unknown_key_xyz_abc": "value",
-    })
+    r = req(
+        "PUT",
+        "/api/settings",
+        token=_admin_token,
+        data={
+            "some_unknown_key_xyz_abc": "value",
+        },
+    )
     assert r.status_code == 400
     assert "不明なキー" in json.loads(r.data)["error"]
 

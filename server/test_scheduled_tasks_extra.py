@@ -41,11 +41,13 @@ def setup_module():
             (f"viewer_st_{_unique}", "viewer", "ViewerSt1!"),
         ]:
             if not User.query.filter_by(username=username).first():
-                db.session.add(User(
-                    username=username,
-                    password_hash=hash_password(password),
-                    role=role,
-                ))
+                db.session.add(
+                    User(
+                        username=username,
+                        password_hash=hash_password(password),
+                        role=role,
+                    )
+                )
         db.session.commit()
 
     _admin_token = _login(f"admin_st_{_unique}", "AdminSt1!")
@@ -102,11 +104,16 @@ def _create_scheduled_task(**kwargs):
 
 def test_create_invalid_schedule_type():
     """schedule_type not in allowed set → 400 (line 34)."""
-    r = req("POST", "/api/scheduled-tasks", token=_admin_token, data={
-        "name": f"BadSched-{_unique}",
-        "task_type": "cleanup",
-        "schedule_type": "hourly",  # not in allowed set
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"BadSched-{_unique}",
+            "task_type": "cleanup",
+            "schedule_type": "hourly",  # not in allowed set
+        },
+    )
     assert r.status_code == 400
     assert "schedule_type" in json.loads(r.data)["error"]
 
@@ -116,36 +123,51 @@ def test_create_invalid_schedule_type():
 
 def test_create_interval_minutes_zero():
     """interval_minutes = 0 → 400 (lines 54-56)."""
-    r = req("POST", "/api/scheduled-tasks", token=_admin_token, data={
-        "name": f"ZeroInterval-{_unique}",
-        "task_type": "cleanup",
-        "schedule_type": "interval",
-        "interval_minutes": 0,
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"ZeroInterval-{_unique}",
+            "task_type": "cleanup",
+            "schedule_type": "interval",
+            "interval_minutes": 0,
+        },
+    )
     assert r.status_code == 400
     assert "interval_minutes" in json.loads(r.data)["error"]
 
 
 def test_create_interval_minutes_negative():
     """interval_minutes = -5 → 400 (lines 54-56)."""
-    r = req("POST", "/api/scheduled-tasks", token=_admin_token, data={
-        "name": f"NegInterval-{_unique}",
-        "task_type": "cleanup",
-        "schedule_type": "interval",
-        "interval_minutes": -5,
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"NegInterval-{_unique}",
+            "task_type": "cleanup",
+            "schedule_type": "interval",
+            "interval_minutes": -5,
+        },
+    )
     assert r.status_code == 400
     assert "interval_minutes" in json.loads(r.data)["error"]
 
 
 def test_create_interval_minutes_not_int():
     """interval_minutes = 'abc' (non-integer) → 400 (lines 54-56)."""
-    r = req("POST", "/api/scheduled-tasks", token=_admin_token, data={
-        "name": f"StrInterval-{_unique}",
-        "task_type": "update",
-        "schedule_type": "interval",
-        "interval_minutes": "abc",
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"StrInterval-{_unique}",
+            "task_type": "update",
+            "schedule_type": "interval",
+            "interval_minutes": "abc",
+        },
+    )
     assert r.status_code == 400
     assert "interval_minutes" in json.loads(r.data)["error"]
 
@@ -155,24 +177,34 @@ def test_create_interval_minutes_not_int():
 
 def test_create_daily_invalid_time():
     """daily_time with invalid format → 400 (line 62)."""
-    r = req("POST", "/api/scheduled-tasks", token=_admin_token, data={
-        "name": f"BadDaily-{_unique}",
-        "task_type": "cleanup",
-        "schedule_type": "daily",
-        "daily_time": "25:00",  # invalid hour
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"BadDaily-{_unique}",
+            "task_type": "cleanup",
+            "schedule_type": "daily",
+            "daily_time": "25:00",  # invalid hour
+        },
+    )
     assert r.status_code == 400
     assert "daily_time" in json.loads(r.data)["error"]
 
 
 def test_create_daily_valid():
     """daily_time with valid format → 201 (covers lines 59-63)."""
-    r = req("POST", "/api/scheduled-tasks", token=_admin_token, data={
-        "name": f"GoodDaily-{_unique}",
-        "task_type": "cleanup",
-        "schedule_type": "daily",
-        "daily_time": "03:00",
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"GoodDaily-{_unique}",
+            "task_type": "cleanup",
+            "schedule_type": "daily",
+            "daily_time": "03:00",
+        },
+    )
     assert r.status_code == 201
     task_id = json.loads(r.data)["scheduled_task"]["id"]
     req("DELETE", f"/api/scheduled-tasks/{task_id}", token=_admin_token)
@@ -183,52 +215,72 @@ def test_create_daily_valid():
 
 def test_create_weekly_invalid_time():
     """weekly_time with invalid format → 400 (line 67-68)."""
-    r = req("POST", "/api/scheduled-tasks", token=_admin_token, data={
-        "name": f"BadWeeklyTime-{_unique}",
-        "task_type": "cleanup",
-        "schedule_type": "weekly",
-        "weekly_time": "not-a-time",
-        "weekly_day": 1,
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"BadWeeklyTime-{_unique}",
+            "task_type": "cleanup",
+            "schedule_type": "weekly",
+            "weekly_time": "not-a-time",
+            "weekly_day": 1,
+        },
+    )
     assert r.status_code == 400
     assert "weekly_time" in json.loads(r.data)["error"]
 
 
 def test_create_weekly_invalid_day():
     """weekly_day out of range → 400 (lines 72-75)."""
-    r = req("POST", "/api/scheduled-tasks", token=_admin_token, data={
-        "name": f"BadWeeklyDay-{_unique}",
-        "task_type": "cleanup",
-        "schedule_type": "weekly",
-        "weekly_time": "09:00",
-        "weekly_day": 7,  # 0-6 only
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"BadWeeklyDay-{_unique}",
+            "task_type": "cleanup",
+            "schedule_type": "weekly",
+            "weekly_time": "09:00",
+            "weekly_day": 7,  # 0-6 only
+        },
+    )
     assert r.status_code == 400
     assert "weekly_day" in json.loads(r.data)["error"]
 
 
 def test_create_weekly_day_not_int():
     """weekly_day is not an integer → 400 (lines 72-75)."""
-    r = req("POST", "/api/scheduled-tasks", token=_admin_token, data={
-        "name": f"BadWeeklyDayStr-{_unique}",
-        "task_type": "diagnose",
-        "schedule_type": "weekly",
-        "weekly_time": "10:00",
-        "weekly_day": "monday",  # not int
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"BadWeeklyDayStr-{_unique}",
+            "task_type": "diagnose",
+            "schedule_type": "weekly",
+            "weekly_time": "10:00",
+            "weekly_day": "monday",  # not int
+        },
+    )
     assert r.status_code == 400
     assert "weekly_day" in json.loads(r.data)["error"]
 
 
 def test_create_weekly_valid():
     """Valid weekly schedule → 201 (covers lines 65-77)."""
-    r = req("POST", "/api/scheduled-tasks", token=_admin_token, data={
-        "name": f"GoodWeekly-{_unique}",
-        "task_type": "cleanup",
-        "schedule_type": "weekly",
-        "weekly_time": "09:30",
-        "weekly_day": 1,  # Tuesday
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"GoodWeekly-{_unique}",
+            "task_type": "cleanup",
+            "schedule_type": "weekly",
+            "weekly_time": "09:30",
+            "weekly_day": 1,  # Tuesday
+        },
+    )
     assert r.status_code == 201
     task_id = json.loads(r.data)["scheduled_task"]["id"]
     req("DELETE", f"/api/scheduled-tasks/{task_id}", token=_admin_token)
@@ -240,13 +292,18 @@ def test_create_weekly_valid():
 def test_create_with_pc_name_found():
     """pc_name matches existing PC → 201, target_type='pc' (lines 80-85)."""
     _, pc_name = _create_pc("stpc1")
-    r = req("POST", "/api/scheduled-tasks", token=_admin_token, data={
-        "name": f"PCTask-{_unique}",
-        "task_type": "cleanup",
-        "schedule_type": "interval",
-        "interval_minutes": 30,
-        "pc_name": pc_name,
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"PCTask-{_unique}",
+            "task_type": "cleanup",
+            "schedule_type": "interval",
+            "interval_minutes": 30,
+            "pc_name": pc_name,
+        },
+    )
     assert r.status_code == 201
     data = json.loads(r.data)
     assert data["scheduled_task"]["target_type"] == "pc"
@@ -256,13 +313,18 @@ def test_create_with_pc_name_found():
 
 def test_create_with_pc_name_not_found():
     """pc_name not in DB → 400 (lines 82-83)."""
-    r = req("POST", "/api/scheduled-tasks", token=_admin_token, data={
-        "name": f"NoPCTask-{_unique}",
-        "task_type": "update",
-        "schedule_type": "interval",
-        "interval_minutes": 60,
-        "pc_name": f"NoSuchPC-{_unique}",
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_admin_token,
+        data={
+            "name": f"NoPCTask-{_unique}",
+            "task_type": "update",
+            "schedule_type": "interval",
+            "interval_minutes": 60,
+            "pc_name": f"NoSuchPC-{_unique}",
+        },
+    )
     assert r.status_code == 400
     assert "見つかりません" in json.loads(r.data)["error"]
 
@@ -272,7 +334,9 @@ def test_create_with_pc_name_not_found():
 
 def test_list_enabled_filter_true():
     """?enabled=true filters to only enabled tasks (line 117)."""
-    r = req("GET", "/api/scheduled-tasks", token=_admin_token, params={"enabled": "true"})
+    r = req(
+        "GET", "/api/scheduled-tasks", token=_admin_token, params={"enabled": "true"}
+    )
     assert r.status_code == 200
     data = json.loads(r.data)
     for t in data["scheduled_tasks"]:
@@ -284,7 +348,9 @@ def test_list_enabled_filter_false():
     task_id = _create_scheduled_task()
     # Disable the task
     req("POST", f"/api/scheduled-tasks/{task_id}/toggle", token=_admin_token)
-    r = req("GET", "/api/scheduled-tasks", token=_admin_token, params={"enabled": "false"})
+    r = req(
+        "GET", "/api/scheduled-tasks", token=_admin_token, params={"enabled": "false"}
+    )
     assert r.status_code == 200
     data = json.loads(r.data)
     for t in data["scheduled_tasks"]:
@@ -323,12 +389,17 @@ def test_update_no_body():
 def test_update_validation_error():
     """PUT with invalid payload → 400 (line 186)."""
     task_id = _create_scheduled_task()
-    r = req("PUT", f"/api/scheduled-tasks/{task_id}", token=_admin_token, data={
-        "name": "UpdatedName",
-        "task_type": "cleanup",
-        "schedule_type": "interval",
-        "interval_minutes": -1,  # invalid
-    })
+    r = req(
+        "PUT",
+        f"/api/scheduled-tasks/{task_id}",
+        token=_admin_token,
+        data={
+            "name": "UpdatedName",
+            "task_type": "cleanup",
+            "schedule_type": "interval",
+            "interval_minutes": -1,  # invalid
+        },
+    )
     assert r.status_code == 400
     assert "interval_minutes" in json.loads(r.data)["error"]
     req("DELETE", f"/api/scheduled-tasks/{task_id}", token=_admin_token)
@@ -337,12 +408,17 @@ def test_update_validation_error():
 def test_update_success():
     """PUT with valid payload → 200 (covers lines 188-200)."""
     task_id = _create_scheduled_task()
-    r = req("PUT", f"/api/scheduled-tasks/{task_id}", token=_admin_token, data={
-        "name": f"Updated-{_unique}",
-        "task_type": "diagnose",
-        "schedule_type": "interval",
-        "interval_minutes": 120,
-    })
+    r = req(
+        "PUT",
+        f"/api/scheduled-tasks/{task_id}",
+        token=_admin_token,
+        data={
+            "name": f"Updated-{_unique}",
+            "task_type": "diagnose",
+            "schedule_type": "interval",
+            "interval_minutes": 120,
+        },
+    )
     assert r.status_code == 200
     data = json.loads(r.data)
     assert data["scheduled_task"]["interval_minutes"] == 120
@@ -362,6 +438,7 @@ def test_run_now_success():
     assert data["task"]["status"] == "pending"
     # cleanup created task
     from models import Task
+
     with app.app_context():
         created_task_id = data["task"]["id"]
         t = db.session.get(Task, created_task_id)
@@ -400,12 +477,17 @@ def test_toggle_enables_then_disables():
 
 def test_operator_can_create():
     """Operator role can create scheduled tasks."""
-    r = req("POST", "/api/scheduled-tasks", token=_operator_token, data={
-        "name": f"OpTask-{_unique}",
-        "task_type": "cleanup",
-        "schedule_type": "interval",
-        "interval_minutes": 15,
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_operator_token,
+        data={
+            "name": f"OpTask-{_unique}",
+            "task_type": "cleanup",
+            "schedule_type": "interval",
+            "interval_minutes": 15,
+        },
+    )
     assert r.status_code == 201
     task_id = json.loads(r.data)["scheduled_task"]["id"]
     req("DELETE", f"/api/scheduled-tasks/{task_id}", token=_admin_token)
@@ -413,10 +495,15 @@ def test_operator_can_create():
 
 def test_viewer_cannot_create():
     """Viewer role cannot create scheduled tasks → 403."""
-    r = req("POST", "/api/scheduled-tasks", token=_viewer_token, data={
-        "name": f"ViewTask-{_unique}",
-        "task_type": "cleanup",
-        "schedule_type": "interval",
-        "interval_minutes": 15,
-    })
+    r = req(
+        "POST",
+        "/api/scheduled-tasks",
+        token=_viewer_token,
+        data={
+            "name": f"ViewTask-{_unique}",
+            "task_type": "cleanup",
+            "schedule_type": "interval",
+            "interval_minutes": 15,
+        },
+    )
     assert r.status_code == 403

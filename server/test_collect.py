@@ -69,13 +69,23 @@ def _pc_payload(suffix="", **kwargs):
 
 
 def test_collect_no_auth():
-    r = client.open("/api/collect", method="POST", headers={"Content-Type": "application/json"}, data="{}")
+    r = client.open(
+        "/api/collect",
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        data="{}",
+    )
     assert r.status_code == 401
 
 
 def test_collect_invalid_token():
     headers = {"Content-Type": "application/json", "Authorization": "Bearer badtoken"}
-    r = client.open("/api/collect", method="POST", headers=headers, data=json.dumps({"pc_name": "x"}))
+    r = client.open(
+        "/api/collect",
+        method="POST",
+        headers=headers,
+        data=json.dumps({"pc_name": "x"}),
+    )
     assert r.status_code == 401
 
 
@@ -83,7 +93,9 @@ def test_collect_invalid_token():
 
 
 def test_collect_no_body():
-    r = client.open("/api/collect", method="POST", headers={"Authorization": f"Bearer {_AGENT_KEY}"})
+    r = client.open(
+        "/api/collect", method="POST", headers={"Authorization": f"Bearer {_AGENT_KEY}"}
+    )
     assert r.status_code in (400, 415)
 
 
@@ -116,8 +128,16 @@ def test_collect_creates_new_pc():
 
 def test_collect_updates_existing_pc():
     name = f"ExistPC-{_unique}"
-    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name, memory_available_gb=8.0))
-    r = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name, memory_available_gb=4.0, os_version="Windows 11 Update"))
+    _agent_req(
+        "POST", "/api/collect", data=_pc_payload(pc_name=name, memory_available_gb=8.0)
+    )
+    r = _agent_req(
+        "POST",
+        "/api/collect",
+        data=_pc_payload(
+            pc_name=name, memory_available_gb=4.0, os_version="Windows 11 Update"
+        ),
+    )
     assert r.status_code == 200
 
 
@@ -187,8 +207,13 @@ def test_collect_health_score_disk_moderate():
 def test_collect_health_score_perfect():
     """Low resource usage → health_score = 100."""
     name = f"Perfect-{_unique}"
-    payload = _pc_payload(pc_name=name, memory_total_gb=32.0, memory_available_gb=20.0,
-                          disk_total_gb=1000.0, disk_free_gb=700.0)
+    payload = _pc_payload(
+        pc_name=name,
+        memory_total_gb=32.0,
+        memory_available_gb=20.0,
+        disk_total_gb=1000.0,
+        disk_free_gb=700.0,
+    )
     r = _agent_req("POST", "/api/collect", data=payload)
     assert r.status_code == 200
     data = json.loads(r.data)
@@ -201,8 +226,13 @@ def test_collect_health_score_perfect():
 def test_collect_status_healthy():
     """health_score >= 80 → status = healthy."""
     name = f"Healthy-{_unique}"
-    payload = _pc_payload(pc_name=name, memory_total_gb=16.0, memory_available_gb=12.0,
-                          disk_total_gb=500.0, disk_free_gb=400.0)
+    payload = _pc_payload(
+        pc_name=name,
+        memory_total_gb=16.0,
+        memory_available_gb=12.0,
+        disk_total_gb=500.0,
+        disk_free_gb=400.0,
+    )
     r = _agent_req("POST", "/api/collect", data=payload)
     assert json.loads(r.data)["status"] == "healthy"
 
@@ -210,8 +240,13 @@ def test_collect_status_healthy():
 def test_collect_status_warning():
     """health_score between 50 and 79 → status = warning."""
     name = f"Warn-{_unique}"
-    payload = _pc_payload(pc_name=name, memory_total_gb=16.0, memory_available_gb=0.5,
-                          disk_total_gb=100.0, disk_free_gb=12.0)
+    payload = _pc_payload(
+        pc_name=name,
+        memory_total_gb=16.0,
+        memory_available_gb=0.5,
+        disk_total_gb=100.0,
+        disk_free_gb=12.0,
+    )
     r = _agent_req("POST", "/api/collect", data=payload)
     data = json.loads(r.data)
     assert data["status"] in ("warning", "critical")
@@ -220,8 +255,13 @@ def test_collect_status_warning():
 def test_collect_status_critical():
     """Very low health_score → status = critical."""
     name = f"Critical-{_unique}"
-    payload = _pc_payload(pc_name=name, memory_total_gb=16.0, memory_available_gb=0.1,
-                          disk_total_gb=100.0, disk_free_gb=1.0)
+    payload = _pc_payload(
+        pc_name=name,
+        memory_total_gb=16.0,
+        memory_available_gb=0.1,
+        disk_total_gb=100.0,
+        disk_free_gb=1.0,
+    )
     r = _agent_req("POST", "/api/collect", data=payload)
     data = json.loads(r.data)
     assert data["status"] == "critical"
@@ -267,7 +307,10 @@ def test_collect_alert_rule_cpu_gt_triggered():
     _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name, cpu_usage=80.0))
 
     with app.app_context():
-        alert = Alert.query.filter_by(source_key=f"rule:{rule_id}:pc:{PC.query.filter_by(pc_name=name).first().id}", resolved=False).first()
+        alert = Alert.query.filter_by(
+            source_key=f"rule:{rule_id}:pc:{PC.query.filter_by(pc_name=name).first().id}",
+            resolved=False,
+        ).first()
         assert alert is not None
         assert "cpu" in alert.alert_type
 
@@ -292,7 +335,9 @@ def test_collect_alert_rule_not_triggered():
 
     with app.app_context():
         pc = PC.query.filter_by(pc_name=name).first()
-        alert = Alert.query.filter_by(source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False).first()
+        alert = Alert.query.filter_by(
+            source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False
+        ).first()
         assert alert is None
 
 
@@ -317,7 +362,9 @@ def test_collect_alert_rule_dedup():
 
     with app.app_context():
         pc = PC.query.filter_by(pc_name=name).first()
-        count = Alert.query.filter_by(source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False).count()
+        count = Alert.query.filter_by(
+            source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False
+        ).count()
         assert count == 1
 
 
@@ -341,7 +388,9 @@ def test_collect_alert_rule_disabled():
 
     with app.app_context():
         pc = PC.query.filter_by(pc_name=name).first()
-        alert = Alert.query.filter_by(source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False).first()
+        alert = Alert.query.filter_by(
+            source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False
+        ).first()
         assert alert is None
 
 
@@ -366,7 +415,9 @@ def test_collect_alert_rule_memory_gte():
 
     with app.app_context():
         pc = PC.query.filter_by(pc_name=name).first()
-        alert = Alert.query.filter_by(source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False).first()
+        alert = Alert.query.filter_by(
+            source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False
+        ).first()
         assert alert is not None
 
 
@@ -395,7 +446,9 @@ def test_collect_alert_rule_disk_lt():
 
     with app.app_context():
         pc = PC.query.filter_by(pc_name=name).first()
-        alert = Alert.query.filter_by(source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False).first()
+        alert = Alert.query.filter_by(
+            source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False
+        ).first()
         assert alert is not None
 
 
@@ -419,7 +472,9 @@ def test_collect_alert_rule_lte():
 
     with app.app_context():
         pc = PC.query.filter_by(pc_name=name).first()
-        alert = Alert.query.filter_by(source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False).first()
+        alert = Alert.query.filter_by(
+            source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False
+        ).first()
         assert alert is not None
 
 
@@ -443,7 +498,9 @@ def test_collect_alert_rule_offline_skipped():
 
     with app.app_context():
         pc = PC.query.filter_by(pc_name=name).first()
-        alert = Alert.query.filter_by(source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False).first()
+        alert = Alert.query.filter_by(
+            source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False
+        ).first()
         assert alert is None
 
 
@@ -451,8 +508,11 @@ def test_collect_alert_rule_offline_skipped():
 
 
 def test_collect_detail_no_body():
-    r = client.open("/api/collect/detail", method="POST",
-                    headers={"Authorization": f"Bearer {_AGENT_KEY}"})
+    r = client.open(
+        "/api/collect/detail",
+        method="POST",
+        headers={"Authorization": f"Bearer {_AGENT_KEY}"},
+    )
     assert r.status_code in (400, 415)
 
 
@@ -463,10 +523,14 @@ def test_collect_detail_missing_pc_name():
 
 
 def test_collect_detail_pc_not_found():
-    r = _agent_req("POST", "/api/collect/detail", data={
-        "pc_name": f"NonExistPC-{_unique}",
-        "software": [],
-    })
+    r = _agent_req(
+        "POST",
+        "/api/collect/detail",
+        data={
+            "pc_name": f"NonExistPC-{_unique}",
+            "software": [],
+        },
+    )
     assert r.status_code == 404
 
 
@@ -475,13 +539,22 @@ def test_collect_detail_software():
     name = f"SWDetail-{_unique}"
     _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
 
-    r = _agent_req("POST", "/api/collect/detail", data={
-        "pc_name": name,
-        "software": [
-            {"name": "Microsoft Office", "version": "2021", "publisher": "Microsoft", "install_date": "2024-01-15"},
-            {"name": "Chrome", "version": "120.0", "publisher": "Google"},
-        ],
-    })
+    r = _agent_req(
+        "POST",
+        "/api/collect/detail",
+        data={
+            "pc_name": name,
+            "software": [
+                {
+                    "name": "Microsoft Office",
+                    "version": "2021",
+                    "publisher": "Microsoft",
+                    "install_date": "2024-01-15",
+                },
+                {"name": "Chrome", "version": "120.0", "publisher": "Google"},
+            ],
+        },
+    )
     assert r.status_code == 200
     data = json.loads(r.data)
     assert data["message"] == "詳細情報を受信しました"
@@ -493,15 +566,28 @@ def test_collect_detail_windows_updates():
     name = f"WinUpd-{_unique}"
     _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
 
-    r = _agent_req("POST", "/api/collect/detail", data={
-        "pc_name": name,
-        "windows_updates": [
-            {"kb_id": "KB5001234", "title": "Security Update", "severity": "Critical",
-             "installed": True, "installed_at": "2026-04-01T12:00:00"},
-            {"kb_id": "KB5005678", "title": "Cumulative Update", "severity": "Important",
-             "installed": False},
-        ],
-    })
+    r = _agent_req(
+        "POST",
+        "/api/collect/detail",
+        data={
+            "pc_name": name,
+            "windows_updates": [
+                {
+                    "kb_id": "KB5001234",
+                    "title": "Security Update",
+                    "severity": "Critical",
+                    "installed": True,
+                    "installed_at": "2026-04-01T12:00:00",
+                },
+                {
+                    "kb_id": "KB5005678",
+                    "title": "Cumulative Update",
+                    "severity": "Important",
+                    "installed": False,
+                },
+            ],
+        },
+    )
     assert r.status_code == 200
 
 
@@ -510,15 +596,30 @@ def test_collect_detail_event_logs():
     name = f"EvtLog-{_unique}"
     _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
 
-    r = _agent_req("POST", "/api/collect/detail", data={
-        "pc_name": name,
-        "event_logs": [
-            {"log_type": "system", "event_id": 6006, "level": "Information",
-             "source": "EventLog", "message": "System shutdown", "generated_at": "2026-05-01T08:00:00"},
-            {"log_type": "application", "event_id": 1001, "level": "Error",
-             "source": "MyApp", "message": "App crashed"},
-        ],
-    })
+    r = _agent_req(
+        "POST",
+        "/api/collect/detail",
+        data={
+            "pc_name": name,
+            "event_logs": [
+                {
+                    "log_type": "system",
+                    "event_id": 6006,
+                    "level": "Information",
+                    "source": "EventLog",
+                    "message": "System shutdown",
+                    "generated_at": "2026-05-01T08:00:00",
+                },
+                {
+                    "log_type": "application",
+                    "event_id": 1001,
+                    "level": "Error",
+                    "source": "MyApp",
+                    "message": "App crashed",
+                },
+            ],
+        },
+    )
     assert r.status_code == 200
 
 
@@ -527,12 +628,16 @@ def test_collect_detail_invalid_dates_ignored():
     name = f"BadDate-{_unique}"
     _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
 
-    r = _agent_req("POST", "/api/collect/detail", data={
-        "pc_name": name,
-        "software": [{"name": "BadApp", "install_date": "not-a-date"}],
-        "windows_updates": [{"kb_id": "KB999", "installed_at": "INVALID"}],
-        "event_logs": [{"log_type": "system", "generated_at": "INVALID"}],
-    })
+    r = _agent_req(
+        "POST",
+        "/api/collect/detail",
+        data={
+            "pc_name": name,
+            "software": [{"name": "BadApp", "install_date": "not-a-date"}],
+            "windows_updates": [{"kb_id": "KB999", "installed_at": "INVALID"}],
+            "event_logs": [{"log_type": "system", "generated_at": "INVALID"}],
+        },
+    )
     assert r.status_code == 200
 
 
@@ -541,12 +646,16 @@ def test_collect_detail_all_together():
     name = f"AllDetail-{_unique}"
     _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
 
-    r = _agent_req("POST", "/api/collect/detail", data={
-        "pc_name": name,
-        "software": [{"name": "VSCode", "version": "1.88"}],
-        "windows_updates": [{"kb_id": "KB1234", "installed": True}],
-        "event_logs": [{"log_type": "system", "event_id": 100, "level": "Info"}],
-    })
+    r = _agent_req(
+        "POST",
+        "/api/collect/detail",
+        data={
+            "pc_name": name,
+            "software": [{"name": "VSCode", "version": "1.88"}],
+            "windows_updates": [{"kb_id": "KB1234", "installed": True}],
+            "event_logs": [{"log_type": "system", "event_id": 100, "level": "Info"}],
+        },
+    )
     assert r.status_code == 200
 
 
@@ -555,12 +664,16 @@ def test_collect_detail_empty_lists():
     name = f"EmptyLists-{_unique}"
     _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
 
-    r = _agent_req("POST", "/api/collect/detail", data={
-        "pc_name": name,
-        "software": [],
-        "windows_updates": [],
-        "event_logs": [],
-    })
+    r = _agent_req(
+        "POST",
+        "/api/collect/detail",
+        data={
+            "pc_name": name,
+            "software": [],
+            "windows_updates": [],
+            "event_logs": [],
+        },
+    )
     assert r.status_code == 200
 
 

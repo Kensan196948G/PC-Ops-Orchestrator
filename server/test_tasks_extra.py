@@ -41,11 +41,13 @@ def setup_module():
             (f"viewer_tk_{_unique}", "viewer", "ViewerTk1!"),
         ]:
             if not User.query.filter_by(username=username).first():
-                db.session.add(User(
-                    username=username,
-                    password_hash=hash_password(password),
-                    role=role,
-                ))
+                db.session.add(
+                    User(
+                        username=username,
+                        password_hash=hash_password(password),
+                        role=role,
+                    )
+                )
         db.session.commit()
 
     _admin_token = _login(f"admin_tk_{_unique}", "AdminTk1!")
@@ -111,8 +113,12 @@ def test_get_pending_tasks_no_pc_name():
 
 def test_get_pending_tasks_pc_not_found():
     """pc_name not in DB → empty tasks list."""
-    r = req("GET", "/api/tasks/pending", agent_key=_AGENT_KEY,
-            params={"pc_name": f"NoSuchPC-{_unique}"})
+    r = req(
+        "GET",
+        "/api/tasks/pending",
+        agent_key=_AGENT_KEY,
+        params={"pc_name": f"NoSuchPC-{_unique}"},
+    )
     assert r.status_code == 200
     data = json.loads(r.data)
     assert data["tasks"] == []
@@ -122,8 +128,9 @@ def test_get_pending_tasks_success():
     """PC exists with pending task → returns task list (lines 36-46)."""
     pc_id, pc_name = _create_pc("pend")
     _create_task(pc_id=pc_id, task_type="cleanup", status="pending")
-    r = req("GET", "/api/tasks/pending", agent_key=_AGENT_KEY,
-            params={"pc_name": pc_name})
+    r = req(
+        "GET", "/api/tasks/pending", agent_key=_AGENT_KEY, params={"pc_name": pc_name}
+    )
     assert r.status_code == 200
     data = json.loads(r.data)
     assert "tasks" in data
@@ -152,9 +159,14 @@ def test_create_task_no_body():
 
 def test_create_task_success_minimal():
     """Minimal valid create_task → 201."""
-    r = req("POST", "/api/tasks", token=_admin_token, data={
-        "task_type": "cleanup",
-    })
+    r = req(
+        "POST",
+        "/api/tasks",
+        token=_admin_token,
+        data={
+            "task_type": "cleanup",
+        },
+    )
     assert r.status_code == 201
     data = json.loads(r.data)
     assert "task" in data
@@ -178,42 +190,62 @@ def test_bulk_create_tasks_no_body():
 
 def test_bulk_create_tasks_no_task_type():
     """Empty task_type → 400 (line 122)."""
-    r = req("POST", "/api/tasks/bulk", token=_admin_token, data={
-        "task_type": "",
-        "pc_names": ["SomePC"],
-    })
+    r = req(
+        "POST",
+        "/api/tasks/bulk",
+        token=_admin_token,
+        data={
+            "task_type": "",
+            "pc_names": ["SomePC"],
+        },
+    )
     assert r.status_code == 400
     assert "task_type" in json.loads(r.data)["error"]
 
 
 def test_bulk_create_tasks_command_not_str():
     """command is int (not str) → 400 (line 138-139)."""
-    r = req("POST", "/api/tasks/bulk", token=_admin_token, data={
-        "task_type": "custom",
-        "pc_names": ["SomePC"],
-        "command": 12345,
-    })
+    r = req(
+        "POST",
+        "/api/tasks/bulk",
+        token=_admin_token,
+        data={
+            "task_type": "custom",
+            "pc_names": ["SomePC"],
+            "command": 12345,
+        },
+    )
     assert r.status_code == 400
     assert "command" in json.loads(r.data)["error"]
 
 
 def test_bulk_create_tasks_command_too_long():
     """command > 512 chars → 400 (lines 140-142)."""
-    r = req("POST", "/api/tasks/bulk", token=_admin_token, data={
-        "task_type": "custom",
-        "pc_names": ["SomePC"],
-        "command": "A" * 513,
-    })
+    r = req(
+        "POST",
+        "/api/tasks/bulk",
+        token=_admin_token,
+        data={
+            "task_type": "custom",
+            "pc_names": ["SomePC"],
+            "command": "A" * 513,
+        },
+    )
     assert r.status_code == 400
     assert "command" in json.loads(r.data)["error"]
 
 
 def test_bulk_create_tasks_all_pcs_not_found():
     """All pc_names not found → 400, successes=[] (lines 177-178)."""
-    r = req("POST", "/api/tasks/bulk", token=_admin_token, data={
-        "task_type": "diagnose",
-        "pc_names": [f"NoPC-{_unique}-1", f"NoPC-{_unique}-2"],
-    })
+    r = req(
+        "POST",
+        "/api/tasks/bulk",
+        token=_admin_token,
+        data={
+            "task_type": "diagnose",
+            "pc_names": [f"NoPC-{_unique}-1", f"NoPC-{_unique}-2"],
+        },
+    )
     assert r.status_code == 400
     data = json.loads(r.data)
     assert data["successes"] == []
@@ -224,11 +256,16 @@ def test_bulk_create_tasks_success():
     """PC exists → tasks created (lines 154-165, 168-169)."""
     pc_id1, pc_name1 = _create_pc("bulk1")
     pc_id2, pc_name2 = _create_pc("bulk2")
-    r = req("POST", "/api/tasks/bulk", token=_admin_token, data={
-        "task_type": "diagnose",
-        "pc_names": [pc_name1, pc_name2],
-        "priority": 5,
-    })
+    r = req(
+        "POST",
+        "/api/tasks/bulk",
+        token=_admin_token,
+        data={
+            "task_type": "diagnose",
+            "pc_names": [pc_name1, pc_name2],
+            "priority": 5,
+        },
+    )
     assert r.status_code == 201
     data = json.loads(r.data)
     assert len(data["successes"]) == 2
@@ -241,10 +278,15 @@ def test_bulk_create_tasks_success():
 def test_bulk_create_tasks_mixed():
     """Mix of found/not-found PCs → partial success."""
     pc_id, pc_name = _create_pc("bulkmix")
-    r = req("POST", "/api/tasks/bulk", token=_admin_token, data={
-        "task_type": "update",
-        "pc_names": [pc_name, f"NoPC-{_unique}-mix"],
-    })
+    r = req(
+        "POST",
+        "/api/tasks/bulk",
+        token=_admin_token,
+        data={
+            "task_type": "update",
+            "pc_names": [pc_name, f"NoPC-{_unique}-mix"],
+        },
+    )
     assert r.status_code == 201
     data = json.loads(r.data)
     assert len(data["successes"]) == 1
@@ -275,20 +317,30 @@ def test_submit_result_no_task_id():
 
 def test_submit_result_task_not_found():
     """task_id not in DB → 404 (line 206)."""
-    r = req("POST", "/api/result", agent_key=_AGENT_KEY, data={
-        "task_id": 9999999,
-        "status": "completed",
-    })
+    r = req(
+        "POST",
+        "/api/result",
+        agent_key=_AGENT_KEY,
+        data={
+            "task_id": 9999999,
+            "status": "completed",
+        },
+    )
     assert r.status_code == 404
 
 
 def test_submit_result_bad_status():
     """Invalid status value → 400 (line 211)."""
     task_id = _create_task()
-    r = req("POST", "/api/result", agent_key=_AGENT_KEY, data={
-        "task_id": task_id,
-        "status": "invalid_status",
-    })
+    r = req(
+        "POST",
+        "/api/result",
+        agent_key=_AGENT_KEY,
+        data={
+            "task_id": task_id,
+            "status": "invalid_status",
+        },
+    )
     assert r.status_code == 400
     assert "status" in json.loads(r.data)["error"]
     # cleanup
@@ -298,11 +350,16 @@ def test_submit_result_bad_status():
 def test_submit_result_success():
     """Valid submit → 200 (covers commit at line 219)."""
     task_id = _create_task()
-    r = req("POST", "/api/result", agent_key=_AGENT_KEY, data={
-        "task_id": task_id,
-        "status": "completed",
-        "result": {"output": "done"},
-    })
+    r = req(
+        "POST",
+        "/api/result",
+        agent_key=_AGENT_KEY,
+        data={
+            "task_id": task_id,
+            "status": "completed",
+            "result": {"output": "done"},
+        },
+    )
     assert r.status_code == 200
     data = json.loads(r.data)
     assert "message" in data
@@ -350,8 +407,9 @@ def test_export_tasks_csv_basic():
 
 def test_export_tasks_csv_status_filter():
     """export.csv?status=pending covers line 241."""
-    r = req("GET", "/api/tasks/export.csv", token=_admin_token,
-            params={"status": "pending"})
+    r = req(
+        "GET", "/api/tasks/export.csv", token=_admin_token, params={"status": "pending"}
+    )
     assert r.status_code == 200
     content = r.data.decode("utf-8-sig")
     assert "ID" in content  # header row present
@@ -359,8 +417,12 @@ def test_export_tasks_csv_status_filter():
 
 def test_export_tasks_csv_task_type_filter():
     """export.csv?task_type=cleanup covers line 243."""
-    r = req("GET", "/api/tasks/export.csv", token=_admin_token,
-            params={"task_type": "cleanup"})
+    r = req(
+        "GET",
+        "/api/tasks/export.csv",
+        token=_admin_token,
+        params={"task_type": "cleanup"},
+    )
     assert r.status_code == 200
     content = r.data.decode("utf-8-sig")
     assert "タスク種別" in content
@@ -407,8 +469,12 @@ def test_list_tasks_pc_name_found():
 
 def test_list_tasks_pc_name_not_found():
     """pc_name filter with non-existent PC → empty result (lines 309-310)."""
-    r = req("GET", "/api/tasks", token=_admin_token,
-            params={"pc_name": f"NonExistentPC-{_unique}"})
+    r = req(
+        "GET",
+        "/api/tasks",
+        token=_admin_token,
+        params={"pc_name": f"NonExistentPC-{_unique}"},
+    )
     assert r.status_code == 200
     data = json.loads(r.data)
     assert data["tasks"] == []

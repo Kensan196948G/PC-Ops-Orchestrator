@@ -36,11 +36,13 @@ def setup_module():
         db.create_all()
         username = f"admin_al_{_unique}"
         if not User.query.filter_by(username=username).first():
-            db.session.add(User(
-                username=username,
-                password_hash=hash_password("AdminAl1!"),
-                role="admin",
-            ))
+            db.session.add(
+                User(
+                    username=username,
+                    password_hash=hash_password("AdminAl1!"),
+                    role="admin",
+                )
+            )
         db.session.commit()
     _admin_token = _login(f"admin_al_{_unique}", "AdminAl1!")
 
@@ -130,7 +132,9 @@ def test_export_alerts_csv_basic():
 
 def test_export_alerts_csv_severity_filter():
     """GET /api/alerts/export.csv?severity=high → covers severity filter (line 64)."""
-    r = req("GET", "/api/alerts/export.csv", token=_admin_token, params={"severity": "high"})
+    r = req(
+        "GET", "/api/alerts/export.csv", token=_admin_token, params={"severity": "high"}
+    )
     assert r.status_code == 200
     content = r.data.decode("utf-8-sig")
     assert "ID" in content
@@ -138,7 +142,9 @@ def test_export_alerts_csv_severity_filter():
 
 def test_export_alerts_csv_resolved_filter():
     """GET /api/alerts/export.csv?resolved=true → resolved filter (line 60)."""
-    r = req("GET", "/api/alerts/export.csv", token=_admin_token, params={"resolved": "true"})
+    r = req(
+        "GET", "/api/alerts/export.csv", token=_admin_token, params={"resolved": "true"}
+    )
     assert r.status_code == 200
 
 

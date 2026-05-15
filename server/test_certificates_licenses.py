@@ -143,13 +143,23 @@ def test_create_certificate_code_type():
 
 
 def test_create_certificate_missing_domain():
-    r = req("POST", "/api/certificates", token=_admin_token, data={"expires_at": "2027-01-01"})
+    r = req(
+        "POST",
+        "/api/certificates",
+        token=_admin_token,
+        data={"expires_at": "2027-01-01"},
+    )
     assert r.status_code == 400
     assert "domain" in json.loads(r.data)["error"]
 
 
 def test_create_certificate_empty_domain():
-    r = req("POST", "/api/certificates", token=_admin_token, data={"domain": "", "expires_at": "2027-01-01"})
+    r = req(
+        "POST",
+        "/api/certificates",
+        token=_admin_token,
+        data={"domain": "", "expires_at": "2027-01-01"},
+    )
     assert r.status_code == 400
 
 
@@ -160,67 +170,106 @@ def test_create_certificate_missing_expires_at():
 
 
 def test_create_certificate_invalid_expires_at():
-    r = req("POST", "/api/certificates", token=_admin_token, data={"domain": "x.com", "expires_at": "not-a-date"})
+    r = req(
+        "POST",
+        "/api/certificates",
+        token=_admin_token,
+        data={"domain": "x.com", "expires_at": "not-a-date"},
+    )
     assert r.status_code == 400
 
 
 def test_create_certificate_invalid_issued_at():
-    r = req("POST", "/api/certificates", token=_admin_token, data={
-        "domain": "x.com",
-        "expires_at": "2027-01-01",
-        "issued_at": "baddate",
-    })
+    r = req(
+        "POST",
+        "/api/certificates",
+        token=_admin_token,
+        data={
+            "domain": "x.com",
+            "expires_at": "2027-01-01",
+            "issued_at": "baddate",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_create_certificate_invalid_cert_type():
-    r = req("POST", "/api/certificates", token=_admin_token, data={
-        "domain": "x.com",
-        "expires_at": "2027-01-01",
-        "cert_type": "invalid_type",
-    })
+    r = req(
+        "POST",
+        "/api/certificates",
+        token=_admin_token,
+        data={
+            "domain": "x.com",
+            "expires_at": "2027-01-01",
+            "cert_type": "invalid_type",
+        },
+    )
     assert r.status_code == 400
     assert "cert_type" in json.loads(r.data)["error"]
 
 
 def test_create_certificate_name_too_long():
-    r = req("POST", "/api/certificates", token=_admin_token, data={
-        "domain": "x.com",
-        "expires_at": "2027-01-01",
-        "name": "A" * 201,
-    })
+    r = req(
+        "POST",
+        "/api/certificates",
+        token=_admin_token,
+        data={
+            "domain": "x.com",
+            "expires_at": "2027-01-01",
+            "name": "A" * 201,
+        },
+    )
     assert r.status_code == 400
 
 
 def test_create_certificate_domain_too_long():
-    r = req("POST", "/api/certificates", token=_admin_token, data={
-        "domain": "A" * 201 + ".com",
-        "expires_at": "2027-01-01",
-    })
+    r = req(
+        "POST",
+        "/api/certificates",
+        token=_admin_token,
+        data={
+            "domain": "A" * 201 + ".com",
+            "expires_at": "2027-01-01",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_create_certificate_no_body():
-    r = client.open("/api/certificates", method="POST", headers={
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {_admin_token}",
-    })
+    r = client.open(
+        "/api/certificates",
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {_admin_token}",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_create_certificate_viewer_forbidden():
-    r = req("POST", "/api/certificates", token=_viewer_token, data={
-        "domain": "x.com",
-        "expires_at": "2027-01-01",
-    })
+    r = req(
+        "POST",
+        "/api/certificates",
+        token=_viewer_token,
+        data={
+            "domain": "x.com",
+            "expires_at": "2027-01-01",
+        },
+    )
     assert r.status_code == 403
 
 
 def test_create_certificate_operator_forbidden():
-    r = req("POST", "/api/certificates", token=_operator_token, data={
-        "domain": "x.com",
-        "expires_at": "2027-01-01",
-    })
+    r = req(
+        "POST",
+        "/api/certificates",
+        token=_operator_token,
+        data={
+            "domain": "x.com",
+            "expires_at": "2027-01-01",
+        },
+    )
     assert r.status_code == 403
 
 
@@ -238,15 +287,20 @@ def _create_cert(suffix=""):
 
 def test_update_certificate_success():
     cert_id = _create_cert("-upd")
-    r = req("PUT", f"/api/certificates/{cert_id}", token=_admin_token, data={
-        "name": "Updated Cert",
-        "issuer": "DigiCert",
-        "cert_type": "client",
-        "expires_at": "2028-12-31",
-        "issued_at": "2026-01-01",
-        "auto_renew": False,
-        "notes": "Updated",
-    })
+    r = req(
+        "PUT",
+        f"/api/certificates/{cert_id}",
+        token=_admin_token,
+        data={
+            "name": "Updated Cert",
+            "issuer": "DigiCert",
+            "cert_type": "client",
+            "expires_at": "2028-12-31",
+            "issued_at": "2026-01-01",
+            "auto_renew": False,
+            "notes": "Updated",
+        },
+    )
     assert r.status_code == 200
     data = json.loads(r.data)
     assert data["certificate"]["name"] == "Updated Cert"
@@ -255,66 +309,106 @@ def test_update_certificate_success():
 
 def test_update_certificate_domain():
     cert_id = _create_cert("-dom")
-    r = req("PUT", f"/api/certificates/{cert_id}", token=_admin_token, data={
-        "domain": "new-domain.example.com",
-    })
+    r = req(
+        "PUT",
+        f"/api/certificates/{cert_id}",
+        token=_admin_token,
+        data={
+            "domain": "new-domain.example.com",
+        },
+    )
     assert r.status_code == 200
     assert json.loads(r.data)["certificate"]["domain"] == "new-domain.example.com"
 
 
 def test_update_certificate_empty_domain_rejected():
     cert_id = _create_cert("-empdom")
-    r = req("PUT", f"/api/certificates/{cert_id}", token=_admin_token, data={
-        "domain": "",
-    })
+    r = req(
+        "PUT",
+        f"/api/certificates/{cert_id}",
+        token=_admin_token,
+        data={
+            "domain": "",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_certificate_domain_too_long():
     cert_id = _create_cert("-longdom")
-    r = req("PUT", f"/api/certificates/{cert_id}", token=_admin_token, data={
-        "domain": "A" * 201 + ".com",
-    })
+    r = req(
+        "PUT",
+        f"/api/certificates/{cert_id}",
+        token=_admin_token,
+        data={
+            "domain": "A" * 201 + ".com",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_certificate_name_too_long():
     cert_id = _create_cert("-longname")
-    r = req("PUT", f"/api/certificates/{cert_id}", token=_admin_token, data={
-        "name": "A" * 201,
-    })
+    r = req(
+        "PUT",
+        f"/api/certificates/{cert_id}",
+        token=_admin_token,
+        data={
+            "name": "A" * 201,
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_certificate_invalid_cert_type():
     cert_id = _create_cert("-badtype")
-    r = req("PUT", f"/api/certificates/{cert_id}", token=_admin_token, data={
-        "cert_type": "unknown",
-    })
+    r = req(
+        "PUT",
+        f"/api/certificates/{cert_id}",
+        token=_admin_token,
+        data={
+            "cert_type": "unknown",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_certificate_invalid_expires_at():
     cert_id = _create_cert("-badexp")
-    r = req("PUT", f"/api/certificates/{cert_id}", token=_admin_token, data={
-        "expires_at": "bad-date",
-    })
+    r = req(
+        "PUT",
+        f"/api/certificates/{cert_id}",
+        token=_admin_token,
+        data={
+            "expires_at": "bad-date",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_certificate_empty_expires_at_rejected():
     cert_id = _create_cert("-emptyexp")
-    r = req("PUT", f"/api/certificates/{cert_id}", token=_admin_token, data={
-        "expires_at": "",
-    })
+    r = req(
+        "PUT",
+        f"/api/certificates/{cert_id}",
+        token=_admin_token,
+        data={
+            "expires_at": "",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_certificate_invalid_issued_at():
     cert_id = _create_cert("-badiss")
-    r = req("PUT", f"/api/certificates/{cert_id}", token=_admin_token, data={
-        "issued_at": "not-a-date",
-    })
+    r = req(
+        "PUT",
+        f"/api/certificates/{cert_id}",
+        token=_admin_token,
+        data={
+            "issued_at": "not-a-date",
+        },
+    )
     assert r.status_code == 400
 
 
@@ -325,16 +419,22 @@ def test_update_certificate_not_found():
 
 def test_update_certificate_no_body():
     cert_id = _create_cert("-nobody")
-    r = client.open(f"/api/certificates/{cert_id}", method="PUT", headers={
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {_admin_token}",
-    })
+    r = client.open(
+        f"/api/certificates/{cert_id}",
+        method="PUT",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {_admin_token}",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_certificate_viewer_forbidden():
     cert_id = _create_cert("-view")
-    r = req("PUT", f"/api/certificates/{cert_id}", token=_viewer_token, data={"name": "X"})
+    r = req(
+        "PUT", f"/api/certificates/{cert_id}", token=_viewer_token, data={"name": "X"}
+    )
     assert r.status_code == 403
 
 
@@ -430,34 +530,54 @@ def test_create_license_subscription():
 
 
 def test_create_license_perpetual():
-    r = req("POST", "/api/licenses", token=_admin_token, data={
-        "product_name": f"Adobe CC {_unique}",
-        "license_type": "perpetual",
-        "seat_count": 10,
-        "unit_price": 50000,
-    })
+    r = req(
+        "POST",
+        "/api/licenses",
+        token=_admin_token,
+        data={
+            "product_name": f"Adobe CC {_unique}",
+            "license_type": "perpetual",
+            "seat_count": 10,
+            "unit_price": 50000,
+        },
+    )
     assert r.status_code == 201
 
 
 def test_create_license_volume():
-    r = req("POST", "/api/licenses", token=_admin_token, data={
-        "product_name": f"Windows Vol {_unique}",
-        "license_type": "volume",
-    })
+    r = req(
+        "POST",
+        "/api/licenses",
+        token=_admin_token,
+        data={
+            "product_name": f"Windows Vol {_unique}",
+            "license_type": "volume",
+        },
+    )
     assert r.status_code == 201
 
 
 def test_create_license_no_optional_fields():
-    r = req("POST", "/api/licenses", token=_admin_token, data={
-        "product_name": f"Minimal {_unique}",
-    })
+    r = req(
+        "POST",
+        "/api/licenses",
+        token=_admin_token,
+        data={
+            "product_name": f"Minimal {_unique}",
+        },
+    )
     assert r.status_code == 201
     data = json.loads(r.data)
     assert data["license"]["total_cost"] == 0
 
 
 def test_create_license_missing_product_name():
-    r = req("POST", "/api/licenses", token=_admin_token, data={"license_type": "subscription"})
+    r = req(
+        "POST",
+        "/api/licenses",
+        token=_admin_token,
+        data={"license_type": "subscription"},
+    )
     assert r.status_code == 400
     assert "product_name" in json.loads(r.data)["error"]
 
@@ -468,64 +588,100 @@ def test_create_license_empty_product_name():
 
 
 def test_create_license_product_name_too_long():
-    r = req("POST", "/api/licenses", token=_admin_token, data={"product_name": "A" * 201})
+    r = req(
+        "POST", "/api/licenses", token=_admin_token, data={"product_name": "A" * 201}
+    )
     assert r.status_code == 400
 
 
 def test_create_license_invalid_license_type():
-    r = req("POST", "/api/licenses", token=_admin_token, data={
-        "product_name": "X",
-        "license_type": "invalid",
-    })
+    r = req(
+        "POST",
+        "/api/licenses",
+        token=_admin_token,
+        data={
+            "product_name": "X",
+            "license_type": "invalid",
+        },
+    )
     assert r.status_code == 400
     assert "license_type" in json.loads(r.data)["error"]
 
 
 def test_create_license_invalid_seat_count_string():
-    r = req("POST", "/api/licenses", token=_admin_token, data={
-        "product_name": "X",
-        "seat_count": "notanumber",
-    })
+    r = req(
+        "POST",
+        "/api/licenses",
+        token=_admin_token,
+        data={
+            "product_name": "X",
+            "seat_count": "notanumber",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_create_license_negative_seat_count():
-    r = req("POST", "/api/licenses", token=_admin_token, data={
-        "product_name": "X",
-        "seat_count": -1,
-    })
+    r = req(
+        "POST",
+        "/api/licenses",
+        token=_admin_token,
+        data={
+            "product_name": "X",
+            "seat_count": -1,
+        },
+    )
     assert r.status_code == 400
 
 
 def test_create_license_invalid_unit_price_string():
-    r = req("POST", "/api/licenses", token=_admin_token, data={
-        "product_name": "X",
-        "unit_price": "notanumber",
-    })
+    r = req(
+        "POST",
+        "/api/licenses",
+        token=_admin_token,
+        data={
+            "product_name": "X",
+            "unit_price": "notanumber",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_create_license_negative_unit_price():
-    r = req("POST", "/api/licenses", token=_admin_token, data={
-        "product_name": "X",
-        "unit_price": -100,
-    })
+    r = req(
+        "POST",
+        "/api/licenses",
+        token=_admin_token,
+        data={
+            "product_name": "X",
+            "unit_price": -100,
+        },
+    )
     assert r.status_code == 400
 
 
 def test_create_license_invalid_expires_at():
-    r = req("POST", "/api/licenses", token=_admin_token, data={
-        "product_name": "X",
-        "expires_at": "not-a-date",
-    })
+    r = req(
+        "POST",
+        "/api/licenses",
+        token=_admin_token,
+        data={
+            "product_name": "X",
+            "expires_at": "not-a-date",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_create_license_no_body():
-    r = client.open("/api/licenses", method="POST", headers={
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {_admin_token}",
-    })
+    r = client.open(
+        "/api/licenses",
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {_admin_token}",
+        },
+    )
     assert r.status_code == 400
 
 
@@ -543,25 +699,35 @@ def test_create_license_operator_forbidden():
 
 
 def _create_license(suffix=""):
-    r = req("POST", "/api/licenses", token=_admin_token, data={
-        "product_name": f"License-test{suffix}-{_unique}",
-        "seat_count": 5,
-        "unit_price": 1000,
-    })
+    r = req(
+        "POST",
+        "/api/licenses",
+        token=_admin_token,
+        data={
+            "product_name": f"License-test{suffix}-{_unique}",
+            "seat_count": 5,
+            "unit_price": 1000,
+        },
+    )
     return json.loads(r.data)["license"]["id"]
 
 
 def test_update_license_success():
     lic_id = _create_license("-upd")
-    r = req("PUT", f"/api/licenses/{lic_id}", token=_admin_token, data={
-        "product_name": "Updated Product",
-        "vendor": "New Vendor",
-        "license_type": "perpetual",
-        "seat_count": 100,
-        "unit_price": 9999,
-        "expires_at": "2028-12-31",
-        "notes": "Updated notes",
-    })
+    r = req(
+        "PUT",
+        f"/api/licenses/{lic_id}",
+        token=_admin_token,
+        data={
+            "product_name": "Updated Product",
+            "vendor": "New Vendor",
+            "license_type": "perpetual",
+            "seat_count": 100,
+            "unit_price": 9999,
+            "expires_at": "2028-12-31",
+            "notes": "Updated notes",
+        },
+    )
     assert r.status_code == 200
     data = json.loads(r.data)
     assert data["license"]["product_name"] == "Updated Product"
@@ -570,111 +736,177 @@ def test_update_license_success():
 
 def test_update_license_vendor_null():
     lic_id = _create_license("-vnull")
-    r = req("PUT", f"/api/licenses/{lic_id}", token=_admin_token, data={
-        "vendor": "",
-    })
+    r = req(
+        "PUT",
+        f"/api/licenses/{lic_id}",
+        token=_admin_token,
+        data={
+            "vendor": "",
+        },
+    )
     assert r.status_code == 200
     assert json.loads(r.data)["license"]["vendor"] is None
 
 
 def test_update_license_seat_count_null():
     lic_id = _create_license("-scnull")
-    r = req("PUT", f"/api/licenses/{lic_id}", token=_admin_token, data={
-        "seat_count": None,
-    })
+    r = req(
+        "PUT",
+        f"/api/licenses/{lic_id}",
+        token=_admin_token,
+        data={
+            "seat_count": None,
+        },
+    )
     assert r.status_code == 200
     assert json.loads(r.data)["license"]["seat_count"] is None
 
 
 def test_update_license_unit_price_null():
     lic_id = _create_license("-upnull")
-    r = req("PUT", f"/api/licenses/{lic_id}", token=_admin_token, data={
-        "unit_price": None,
-    })
+    r = req(
+        "PUT",
+        f"/api/licenses/{lic_id}",
+        token=_admin_token,
+        data={
+            "unit_price": None,
+        },
+    )
     assert r.status_code == 200
 
 
 def test_update_license_empty_product_name_rejected():
     lic_id = _create_license("-empname")
-    r = req("PUT", f"/api/licenses/{lic_id}", token=_admin_token, data={
-        "product_name": "",
-    })
+    r = req(
+        "PUT",
+        f"/api/licenses/{lic_id}",
+        token=_admin_token,
+        data={
+            "product_name": "",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_license_product_name_too_long():
     lic_id = _create_license("-longname")
-    r = req("PUT", f"/api/licenses/{lic_id}", token=_admin_token, data={
-        "product_name": "A" * 201,
-    })
+    r = req(
+        "PUT",
+        f"/api/licenses/{lic_id}",
+        token=_admin_token,
+        data={
+            "product_name": "A" * 201,
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_license_invalid_license_type():
     lic_id = _create_license("-badtype")
-    r = req("PUT", f"/api/licenses/{lic_id}", token=_admin_token, data={
-        "license_type": "bad",
-    })
+    r = req(
+        "PUT",
+        f"/api/licenses/{lic_id}",
+        token=_admin_token,
+        data={
+            "license_type": "bad",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_license_invalid_seat_count():
     lic_id = _create_license("-badsc")
-    r = req("PUT", f"/api/licenses/{lic_id}", token=_admin_token, data={
-        "seat_count": -5,
-    })
+    r = req(
+        "PUT",
+        f"/api/licenses/{lic_id}",
+        token=_admin_token,
+        data={
+            "seat_count": -5,
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_license_invalid_seat_count_string():
     lic_id = _create_license("-strsc")
-    r = req("PUT", f"/api/licenses/{lic_id}", token=_admin_token, data={
-        "seat_count": "bad",
-    })
+    r = req(
+        "PUT",
+        f"/api/licenses/{lic_id}",
+        token=_admin_token,
+        data={
+            "seat_count": "bad",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_license_invalid_unit_price():
     lic_id = _create_license("-badup")
-    r = req("PUT", f"/api/licenses/{lic_id}", token=_admin_token, data={
-        "unit_price": -100,
-    })
+    r = req(
+        "PUT",
+        f"/api/licenses/{lic_id}",
+        token=_admin_token,
+        data={
+            "unit_price": -100,
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_license_invalid_unit_price_string():
     lic_id = _create_license("-strup")
-    r = req("PUT", f"/api/licenses/{lic_id}", token=_admin_token, data={
-        "unit_price": "bad",
-    })
+    r = req(
+        "PUT",
+        f"/api/licenses/{lic_id}",
+        token=_admin_token,
+        data={
+            "unit_price": "bad",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_license_invalid_expires_at():
     lic_id = _create_license("-badexp")
-    r = req("PUT", f"/api/licenses/{lic_id}", token=_admin_token, data={
-        "expires_at": "not-a-date",
-    })
+    r = req(
+        "PUT",
+        f"/api/licenses/{lic_id}",
+        token=_admin_token,
+        data={
+            "expires_at": "not-a-date",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_license_not_found():
-    r = req("PUT", "/api/licenses/999999", token=_admin_token, data={"product_name": "X"})
+    r = req(
+        "PUT", "/api/licenses/999999", token=_admin_token, data={"product_name": "X"}
+    )
     assert r.status_code == 404
 
 
 def test_update_license_no_body():
     lic_id = _create_license("-nobody")
-    r = client.open(f"/api/licenses/{lic_id}", method="PUT", headers={
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {_admin_token}",
-    })
+    r = client.open(
+        f"/api/licenses/{lic_id}",
+        method="PUT",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {_admin_token}",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_update_license_viewer_forbidden():
     lic_id = _create_license("-view")
-    r = req("PUT", f"/api/licenses/{lic_id}", token=_viewer_token, data={"product_name": "X"})
+    r = req(
+        "PUT",
+        f"/api/licenses/{lic_id}",
+        token=_viewer_token,
+        data={"product_name": "X"},
+    )
     assert r.status_code == 403
 
 
@@ -710,20 +942,30 @@ def test_delete_license_operator_forbidden():
 
 def test_create_certificate_no_issued_at():
     """issued_at = None はそのまま通る（_parse_date None passthrough）。"""
-    r = req("POST", "/api/certificates", token=_admin_token, data={
-        "domain": f"noissue-{_unique}.com",
-        "expires_at": "2027-01-01",
-        "issued_at": None,
-    })
+    r = req(
+        "POST",
+        "/api/certificates",
+        token=_admin_token,
+        data={
+            "domain": f"noissue-{_unique}.com",
+            "expires_at": "2027-01-01",
+            "issued_at": None,
+        },
+    )
     assert r.status_code == 201
     assert json.loads(r.data)["certificate"]["issued_at"] is None
 
 
 def test_update_certificate_issued_at_none():
     cert_id = _create_cert("-isnull")
-    r = req("PUT", f"/api/certificates/{cert_id}", token=_admin_token, data={
-        "issued_at": None,
-    })
+    r = req(
+        "PUT",
+        f"/api/certificates/{cert_id}",
+        token=_admin_token,
+        data={
+            "issued_at": None,
+        },
+    )
     assert r.status_code == 200
 
 
@@ -742,13 +984,18 @@ def test_licenses_csv_has_header():
 def test_licenses_csv_with_data():
     """Create a license then verify it appears in the CSV."""
     product = f"CSV-Product-{_unique}"
-    req("POST", "/api/licenses", token=_admin_token, data={
-        "product_name": product,
-        "vendor": "TestVendor",
-        "seat_count": 25,
-        "unit_price": 500,
-        "expires_at": "2027-12-31",
-    })
+    req(
+        "POST",
+        "/api/licenses",
+        token=_admin_token,
+        data={
+            "product_name": product,
+            "vendor": "TestVendor",
+            "seat_count": 25,
+            "unit_price": 500,
+            "expires_at": "2027-12-31",
+        },
+    )
     r = req("GET", "/api/licenses/export.csv", token=_admin_token)
     assert r.status_code == 200
     text = r.data.decode("utf-8-sig")

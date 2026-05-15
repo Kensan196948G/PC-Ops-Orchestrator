@@ -15,6 +15,7 @@ import sys
 import os
 import uuid
 from datetime import datetime, timedelta, timezone
+
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app import create_app
@@ -267,8 +268,18 @@ def test_list_agents_response_fields():
     data = json.loads(r.data)
     assert len(data["agents"]) > 0
     for agent in data["agents"]:
-        for field in ["id", "pc_name", "ip_address", "os_version", "agent_version",
-                      "cpu_usage", "memory_usage", "status", "online", "last_seen"]:
+        for field in [
+            "id",
+            "pc_name",
+            "ip_address",
+            "os_version",
+            "agent_version",
+            "cpu_usage",
+            "memory_usage",
+            "status",
+            "online",
+            "last_seen",
+        ]:
             assert field in agent, f"Missing field: {field}"
 
 
@@ -300,7 +311,9 @@ def test_export_csv_has_header_row():
 
 def test_export_csv_with_pc_data():
     """CSV contains a row for each PC."""
-    _create_pc("csvpc", status="healthy", ip_address="192.168.1.99", os_version="Win 11")
+    _create_pc(
+        "csvpc", status="healthy", ip_address="192.168.1.99", os_version="Win 11"
+    )
     r = req("GET", "/api/agents/export.csv", token=_admin_token)
     content = r.data.decode("utf-8-sig")
     assert f"TestAgent-csvpc-{_unique}" in content
@@ -326,7 +339,11 @@ def test_export_csv_online_label():
 
 def test_export_csv_offline_label():
     """PC with old last_seen shows status (not オンライン) in CSV."""
-    _create_pc("csvoffline", status="warning", last_seen=datetime(2026, 1, 1, tzinfo=timezone.utc))
+    _create_pc(
+        "csvoffline",
+        status="warning",
+        last_seen=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    )
     r = req("GET", "/api/agents/export.csv", token=_admin_token)
     content = r.data.decode("utf-8-sig")
     assert "warning" in content

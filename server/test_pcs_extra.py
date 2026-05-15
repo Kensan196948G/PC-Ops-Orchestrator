@@ -37,11 +37,13 @@ def setup_module():
             (f"viewer_pcs_{_unique}", "viewer", "ViewerPcs1!"),
         ]:
             if not User.query.filter_by(username=username).first():
-                db.session.add(User(
-                    username=username,
-                    password_hash=hash_password(password),
-                    role=role,
-                ))
+                db.session.add(
+                    User(
+                        username=username,
+                        password_hash=hash_password(password),
+                        role=role,
+                    )
+                )
         db.session.commit()
 
     _admin_token = _login(f"admin_pcs_{_unique}", "AdminPcs1!")
@@ -88,7 +90,9 @@ def _create_software(pc_id, name="TestApp", version="1.0"):
 
 def _create_update(pc_id, kb_id="KB123456"):
     with app.app_context():
-        upd = WindowsUpdate(pc_id=pc_id, kb_id=kb_id, title="Test Update", installed=True)
+        upd = WindowsUpdate(
+            pc_id=pc_id, kb_id=kb_id, title="Test Update", installed=True
+        )
         db.session.add(upd)
         db.session.commit()
         return upd.id
@@ -139,7 +143,9 @@ def test_export_csv_with_os_filter():
 
 def test_export_csv_for_loop_body():
     """CSV export with PCs in DB covers the for loop body (line 88)."""
-    _create_pc("csvloop", status="healthy", health_score=95.0, ip_address="192.168.1.10")
+    _create_pc(
+        "csvloop", status="healthy", health_score=95.0, ip_address="192.168.1.10"
+    )
     r = client.open(
         "/api/pcs/export.csv",
         method="GET",
@@ -249,7 +255,9 @@ def test_get_pc_history_with_days_param():
 def test_get_pc_history_days_capped_at_365():
     """?days=9999 is capped at 365 — function still returns 200."""
     pc_id = _create_pc("histcappc")
-    r = req("GET", f"/api/pcs/{pc_id}/history", token=_admin_token, params={"days": 9999})
+    r = req(
+        "GET", f"/api/pcs/{pc_id}/history", token=_admin_token, params={"days": 9999}
+    )
     assert r.status_code == 200
 
 
