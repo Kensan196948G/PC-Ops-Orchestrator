@@ -68,6 +68,10 @@ def upgrade():
             nullable=False,
             server_default="low",
         ),
+        sa.CheckConstraint(
+            "risk_level IN ('low','medium','high')",
+            name="ck_job_templates_risk_level",
+        ),
         sa.Column(
             "requires_approval",
             sa.Boolean(),

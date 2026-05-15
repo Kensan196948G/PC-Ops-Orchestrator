@@ -10,6 +10,7 @@ import os
 import sys
 
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -100,9 +101,11 @@ def test_network_interface_unique_per_pc(app, pc):
         db.session.add(
             NetworkInterface(pc_id=pc, interface_name="Wi-Fi", ip_address="10.0.0.2")
         )
-        with pytest.raises(Exception):
-            db.session.commit()
-        db.session.rollback()
+        try:
+            with pytest.raises(IntegrityError):
+                db.session.commit()
+        finally:
+            db.session.rollback()
 
 
 def test_pc_network_interfaces_relationship(app, pc):
@@ -188,15 +191,27 @@ def test_job_template_risk_levels(app):
             db.session.commit()
 
 
+def test_job_template_risk_level_check_constraint(app):
+    with app.app_context():
+        db.session.add(JobTemplate(name="invalid-risk", risk_level="critical"))
+        try:
+            with pytest.raises(IntegrityError):
+                db.session.commit()
+        finally:
+            db.session.rollback()
+
+
 def test_job_template_name_unique(app):
     with app.app_context():
         db.session.add(JobTemplate(name="dup-template"))
         db.session.commit()
         try:
             db.session.add(JobTemplate(name="dup-template"))
-            with pytest.raises(Exception):
-                db.session.commit()
-            db.session.rollback()
+            try:
+                with pytest.raises(IntegrityError):
+                    db.session.commit()
+            finally:
+                db.session.rollback()
         finally:
             db.session.query(JobTemplate).filter_by(name="dup-template").delete()
             db.session.commit()

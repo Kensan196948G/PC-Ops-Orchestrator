@@ -736,6 +736,12 @@ class JobTemplate(db.Model):
     """
 
     __tablename__ = "job_templates"
+    __table_args__ = (
+        db.CheckConstraint(
+            "risk_level IN ('low','medium','high')",
+            name="ck_job_templates_risk_level",
+        ),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), unique=True, nullable=False, index=True)
