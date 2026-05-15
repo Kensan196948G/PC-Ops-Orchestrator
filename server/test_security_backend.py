@@ -618,9 +618,12 @@ class TestSecurityHeaders:
         val = r.headers.get("Content-Security-Policy", "")
         assert val, "Content-Security-Policy header missing"
         assert "default-src" in val, f"CSP without default-src: {val!r}"
-        # Chart.js CDN must remain allowed for the dashboard to render.
-        assert "cdn.jsdelivr.net" in val, (
-            f"CSP must allow Chart.js from cdn.jsdelivr.net: {val!r}"
+        # Chart.js is now self-hosted (static/js/lib/chart.umd.min.js); the CDN
+        # must NOT be allowed by CSP. This guards against accidental reintroduction
+        # of cdn.jsdelivr.net which previously caused .js.map fetches to be blocked
+        # by connect-src 'self' and froze the /agents page.
+        assert "cdn.jsdelivr.net" not in val, (
+            f"CSP must not allow cdn.jsdelivr.net (Chart.js is self-hosted): {val!r}"
         )
         print("  [PASS] 170: Content-Security-Policy present and well-formed")
 
