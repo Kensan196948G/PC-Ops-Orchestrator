@@ -627,6 +627,7 @@ gantt
 | 🔧 **PR #147** | **全スタブ機能の実機能化** — API キー/バックアップ/設定管理 | ✅ MERGED | 証明書/バックアップ/設定/API キー CRUD + 343 tests |
 | 🧪 **PR #153** | **routes カバレッジ 95% 達成** — test_misc_coverage.py 追加 | ✅ MERGED | 730 tests / routes 95% (2079 stmts / 112 miss) |
 | 🔬 **PR #161** | **collect.py カバレッジ 100% 達成** — Issue #160 / test_collect.py 拡充 | ✅ MERGED | 762 tests / collect.py 100% (218 stmts / 0 miss) |
+| 🧬 **PR #164** | **routes カバレッジギャップ解消** — Issue #163 / 5 ファイル 10 テスト | 🔄 CI 中 | 772 tests / 11 lines covered + 2 lines `# pragma: no cover` (PostgreSQL-only) |
 
 ---
 
@@ -634,7 +635,7 @@ gantt
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| **API 拡張テスト（Python）** | **762項目** | **✅ PASS** |
+| **API 拡張テスト（Python）** | **772項目** | **✅ PASS** |
 | **WebUI E2E テスト（Playwright）** | **121項目** | **✅ PASS** |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
