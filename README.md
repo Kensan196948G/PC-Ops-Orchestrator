@@ -625,7 +625,8 @@ gantt
 | 🎨 **PR #143/#144** | **WebUI 刷新** — KPI/フィード/モーダル | ✅ MERGED | ダッシュボード KPI グリッド・健全性リング・全ページシード |
 | 🔒 **PR #139** | **CSP Phase 3** — `style-src 'unsafe-inline'` 除去 | ✅ MERGED | 全 16 テンプレートの inline style=0 件 |
 | 🔧 **PR #147** | **全スタブ機能の実機能化** — API キー/バックアップ/設定管理 | ✅ MERGED | 証明書/バックアップ/設定/API キー CRUD + 343 tests |
-| 🧪 **PR #153** | **routes カバレッジ 95% 達成** — test_misc_coverage.py 追加 | 🔄 CI 実行中 | 730 tests / routes 95% (2079 stmts / 112 miss) |
+| 🧪 **PR #153** | **routes カバレッジ 95% 達成** — test_misc_coverage.py 追加 | ✅ MERGED | 730 tests / routes 95% (2079 stmts / 112 miss) |
+| 🔬 **PR #161** | **collect.py カバレッジ 100% 達成** — Issue #160 / test_collect.py 拡充 | ✅ MERGED | 762 tests / collect.py 100% (218 stmts / 0 miss) |
 
 ---
 
@@ -633,7 +634,7 @@ gantt
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| **API 拡張テスト（Python）** | **730項目** | **✅ PASS** |
+| **API 拡張テスト（Python）** | **762項目** | **✅ PASS** |
 | **WebUI E2E テスト（Playwright）** | **121項目** | **✅ PASS** |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
@@ -641,7 +642,7 @@ gantt
 | Agent Teams 負荷テスト | 複数 | ✅ PASS |
 | スモークテスト（PS5.1 / PS7） | 複数 | ✅ PASS |
 | **セキュリティスキャン（bandit）** | **High=0** | **✅ PASS** |
-| **routes カバレッジ** | **95%** | **✅ (81%→95% +14%)** |
+| **routes カバレッジ** | **95%+** | **✅ (collect.py 100% / 全体 95%+)** |
 
 ### 🔒 250項目テスト検証カバレッジ
 

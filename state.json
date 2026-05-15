@@ -42,7 +42,7 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-15T06:54:28.233Z",
+    "current_session_start_at": "2026-05-15T07:25:53.424Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "manual",
     "last_cron_session_id": "20260509-190001-PC-Ops-Orchestrator"
@@ -86,14 +86,15 @@
       130,
       147,
       153,
-      158
+      158,
+      161
     ]
   },
   "priority": {
     "score": 0
   },
   "open_issues": {
-    "note": "PR #158 MERGED (2026-05-15)。Issue #154 FortiClient SSL-VPN オフライン同期 完全実装。744 tests PASS。v1.2.0 リリース予定。"
+    "note": "PR #161 MERGED (2026-05-15)。Issue #160 collect.py カバレッジ 100% 達成。762 tests PASS。v1.4.0 リリース完了。"
   },
   "milestones": {
     "M1": {
@@ -153,43 +154,44 @@
     }
   },
   "session_summary": {
-    "id": "20260515-session-vpn-offline-sync",
-    "loop_phase": "Build (Issue #154 — FortiClient SSL-VPN offline sync + 4-state online detection)",
-    "duration_minutes": 120,
+    "id": "20260515-session-collect-coverage-100pct",
+    "loop_phase": "Build + Verify (Issue #160 — collect.py カバレッジ 78% → 100%)",
+    "duration_minutes": 180,
     "prs_merged": [
-      139,
-      147,
-      153,
-      158
+      158,
+      161
     ],
     "prs_pending": [],
     "issues_closed": [
-      154
+      154,
+      160
     ],
     "issues_opened": [],
     "completed": [
-      "Issue #154: FortiClient SSL-VPN オフライン同期 完全実装",
-      "DB マイグレーション: connection_type / offline_pending_count カラム追加 (Flask-Migrate batch_alter)",
-      "/api/collect: connection_type 保存 + offline_pending_count リセット",
-      "/api/collect/sync: バルクオフラインキャッシュ同期 (dedup + insert)",
-      "/api/agents: 4-state online_status (online/recently_seen/offline/stale)",
-      "PCOpsAgent.ps1: FortiClient SSL-VPN 検知 + オフラインキャッシュ管理 (最大2016件)",
-      "test_vpn_offline_sync.py: 14 テスト新規追加",
-      "test_agents.py: CSV 4-state ラベル対応 (古いデータ → 古いデータ assert)",
-      "PR #158 CI全ジョブ SUCCESS → squash merge 完了 (2026-05-15)"
+      "Issue #160: routes/collect.py カバレッジ 78% → 100% 達成",
+      "test_collect.py: 55 tests (218 stmts / 0 miss)",
+      "Werkzeug 3.x 回避: data={} (空辞書=falsy JSON) で if not data: ガードを到達",
+      "_trim_snapshots() 削除パス: 722件 bulk_save_objects で発火",
+      "last_boot_time fromisoformat 正常+不正両経路カバー",
+      "_matches() 不明演算子 fallback (line 348) カバー",
+      "ruff check + ruff format --check 両方 PASS",
+      "PR #161 CI全ジョブ SUCCESS → squash merge 完了 (2026-05-15)",
+      "v1.4.0 GitHub Release 作成完了",
+      "PR #158 MERGED: FortiClient SSL-VPN オフライン同期 (Issue #154)"
     ],
-    "ci_status": "CI success (25904465511)。744 tests PASS (E2E除く)。全ジョブ SUCCESS。",
+    "ci_status": "CI success (25905822408)。762 tests PASS (E2E除く)。全ジョブ SUCCESS。",
     "verification": {
-      "pytest_unit": "744 passed, 0 failed",
-      "coverage_routes": "95%",
+      "pytest_unit": "762 passed, 0 failed",
+      "coverage_collect": "100% (218 stmts, 0 miss)",
+      "coverage_routes": "95%+",
       "ruff_check": "All checks passed",
       "ruff_format": "All checks passed",
       "data_stub_alert": "0 件"
     },
     "resume_point": {
-      "next_action": "v1.2.0 GitHub Release 作成。README.md VPN/offline sync アーキテクチャ記載。",
+      "next_action": "次 Issue 調査。他 routes のカバレッジ向上 or 新機能 Issue 対応。open issues なし → 新規 Issue 生成検討。",
       "blocker": "なし",
-      "notes": "今セッション主成果: Issue #154 FortiClient SSL-VPN オフライン同期。744 tests。PR #158 MERGED。v1.2.0 リリース予定。"
+      "notes": "今セッション主成果: Issue #160 collect.py 100% カバレッジ。762 tests。PR #161 MERGED。v1.4.0 リリース完了。"
     }
   },
   "learning": {
@@ -239,6 +241,6 @@
     ]
   },
   "compact": {
-    "last_pre_compact_at": "2026-05-15T06:52:56.997Z"
+    "last_pre_compact_at": "2026-05-15T07:24:21.410Z"
   }
 }
