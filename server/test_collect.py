@@ -684,3 +684,312 @@ def test_collect_no_memory_info():
     r = _agent_req("POST", "/api/collect", data=payload)
     assert r.status_code == 200
     assert json.loads(r.data)["health_score"] == 100.0
+
+
+# ── additional coverage: no-body with JSON Content-Type (lines 24 & 104) ─────
+
+
+def test_collect_no_body_json_content_type():
+    """Empty JSON object {} is falsy → get_json() returns {} → if not data → line 24."""
+    r = _agent_req("POST", "/api/collect", data={})
+    assert r.status_code == 400
+    assert "リクエストボディ" in json.loads(r.data)["error"]
+
+
+def test_collect_detail_no_body_json_content_type():
+    """Same pattern for collect_detail — hits line 104."""
+    r = _agent_req("POST", "/api/collect/detail", data={})
+    assert r.status_code == 400
+    assert "リクエストボディ" in json.loads(r.data)["error"]
+
+
+# ── connection_type coverage (line 54) ───────────────────────────────────────
+
+
+def test_collect_sets_connection_type_lan():
+    """connection_type LAN stored via line 54."""
+    name = f"CT-LAN-{_unique}"
+    r = _agent_req(
+        "POST", "/api/collect", data=_pc_payload(pc_name=name, connection_type="LAN")
+    )
+    assert r.status_code == 200
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        assert pc is not None
+        assert pc.connection_type == "LAN"
+
+
+def test_collect_sets_connection_type_ssl_vpn():
+    """connection_type SSL-VPN stored via line 54."""
+    name = f"CT-VPN-{_unique}"
+    r = _agent_req(
+        "POST",
+        "/api/collect",
+        data=_pc_payload(pc_name=name, connection_type="SSL-VPN"),
+    )
+    assert r.status_code == 200
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        assert pc.connection_type == "SSL-VPN"
+
+
+# ── _evaluate_alert_rules unknown operator (line 348) ────────────────────────
+
+
+def test_collect_alert_rule_unknown_operator_no_alert():
+    """Unknown operator in AlertRule → _matches() returns False → no alert created."""
+    name = f"UnknOp-{_unique}"
+    with app.app_context():
+        rule = AlertRule(
+            name=f"Unknown Op {_unique}",
+            metric="cpu",
+            operator="eq",
+            threshold=25.0,
+            severity="warning",
+            is_enabled=True,
+        )
+        db.session.add(rule)
+        db.session.commit()
+        rule_id = rule.id
+
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name, cpu_usage=25.0))
+
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        alert = Alert.query.filter_by(
+            source_key=f"rule:{rule_id}:pc:{pc.id}", resolved=False
+        ).first()
+        assert alert is None
+
+
+# ── collect_sync endpoint (lines 185-250) ────────────────────────────────────
+
+
+def test_collect_sync_no_body():
+    """No Content-Type + no body → 400 or 415."""
+    r = client.open(
+        "/api/collect/sync",
+        method="POST",
+        headers={"Authorization": f"Bearer {_AGENT_KEY}"},
+    )
+    assert r.status_code in (400, 415)
+
+
+def test_collect_sync_no_body_json():
+    """Empty JSON object {} is falsy → get_json() returns {} → if not data → line 187."""
+    r = _agent_req("POST", "/api/collect/sync", data={})
+    assert r.status_code == 400
+    assert "リクエストボディ" in json.loads(r.data)["error"]
+
+
+def test_collect_sync_missing_pc_name():
+    r = _agent_req("POST", "/api/collect/sync", data={"offline_cache": []})
+    assert r.status_code == 400
+    assert "pc_name" in json.loads(r.data)["error"]
+
+
+def test_collect_sync_pc_not_found():
+    r = _agent_req(
+        "POST",
+        "/api/collect/sync",
+        data={"pc_name": f"NoSuchPC-sync-{_unique}", "offline_cache": []},
+    )
+    assert r.status_code == 404
+
+
+def test_collect_sync_invalid_cache_format():
+    """offline_cache must be a list."""
+    name = f"SyncFmt-{_unique}"
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    r = _agent_req(
+        "POST",
+        "/api/collect/sync",
+        data={"pc_name": name, "offline_cache": "not-a-list"},
+    )
+    assert r.status_code == 400
+    assert "リスト形式" in json.loads(r.data)["error"]
+
+
+def test_collect_sync_inserts_entries():
+    """Offline cache entries are inserted into DB."""
+    name = f"SyncIns-{_unique}"
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+
+    entries = [
+        {
+            "collected_at": "2026-05-10T10:00:00",
+            "cpu_usage": 30.0,
+            "memory_available_gb": 4.0,
+            "disk_free_gb": 100.0,
+        },
+        {
+            "collected_at": "2026-05-10T10:05:00",
+            "cpu_usage": 35.0,
+            "memory_available_gb": 3.5,
+            "disk_free_gb": 99.0,
+        },
+    ]
+    r = _agent_req(
+        "POST", "/api/collect/sync", data={"pc_name": name, "offline_cache": entries}
+    )
+    assert r.status_code == 200
+    body = json.loads(r.data)
+    assert body["inserted"] == 2
+    assert body["skipped"] == 0
+
+
+def test_collect_sync_dedup_skips_existing_timestamp():
+    """Duplicate timestamps are skipped."""
+    from datetime import datetime
+    from models import SystemSnapshot
+
+    name = f"SyncDup-{_unique}"
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        snap = SystemSnapshot(pc_id=pc.id, collected_at=datetime(2026, 5, 11, 11, 0, 0))
+        db.session.add(snap)
+        db.session.commit()
+
+    entries = [
+        {"collected_at": "2026-05-11T11:00:00", "cpu_usage": 50.0},
+        {"collected_at": "2026-05-11T11:05:00", "cpu_usage": 55.0},
+    ]
+    r = _agent_req(
+        "POST", "/api/collect/sync", data={"pc_name": name, "offline_cache": entries}
+    )
+    assert r.status_code == 200
+    body = json.loads(r.data)
+    assert body["inserted"] == 1
+    assert body["skipped"] == 1
+
+
+def test_collect_sync_invalid_timestamp_skipped():
+    """Invalid timestamp strings are counted as skipped."""
+    name = f"SyncBadTs-{_unique}"
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+
+    entries = [
+        {"collected_at": "not-a-date", "cpu_usage": 10.0},
+        {"collected_at": "2026-05-10T12:00:00", "cpu_usage": 20.0},
+    ]
+    r = _agent_req(
+        "POST", "/api/collect/sync", data={"pc_name": name, "offline_cache": entries}
+    )
+    assert r.status_code == 200
+    body = json.loads(r.data)
+    assert body["inserted"] == 1
+    assert body["skipped"] == 1
+
+
+def test_collect_sync_empty_cache():
+    """Empty offline_cache list → 200 with inserted=0."""
+    name = f"SyncEmpty-{_unique}"
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    r = _agent_req(
+        "POST", "/api/collect/sync", data={"pc_name": name, "offline_cache": []}
+    )
+    assert r.status_code == 200
+    body = json.loads(r.data)
+    assert body["inserted"] == 0
+    assert body["skipped"] == 0
+
+
+def test_collect_sync_no_collected_at():
+    """Entry without collected_at is inserted (no dedup key)."""
+    name = f"SyncNoTs-{_unique}"
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    entries = [{"cpu_usage": 42.0, "memory_available_gb": 3.0}]
+    r = _agent_req(
+        "POST", "/api/collect/sync", data={"pc_name": name, "offline_cache": entries}
+    )
+    assert r.status_code == 200
+    body = json.loads(r.data)
+    assert body["inserted"] == 1
+
+
+def test_collect_sync_with_last_boot_time():
+    """Entry with last_boot_time triggers the fromisoformat branch (lines 234-239)."""
+    name = f"SyncBoot-{_unique}"
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    entries = [
+        {
+            "collected_at": "2026-05-13T08:00:00",
+            "last_boot_time": "2026-05-12T06:00:00",
+            "cpu_usage": 20.0,
+            "memory_available_gb": 6.0,
+        },
+        {
+            "collected_at": "2026-05-13T08:05:00",
+            "last_boot_time": "invalid-boot-time",
+            "cpu_usage": 22.0,
+        },
+    ]
+    r = _agent_req(
+        "POST", "/api/collect/sync", data={"pc_name": name, "offline_cache": entries}
+    )
+    assert r.status_code == 200
+    body = json.loads(r.data)
+    assert body["inserted"] == 2
+
+
+def test_collect_sync_reduces_offline_pending_count():
+    """offline_pending_count decreases by inserted count after sync."""
+    name = f"SyncPend-{_unique}"
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        pc.offline_pending_count = 5
+        db.session.commit()
+
+    entries = [
+        {"collected_at": "2026-05-12T10:00:00", "cpu_usage": 30.0},
+        {"collected_at": "2026-05-12T10:05:00", "cpu_usage": 35.0},
+    ]
+    r = _agent_req(
+        "POST", "/api/collect/sync", data={"pc_name": name, "offline_cache": entries}
+    )
+    assert r.status_code == 200
+    assert json.loads(r.data)["inserted"] == 2
+
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        assert pc.offline_pending_count == 3
+
+
+# ── _trim_snapshots delete path (lines 264-272) ──────────────────────────────
+
+
+def test_trim_snapshots_deletes_oldest_beyond_limit():
+    """Creating 721+ snapshots triggers _trim_snapshots() delete path."""
+    from models import SystemSnapshot
+    from datetime import datetime, timezone, timedelta
+
+    name = f"Trim721-{_unique}"
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        pc_id = pc.id
+        base_time = datetime(2026, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        snapshots = [
+            SystemSnapshot(
+                pc_id=pc_id,
+                collected_at=base_time + timedelta(minutes=i),
+                cpu_usage=float(i % 100),
+            )
+            for i in range(722)
+        ]
+        db.session.bulk_save_objects(snapshots)
+        db.session.commit()
+
+    # Trigger another collect → _trim_snapshots(keep=720) fires in collect()
+    r = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    assert r.status_code == 200
+
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        count = SystemSnapshot.query.filter_by(pc_id=pc.id).count()
+        assert count <= 720
