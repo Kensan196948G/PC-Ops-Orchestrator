@@ -6,161 +6,155 @@
     <a href="/pcs" class="btn btn-secondary">&larr; 一覧に戻る</a>
 </div>
 
-<div class="detail-grid">
+<div class="tab-bar" role="tablist" aria-label="PC詳細タブ">
+    <button type="button" class="tab-btn active" data-tab="overview" role="tab" aria-selected="true" aria-controls="tab-overview">概要</button>
+    <button type="button" class="tab-btn" data-tab="hardware" role="tab" aria-selected="false" aria-controls="tab-hardware">ハードウェア</button>
+    <button type="button" class="tab-btn" data-tab="software" role="tab" aria-selected="false" aria-controls="tab-software">ソフトウェア<span class="tab-count" id="cnt-software">0</span></button>
+    <button type="button" class="tab-btn" data-tab="network" role="tab" aria-selected="false" aria-controls="tab-network">ネットワーク<span class="tab-count" id="cnt-network">0</span></button>
+    <button type="button" class="tab-btn" data-tab="updates" role="tab" aria-selected="false" aria-controls="tab-updates">更新<span class="tab-count" id="cnt-updates">0</span></button>
+    <button type="button" class="tab-btn" data-tab="history" role="tab" aria-selected="false" aria-controls="tab-history">履歴</button>
+    <button type="button" class="tab-btn" data-tab="tasks" role="tab" aria-selected="false" aria-controls="tab-tasks">タスク</button>
+</div>
+
+<section class="tab-panel" id="tab-overview" role="tabpanel" aria-labelledby="tab-overview">
     <div class="card">
         <h3 class="card-title">基本情報</h3>
         <dl class="detail-list" id="pc-info">
-            <div class="detail-row">
-                <dt>PC名</dt>
-                <dd id="d-pc-name">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>ドメイン</dt>
-                <dd id="d-domain">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>OS</dt>
-                <dd id="d-os">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>アーキテクチャ</dt>
-                <dd id="d-arch">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>IP アドレス</dt>
-                <dd id="d-ip">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>MAC アドレス</dt>
-                <dd id="d-mac">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>状態</dt>
-                <dd id="d-status">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>ヘルススコア</dt>
-                <dd id="d-score">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>最終更新</dt>
-                <dd id="d-last-seen">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>Agent バージョン</dt>
-                <dd id="d-agent-ver">-</dd>
-            </div>
+            <div class="detail-row"><dt>PC名</dt><dd id="d-pc-name">-</dd></div>
+            <div class="detail-row"><dt>ドメイン</dt><dd id="d-domain">-</dd></div>
+            <div class="detail-row"><dt>OS</dt><dd id="d-os">-</dd></div>
+            <div class="detail-row"><dt>OS ビルド</dt><dd id="d-os-build">-</dd></div>
+            <div class="detail-row"><dt>アーキテクチャ</dt><dd id="d-arch">-</dd></div>
+            <div class="detail-row"><dt>IP アドレス</dt><dd id="d-ip">-</dd></div>
+            <div class="detail-row"><dt>MAC アドレス</dt><dd id="d-mac">-</dd></div>
+            <div class="detail-row"><dt>状態</dt><dd id="d-status">-</dd></div>
+            <div class="detail-row"><dt>ヘルススコア</dt><dd id="d-score">-</dd></div>
+            <div class="detail-row"><dt>接続方式</dt><dd id="d-connection">-</dd></div>
+            <div class="detail-row"><dt>最終更新</dt><dd id="d-last-seen">-</dd></div>
+            <div class="detail-row"><dt>Agent バージョン</dt><dd id="d-agent-ver">-</dd></div>
         </dl>
     </div>
+</section>
 
+<section class="tab-panel hidden" id="tab-hardware" role="tabpanel" aria-labelledby="tab-hardware">
     <div class="card">
         <h3 class="card-title">ハードウェア</h3>
         <dl class="detail-list" id="hw-info">
-            <div class="detail-row">
-                <dt>CPU</dt>
-                <dd id="d-cpu">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>コア数</dt>
-                <dd id="d-cores">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>論理プロセッサ</dt>
-                <dd id="d-logical">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>メモリ (合計)</dt>
-                <dd id="d-mem-total">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>メモリ (空き)</dt>
-                <dd id="d-mem-free">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>ディスク (合計)</dt>
-                <dd id="d-disk-total">-</dd>
-            </div>
-            <div class="detail-row">
-                <dt>ディスク (空き)</dt>
-                <dd id="d-disk-free">-</dd>
-            </div>
+            <div class="detail-row"><dt>CPU</dt><dd id="d-cpu">-</dd></div>
+            <div class="detail-row"><dt>コア数</dt><dd id="d-cores">-</dd></div>
+            <div class="detail-row"><dt>論理プロセッサ</dt><dd id="d-logical">-</dd></div>
+            <div class="detail-row"><dt>メモリ (合計)</dt><dd id="d-mem-total">-</dd></div>
+            <div class="detail-row"><dt>メモリ (空き)</dt><dd id="d-mem-free">-</dd></div>
+            <div class="detail-row"><dt>ディスク (合計)</dt><dd id="d-disk-total">-</dd></div>
+            <div class="detail-row"><dt>ディスク (空き)</dt><dd id="d-disk-free">-</dd></div>
         </dl>
     </div>
-</div>
+</section>
 
-<div class="card">
-    <h3 class="card-title">タスク実行</h3>
-    <div class="task-form">
-        <select id="task-type-select" class="form-input">
-            <option value="cleanup">クリーンアップ</option>
-            <option value="update">更新実行</option>
-            <option value="diagnose">診断実行</option>
-            <option value="custom">カスタム</option>
-        </select>
-        <input type="text" id="task-command" class="form-input hidden" placeholder="PowerShell コマンド (カスタム時)">
-        <button class="btn btn-primary role-operator-or-admin" id="btn-execute-task">タスク実行</button>
+<section class="tab-panel hidden" id="tab-software" role="tabpanel" aria-labelledby="tab-software">
+    <div class="card">
+        <h3 class="card-title" id="software-title">インストール済みソフトウェア</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>名前</th>
+                    <th>バージョン</th>
+                    <th>発行元</th>
+                    <th>インストール日</th>
+                </tr>
+            </thead>
+            <tbody id="software-body">
+                <tr><td colspan="4" class="text-center">読み込み中...</td></tr>
+            </tbody>
+        </table>
     </div>
-</div>
+</section>
 
-<div class="card">
-    <h3 class="card-title">リソース履歴 (7日間)</h3>
-    <div class="chart-container">
-        <canvas id="historyChart"></canvas>
+<section class="tab-panel hidden" id="tab-network" role="tabpanel" aria-labelledby="tab-network">
+    <div class="card">
+        <h3 class="card-title" id="network-title">ネットワークインターフェース</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>名前</th>
+                    <th>IPv4</th>
+                    <th>サブネット</th>
+                    <th>ゲートウェイ</th>
+                    <th>MAC</th>
+                    <th>DNS</th>
+                    <th>リンク速度</th>
+                    <th>状態</th>
+                </tr>
+            </thead>
+            <tbody id="network-body">
+                <tr><td colspan="8" class="text-center">読み込み中...</td></tr>
+            </tbody>
+        </table>
     </div>
-</div>
+</section>
 
-<div class="card">
-    <h3 class="card-title">最近のタスク</h3>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>種類</th>
-                <th>状態</th>
-                <th>作成日時</th>
-                <th>結果</th>
-            </tr>
-        </thead>
-        <tbody id="recent-tasks-body">
-            <tr><td colspan="5" class="text-center">読み込み中...</td></tr>
-        </tbody>
-    </table>
-</div>
+<section class="tab-panel hidden" id="tab-updates" role="tabpanel" aria-labelledby="tab-updates">
+    <div class="card">
+        <h3 class="card-title" id="updates-title">Windows Update 一覧</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>KB番号</th>
+                    <th>タイトル</th>
+                    <th>重大度</th>
+                    <th>状態</th>
+                    <th>インストール日時</th>
+                </tr>
+            </thead>
+            <tbody id="updates-body">
+                <tr><td colspan="5" class="text-center">読み込み中...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
 
-<div class="card">
-    <h3 class="card-title" id="updates-title">Windows Update 一覧</h3>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>KB番号</th>
-                <th>タイトル</th>
-                <th>重大度</th>
-                <th>状態</th>
-                <th>インストール日時</th>
-            </tr>
-        </thead>
-        <tbody id="updates-body">
-            <tr><td colspan="5" class="text-center">読み込み中...</td></tr>
-        </tbody>
-    </table>
-</div>
+<section class="tab-panel hidden" id="tab-history" role="tabpanel" aria-labelledby="tab-history">
+    <div class="card">
+        <h3 class="card-title">リソース履歴 (7日間)</h3>
+        <div class="chart-container">
+            <canvas id="historyChart"></canvas>
+        </div>
+    </div>
+</section>
 
-<div class="card">
-    <h3 class="card-title" id="software-title">インストール済みソフトウェア</h3>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>名前</th>
-                <th>バージョン</th>
-                <th>発行元</th>
-                <th>インストール日</th>
-            </tr>
-        </thead>
-        <tbody id="software-body">
-            <tr><td colspan="4" class="text-center">読み込み中...</td></tr>
-        </tbody>
-    </table>
-</div>
+<section class="tab-panel hidden" id="tab-tasks" role="tabpanel" aria-labelledby="tab-tasks">
+    <div class="card">
+        <h3 class="card-title">タスク実行</h3>
+        <div class="task-form">
+            <select id="task-type-select" class="form-input">
+                <option value="cleanup">クリーンアップ</option>
+                <option value="update">更新実行</option>
+                <option value="diagnose">診断実行</option>
+                <option value="custom">カスタム</option>
+            </select>
+            <input type="text" id="task-command" class="form-input hidden" placeholder="PowerShell コマンド (カスタム時)">
+            <button class="btn btn-primary role-operator-or-admin" id="btn-execute-task">タスク実行</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 class="card-title">最近のタスク</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>種類</th>
+                    <th>状態</th>
+                    <th>作成日時</th>
+                    <th>結果</th>
+                </tr>
+            </thead>
+            <tbody id="recent-tasks-body">
+                <tr><td colspan="5" class="text-center">読み込み中...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
 {% endblock %}
 
 {% block scripts %}
