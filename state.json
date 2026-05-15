@@ -42,7 +42,7 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-15T05:12:54.807Z",
+    "current_session_start_at": "2026-05-15T06:23:57.142Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "manual",
     "last_cron_session_id": "20260509-190001-PC-Ops-Orchestrator"
@@ -230,6 +230,6 @@
     ]
   },
   "compact": {
-    "last_pre_compact_at": "2026-05-15T05:11:10.338Z"
+    "last_pre_compact_at": "2026-05-15T06:22:01.148Z"
   }
 }
