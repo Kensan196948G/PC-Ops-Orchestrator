@@ -639,11 +639,21 @@ function Start-AgentLoop {
 # === エントリーポイント ===
 # Single-instance enforcement (Issue #188 part 1).
 # A machine-wide named Mutex prevents a second PCOpsAgent process on the same
-# host from racing the first one on collect / cache / pending-task execution.
-# The "Global\" prefix scopes the lock across user sessions and terminal
-# services; including $PC_NAME means a hostname rename in config.json starts a
-# fresh slot rather than silently colliding with a stale handle.
-$mutexName = "Global\PCOpsAgent_${PC_NAME}"
+# install dir from racing the first one on collect / cache / pending-task
+# execution. The lock key is derived from $SCRIPT_DIR (the Agent install path)
+# rather than $PC_NAME — pc_name is user-editable and may legitimately contain
+# '\' (e.g. "DOMAIN\PC01"), which is reserved by Windows as the Global\ namespace
+# separator and would throw at New-Object Mutex. SHA-256 of the install path
+# truncated to 16 hex chars yields a stable, sanitized identifier; two distinct
+# Agent installs on the same host (testing scenario) still get separate locks.
+$pathBytes = [System.Text.Encoding]::UTF8.GetBytes($SCRIPT_DIR.ToLowerInvariant())
+$sha = [System.Security.Cryptography.SHA256]::Create()
+try {
+    $installFingerprint = [System.BitConverter]::ToString($sha.ComputeHash($pathBytes)).Replace("-", "").Substring(0, 16)
+} finally {
+    $sha.Dispose()
+}
+$mutexName = "Global\PCOpsAgent_$installFingerprint"
 $mutexAcquired = $false
 $agentMutex = $null
 try {

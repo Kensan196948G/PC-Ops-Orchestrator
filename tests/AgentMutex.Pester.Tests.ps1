@@ -54,11 +54,16 @@ Describe "Agent single-instance Mutex (Issue #188 part 1)" {
         }
     }
 
-    It "PCOpsAgent.ps1 entry point declares Global Mutex with pc_name" {
+    It "PCOpsAgent.ps1 entry point declares Global Mutex keyed on install path" {
         Test-Path $script:agentScript | Should -BeTrue
         $content = Get-Content -Raw -Path $script:agentScript
         $content | Should -Match 'Global\\PCOpsAgent_'
         $content | Should -Match 'System\.Threading\.Mutex'
+        # Mutex key must be derived from install path (sanitized) rather than
+        # pc_name — pc_name is user-editable and may contain '\' which Windows
+        # reserves as the Global\ namespace separator.
+        $content | Should -Match 'installFingerprint'
+        $content | Should -Match 'SHA256'
         # Release path must exist so a crashed first instance doesn't permanently
         # block the next start.
         $content | Should -Match 'ReleaseMutex'
