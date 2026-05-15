@@ -96,6 +96,11 @@ if (-not (Test-Path $CACHE_DIR)) {
 $OFFLINE_CACHE_FILE = Join-Path $CACHE_DIR "offline_cache.json"
 $MAX_CACHE_ENTRIES = 2016  # 7 days * 24 h * 12 (5-min interval)
 
+# Resolved early so the Mutex name and the main loop see the same identity even
+# if config.json is reloaded later. Renaming pc_name in config.json starts a
+# fresh single-instance slot, which is the documented behavior.
+$PC_NAME = if ($config.pc_name) { $config.pc_name } else { $env:COMPUTERNAME }
+
 # === ログ関数 ===
 function Write-AgentLog {
     param([string]$Message, [string]$Level = "INFO")
@@ -528,7 +533,7 @@ function Invoke-DiagnoseTask {
 function Start-AgentLoop {
     Write-AgentInfo "Agent起動: v$AGENT_VERSION"
 
-    $pcName = if ($config.pc_name) { $config.pc_name } else { $env:COMPUTERNAME }
+    $pcName = $PC_NAME
     Write-AgentInfo "PC Name: $pcName, Server: $SERVER_URL"
 
     while ($true) {
@@ -632,9 +637,34 @@ function Start-AgentLoop {
 }
 
 # === エントリーポイント ===
+# Single-instance enforcement (Issue #188 part 1).
+# A machine-wide named Mutex prevents a second PCOpsAgent process on the same
+# host from racing the first one on collect / cache / pending-task execution.
+# The "Global\" prefix scopes the lock across user sessions and terminal
+# services; including $PC_NAME means a hostname rename in config.json starts a
+# fresh slot rather than silently colliding with a stale handle.
+$mutexName = "Global\PCOpsAgent_${PC_NAME}"
+$mutexAcquired = $false
+$agentMutex = $null
 try {
-    Start-AgentLoop
-} catch {
-    Write-AgentError "Agent致命的エラー: $_"
-    exit 1
+    $agentMutex = New-Object System.Threading.Mutex($true, $mutexName, [ref]$mutexAcquired)
+    if (-not $mutexAcquired) {
+        Write-AgentError "別のAgentインスタンスが既に起動中: $mutexName"
+        exit 1
+    }
+    Write-AgentInfo "Single-instance Mutex取得: $mutexName"
+
+    try {
+        Start-AgentLoop
+    } catch {
+        Write-AgentError "Agent致命的エラー: $_"
+        exit 1
+    }
+} finally {
+    if ($agentMutex) {
+        if ($mutexAcquired) {
+            try { $agentMutex.ReleaseMutex() } catch { }
+        }
+        $agentMutex.Dispose()
+    }
 }
