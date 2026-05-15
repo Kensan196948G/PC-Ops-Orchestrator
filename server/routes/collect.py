@@ -78,6 +78,7 @@ def collect():
 
     tasks = _get_pending_tasks(pc.id)
     _evaluate_alert_rules(pc, snapshot)
+    db.session.commit()
 
     return jsonify(
         {

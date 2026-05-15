@@ -42,7 +42,7 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-15T04:21:17.416Z",
+    "current_session_start_at": "2026-05-15T05:12:54.807Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "manual",
     "last_cron_session_id": "20260509-190001-PC-Ops-Orchestrator"
@@ -223,5 +223,8 @@
       "Flask-Migrate は既存 DB に NOT NULL カラムを追加する場合 server_default を設定しないと OperationalError になる (SQLite の制約)",
       "reportlab TTFont で日本語 PDF を生成する場合 /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf が利用可能 (Ubuntu 22.04 以降は ipafont-gothic パッケージで提供)"
     ]
+  },
+  "compact": {
+    "last_pre_compact_at": "2026-05-15T05:11:10.338Z"
   }
 }
