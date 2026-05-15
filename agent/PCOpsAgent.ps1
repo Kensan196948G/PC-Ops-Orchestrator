@@ -40,10 +40,22 @@ if (Test-Path $ConfigPath) {
         collection_interval_minutes = 5
         log_level = "INFO"
         proxy = ""
-        ssl_verify = $true
         retry_count = 3
         retry_delay_seconds = 10
     }
+}
+
+# === TLS enforcement (Issue #187) ===
+# Spec: ssl_verify must always be true. The config key is removed; any value left
+# in legacy config.json is intentionally ignored so a tampered config cannot
+# downgrade TLS. ServerCertificateValidationCallback is never overridden.
+try {
+    [System.Net.ServicePointManager]::SecurityProtocol = (
+        [System.Net.SecurityProtocolType]::Tls12 -bor [System.Net.SecurityProtocolType]::Tls13
+    )
+} catch {
+    # PS 5.1 / older .NET fallback: Tls13 enum may be absent
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 }
 
 $SERVER_URL = $config.server_url.TrimEnd('/')
@@ -154,9 +166,6 @@ function Test-ServerReachable {
             TimeoutSec = 10
         }
         if ($PROXY) { $params["Proxy"] = $PROXY }
-        if (-not $config.ssl_verify) {
-            [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
-        }
         $r = Invoke-RestMethod @params
         return $true
     } catch {
@@ -236,12 +245,6 @@ function Invoke-AgentRequest {
             "Content-Type" = "application/json"
         }
         UseBasicParsing = $true
-    }
-
-    if (-not $config.ssl_verify) {
-        if (-not ([System.Net.ServicePointManager]::ServerCertificateValidationCallback)) {
-            [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
-        }
     }
 
     if ($PROXY) {
