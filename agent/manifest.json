@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "algorithm": "SHA-256",
   "files": {
-    "PCOpsAgent.ps1": "71847dca7a40effc7c929ce99965e76ae3e432a61a17963f70ffc23556affc97",
+    "PCOpsAgent.ps1": "f214b7d5819d81031cfdb95f4bcf4f89be7564b25158411ea55d00f66e9e8542",
     "Register-AgentTask.ps1": "6682dd312df491e15a39f8b1f82a4497896c040037e59047477da152c1de9986",
     "collectors/Get-HardwareInfo.ps1": "1584972a880ccbc8962387d5f8a547c6c3dfc8535b31e565e9e1181f435308ae",
     "collectors/Get-SoftwareInfo.ps1": "3cd6012430c72a5475b010eb207cb0a36c43bd196cc60943e750098997c3a83a",

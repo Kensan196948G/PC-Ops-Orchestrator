@@ -59,7 +59,130 @@ try {
 }
 
 $SERVER_URL = $config.server_url.TrimEnd('/')
-$API_KEY = $config.api_key
+
+# === DPAPI api_key protection (Issue #188 part 3) ===
+# config.json は CurrentUser スコープの DPAPI で暗号化された api_key_protected
+# (base64 ciphertext) を優先する。後方互換のため平文 api_key も受け付けるが、
+# 起動時に必ず暗号化して config.json を書き直し、平文フィールドは削除する。
+# どちらも欠落していた場合は fail-closed で exit 1。
+#
+# Why:
+#   - 共有ホストで Agent ユーザに read 権限を持つ攻撃者が config.json を覗いても
+#     Bearer Token をそのまま入手できない。DPAPI/CurrentUser は同じユーザー
+#     アカウントでしか復号できないため、別ユーザーへの横展開を遮断する。
+#   - 平文の自動移行を必須化することで、配布時に installer がうっかり平文を
+#     残したまま運用に乗ってもインシデント化前に修復される。
+function Resolve-AgentApiKey {
+    param(
+        [Parameter(Mandatory = $true)] $Config,
+        [Parameter(Mandatory = $true)] [string]$ConfigPath
+    )
+
+    # PS 5.1 では System.Security を明示ロード（PS 7 の .NET 7+ はビルトイン）
+    if ($PSVersionTable.PSVersion.Major -le 5) {
+        try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch {}
+    }
+
+    # Hashtable / PSCustomObject 両対応 (config.json 欠落時は hashtable 経路に入る)
+    $isHashtable = ($Config -is [hashtable]) -or ($Config -is [System.Collections.IDictionary])
+
+    function Test-HasField {
+        param([string]$Name)
+        if ($isHashtable) {
+            return $Config.Contains($Name) `
+                -and -not [string]::IsNullOrWhiteSpace([string]$Config[$Name])
+        }
+        return $Config.PSObject.Properties.Match($Name).Count -gt 0 `
+            -and -not [string]::IsNullOrWhiteSpace([string]$Config.$Name)
+    }
+
+    function Get-Field {
+        param([string]$Name)
+        if ($isHashtable) { return $Config[$Name] }
+        return $Config.$Name
+    }
+
+    function Save-ProtectedConfig {
+        param([string]$ProtectedB64)
+        # api_key を必ず除去し api_key_protected を書き戻す (平文と protected の共存も解消)
+        $migrated = [ordered]@{}
+        if ($isHashtable) {
+            foreach ($p in $Config.Keys) {
+                if ($p -eq 'api_key') { continue }
+                if ($p -eq 'api_key_protected') { continue }
+                $migrated[$p] = $Config[$p]
+            }
+        } else {
+            foreach ($p in $Config.PSObject.Properties) {
+                if ($p.Name -eq 'api_key') { continue }
+                if ($p.Name -eq 'api_key_protected') { continue }
+                $migrated[$p.Name] = $p.Value
+            }
+        }
+        $migrated['api_key_protected'] = $ProtectedB64
+        $migrated | ConvertTo-Json -Depth 10 |
+            Set-Content -Path $ConfigPath -Encoding UTF8
+    }
+
+    $hasProtected = Test-HasField -Name 'api_key_protected'
+    $hasPlain = Test-HasField -Name 'api_key'
+
+    if ($hasProtected) {
+        try {
+            $cipherBytes = [Convert]::FromBase64String((Get-Field -Name 'api_key_protected'))
+            $plainBytes = [System.Security.Cryptography.ProtectedData]::Unprotect(
+                $cipherBytes, $null,
+                [System.Security.Cryptography.DataProtectionScope]::CurrentUser
+            )
+            $resolved = [System.Text.Encoding]::UTF8.GetString($plainBytes)
+        } catch {
+            Write-Error "api_key_protected の復号に失敗 (DPAPI scope=CurrentUser): $_"
+            exit 1
+        }
+
+        # 平文と protected の共存があれば、復号成功後に平文を削除して config.json を書き直す
+        if ($hasPlain) {
+            Write-Warning "config.json に api_key_protected と平文 api_key が共存。平文を削除します。"
+            try {
+                Save-ProtectedConfig -ProtectedB64 (Get-Field -Name 'api_key_protected')
+            } catch {
+                Write-Error "config.json の平文削除書き込みに失敗: $_"
+                exit 1
+            }
+        }
+        return $resolved
+    }
+
+    if ($hasPlain) {
+        Write-Warning "config.json に平文 api_key を検出。DPAPI で暗号化して書き直します。"
+        try {
+            $plain = [string](Get-Field -Name 'api_key')
+            $plainBytes = [System.Text.Encoding]::UTF8.GetBytes($plain)
+            $cipherBytes = [System.Security.Cryptography.ProtectedData]::Protect(
+                $plainBytes, $null,
+                [System.Security.Cryptography.DataProtectionScope]::CurrentUser
+            )
+            $b64 = [Convert]::ToBase64String($cipherBytes)
+        } catch {
+            Write-Error "api_key の DPAPI 暗号化に失敗: $_"
+            exit 1
+        }
+
+        try {
+            Save-ProtectedConfig -ProtectedB64 $b64
+        } catch {
+            Write-Error "config.json への migrate 書き込みに失敗: $_"
+            exit 1
+        }
+        return $plain
+    }
+
+    Write-Error "config.json に api_key も api_key_protected も存在しません。"
+    exit 1
+}
+
+$API_KEY = Resolve-AgentApiKey -Config $config -ConfigPath $ConfigPath
+
 $COLLECT_INTERVAL = [math]::Max(1, [int]$config.collection_interval_minutes)
 $RETRY_COUNT = [int]$config.retry_count
 $RETRY_DELAY = [int]$config.retry_delay_seconds
