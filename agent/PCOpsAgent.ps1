@@ -59,6 +59,24 @@ if (-not (Test-Path $LOG_DIR)) {
     New-Item -ItemType Directory -Path $LOG_DIR -Force | Out-Null
 }
 
+# === Phase A-2 (#175): dot-source collector modules ===
+# Missing collector files are reported (not silently skipped) so a corrupt
+# deployment surfaces immediately instead of degrading collection coverage
+# without warning.
+$COLLECTORS_DIR = Join-Path $SCRIPT_DIR "collectors"
+foreach ($mod in @("Get-HardwareInfo.ps1", "Get-SoftwareInfo.ps1", "Get-NetworkInfo.ps1")) {
+    $modPath = Join-Path $COLLECTORS_DIR $mod
+    if (Test-Path $modPath) {
+        try {
+            . $modPath
+        } catch {
+            Write-Warning "Collector module load failed: ${mod}: $_"
+        }
+    } else {
+        Write-Warning "Collector module not found: $modPath — agent will run with reduced coverage"
+    }
+}
+
 $CACHE_DIR = Join-Path $SCRIPT_DIR "cache"
 if (-not (Test-Path $CACHE_DIR)) {
     New-Item -ItemType Directory -Path $CACHE_DIR -Force | Out-Null
@@ -523,6 +541,30 @@ function Start-AgentLoop {
             $systemInfo.connection_type = $connectionType
             $systemInfo.last_boot_time = (Get-CimInstance Win32_OperatingSystem -ErrorAction SilentlyContinue).LastBootUpTime.ToString("yyyy-MM-ddTHH:mm:ss")
             Write-AgentDebug "システム情報取得完了"
+
+            # Phase A-2 (#175): augment payload with hardware block / network array / os_build flat key.
+            # Old servers ignore unknown keys; new servers (routes/collect.py) ingest them.
+            # Collector failures are logged at WARN (not DEBUG) so operators can
+            # see when hardware/NIC coverage silently drops in production logs.
+            try {
+                if (Get-Command Get-HardwareInfo -ErrorAction SilentlyContinue) {
+                    $hardware = Get-HardwareInfo
+                    if ($hardware) {
+                        $systemInfo.hardware = $hardware
+                        if ($hardware.os_build) { $systemInfo.os_build = $hardware.os_build }
+                    }
+                }
+            } catch {
+                Write-AgentLog -Message "Get-HardwareInfo 失敗: $_" -Level "WARN"
+            }
+            try {
+                if (Get-Command Get-NetworkInfo -ErrorAction SilentlyContinue) {
+                    $nics = Get-NetworkInfo
+                    if ($nics) { $systemInfo.network = @($nics) }
+                }
+            } catch {
+                Write-AgentLog -Message "Get-NetworkInfo 失敗: $_" -Level "WARN"
+            }
 
             # Check server reachability
             if (-not (Test-ServerReachable)) {
