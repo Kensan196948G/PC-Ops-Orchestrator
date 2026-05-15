@@ -18,6 +18,31 @@ async function loadAgents() {
             'Unknown': '—',
         };
 
+        function appendSubStateChips(container, agent) {
+            const subStates = Array.isArray(agent.sub_states) ? agent.sub_states : [];
+            if (subStates.includes('vpn_required')) {
+                const chip = document.createElement('span');
+                chip.className = 'badge badge-info ml-xs';
+                chip.title = 'SSL-VPN 経由で接続中';
+                chip.textContent = '🔒 VPN';
+                container.appendChild(chip);
+            }
+            if (subStates.includes('pending_sync')) {
+                const chip = document.createElement('span');
+                chip.className = 'badge badge-warning ml-xs';
+                chip.title = 'オフラインキャッシュ件数';
+                chip.textContent = `📦 同期待ち ${agent.offline_pending_count ?? 0}`;
+                container.appendChild(chip);
+            }
+            if (subStates.includes('pending_job')) {
+                const chip = document.createElement('span');
+                chip.className = 'badge badge-primary ml-xs';
+                chip.title = 'サーバ側で実行待ちのジョブ件数';
+                chip.textContent = `🔧 ジョブ待ち ${agent.pending_job_count ?? 0}`;
+                container.appendChild(chip);
+            }
+        }
+
         if (agents.length === 0) {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
@@ -47,31 +72,14 @@ async function loadAgents() {
                 if (a.status === 'pending') {
                     badge.className = 'badge badge-info';
                     badge.textContent = '未承認';
+                    statusTd.appendChild(badge);
                 } else {
                     const info = ONLINE_STATUS_MAP[a.online_status] || ONLINE_STATUS_MAP.offline;
                     badge.className = 'badge ' + info.cls;
                     badge.textContent = info.label;
-                    if (a.offline_pending_count > 0) {
-                        const cnt = document.createElement('span');
-                        cnt.className = 'badge badge-warning ml-xs';
-                        cnt.title = 'オフラインキャッシュ件数';
-                        cnt.textContent = `📦 ${a.offline_pending_count}`;
-                        statusTd.appendChild(badge);
-                        statusTd.appendChild(cnt);
-                        tr.appendChild(statusTd);
-                        const actionTd = document.createElement('td');
-                        actionTd.className = 'd-flex-gap';
-                        const detailBtn = document.createElement('a');
-                        detailBtn.className = 'btn btn-secondary text-xs';
-                        detailBtn.href = `/pcs/${a.id}`;
-                        detailBtn.textContent = '詳細';
-                        actionTd.appendChild(detailBtn);
-                        tr.appendChild(actionTd);
-                        tbody.appendChild(tr);
-                        return;
-                    }
+                    statusTd.appendChild(badge);
+                    appendSubStateChips(statusTd, a);
                 }
-                statusTd.appendChild(badge);
                 tr.appendChild(statusTd);
 
                 const actionTd = document.createElement('td');

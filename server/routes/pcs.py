@@ -191,9 +191,29 @@ def get_pc_details(pc_id):
         .all()
     )
 
+    # Issue #180: sub_states (vpn_required / pending_sync / pending_job)
+    pending_job_count = (
+        db.session.query(db.func.count(Task.id))
+        .filter(Task.pc_id == pc_id)
+        .filter(Task.status.in_(("pending", "running")))
+        .scalar()
+        or 0
+    )
+    sub_states = []
+    if (pc.connection_type or "").upper() in ("SSL-VPN", "VPN"):
+        sub_states.append("vpn_required")
+    if (pc.offline_pending_count or 0) > 0:
+        sub_states.append("pending_sync")
+    if pending_job_count > 0:
+        sub_states.append("pending_job")
+
+    pc_payload = pc.to_dict()
+    pc_payload["pending_job_count"] = pending_job_count
+    pc_payload["sub_states"] = sub_states
+
     return jsonify(
         {
-            "pc": pc.to_dict(),
+            "pc": pc_payload,
             "snapshots": [s.to_dict() for s in snapshots],
             "software": [s.to_dict() for s in software],
             "windows_updates": [u.to_dict() for u in updates],
