@@ -298,7 +298,8 @@ jobs:
           # (同テストは Test (PowerShell 5.1/7) ジョブで既に実行されている)
           $cfg.Run.Path = @(
             "tests\PCOptimizer.Pester.Tests.ps1",
-            "tests\AgentTeams.Pester.Tests.ps1"
+            "tests\AgentTeams.Pester.Tests.ps1",
+            "tests\AgentMutex.Pester.Tests.ps1"
           )
           $cfg.Run.Exit = $false
           $cfg.Run.PassThru = $true  # $result オブジェクトを取得するために必須

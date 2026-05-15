@@ -96,6 +96,11 @@ if (-not (Test-Path $CACHE_DIR)) {
 $OFFLINE_CACHE_FILE = Join-Path $CACHE_DIR "offline_cache.json"
 $MAX_CACHE_ENTRIES = 2016  # 7 days * 24 h * 12 (5-min interval)
 
+# Resolved early so the Mutex name and the main loop see the same identity even
+# if config.json is reloaded later. Renaming pc_name in config.json starts a
+# fresh single-instance slot, which is the documented behavior.
+$PC_NAME = if ($config.pc_name) { $config.pc_name } else { $env:COMPUTERNAME }
+
 # === ログ関数 ===
 function Write-AgentLog {
     param([string]$Message, [string]$Level = "INFO")
@@ -528,7 +533,7 @@ function Invoke-DiagnoseTask {
 function Start-AgentLoop {
     Write-AgentInfo "Agent起動: v$AGENT_VERSION"
 
-    $pcName = if ($config.pc_name) { $config.pc_name } else { $env:COMPUTERNAME }
+    $pcName = $PC_NAME
     Write-AgentInfo "PC Name: $pcName, Server: $SERVER_URL"
 
     while ($true) {
@@ -632,9 +637,44 @@ function Start-AgentLoop {
 }
 
 # === エントリーポイント ===
+# Single-instance enforcement (Issue #188 part 1).
+# A machine-wide named Mutex prevents a second PCOpsAgent process on the same
+# install dir from racing the first one on collect / cache / pending-task
+# execution. The lock key is derived from $SCRIPT_DIR (the Agent install path)
+# rather than $PC_NAME — pc_name is user-editable and may legitimately contain
+# '\' (e.g. "DOMAIN\PC01"), which is reserved by Windows as the Global\ namespace
+# separator and would throw at New-Object Mutex. SHA-256 of the install path
+# truncated to 16 hex chars yields a stable, sanitized identifier; two distinct
+# Agent installs on the same host (testing scenario) still get separate locks.
+$pathBytes = [System.Text.Encoding]::UTF8.GetBytes($SCRIPT_DIR.ToLowerInvariant())
+$sha = [System.Security.Cryptography.SHA256]::Create()
 try {
-    Start-AgentLoop
-} catch {
-    Write-AgentError "Agent致命的エラー: $_"
-    exit 1
+    $installFingerprint = [System.BitConverter]::ToString($sha.ComputeHash($pathBytes)).Replace("-", "").Substring(0, 16)
+} finally {
+    $sha.Dispose()
+}
+$mutexName = "Global\PCOpsAgent_$installFingerprint"
+$mutexAcquired = $false
+$agentMutex = $null
+try {
+    $agentMutex = New-Object System.Threading.Mutex($true, $mutexName, [ref]$mutexAcquired)
+    if (-not $mutexAcquired) {
+        Write-AgentError "別のAgentインスタンスが既に起動中: $mutexName"
+        exit 1
+    }
+    Write-AgentInfo "Single-instance Mutex取得: $mutexName"
+
+    try {
+        Start-AgentLoop
+    } catch {
+        Write-AgentError "Agent致命的エラー: $_"
+        exit 1
+    }
+} finally {
+    if ($agentMutex) {
+        if ($mutexAcquired) {
+            try { $agentMutex.ReleaseMutex() } catch { }
+        }
+        $agentMutex.Dispose()
+    }
 }
