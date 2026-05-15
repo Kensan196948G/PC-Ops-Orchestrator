@@ -69,6 +69,9 @@ class PC(db.Model):
     status = db.Column(db.String(32), default="unknown")
     health_score = db.Column(db.Float, default=0.0)
     agent_version = db.Column(db.String(32))
+    # VPN/offline sync fields (Issue #154)
+    connection_type = db.Column(db.String(32), default="Unknown")
+    offline_pending_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
@@ -118,6 +121,8 @@ class PC(db.Model):
             "status": self.status,
             "health_score": self.health_score,
             "agent_version": self.agent_version,
+            "connection_type": self.connection_type or "Unknown",
+            "offline_pending_count": self.offline_pending_count or 0,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

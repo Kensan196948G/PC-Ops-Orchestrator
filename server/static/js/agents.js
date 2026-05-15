@@ -6,10 +6,22 @@ async function loadAgents() {
         tbody.replaceChildren();
         const agents = data.agents || [];
 
+        const ONLINE_STATUS_MAP = {
+            online:        { cls: 'badge-success',   label: 'オンライン' },
+            recently_seen: { cls: 'badge-warning',   label: '最近接続' },
+            offline:       { cls: 'badge-secondary', label: 'オフライン' },
+            stale:         { cls: 'badge-danger',    label: '古いデータ' },
+        };
+        const CONN_TYPE_MAP = {
+            'LAN':     '🏢 LAN',
+            'SSL-VPN': '🔒 SSL-VPN',
+            'Unknown': '—',
+        };
+
         if (agents.length === 0) {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
-            td.colSpan = 8;
+            td.colSpan = 9;
             td.className = 'text-center';
             td.textContent = 'エージェントが登録されていません';
             tr.appendChild(td);
@@ -27,6 +39,7 @@ async function loadAgents() {
                 tr.appendChild(td(a.cpu_usage != null ? a.cpu_usage.toFixed(1) + '%' : '—'));
                 tr.appendChild(td(a.memory_usage != null ? a.memory_usage.toFixed(1) + '%' : '—'));
                 tr.appendChild(td(a.agent_version));
+                tr.appendChild(td(CONN_TYPE_MAP[a.connection_type] ?? a.connection_type ?? '—'));
                 tr.appendChild(td(a.last_seen ? new Date(a.last_seen).toLocaleString('ja-JP') : '—'));
 
                 const statusTd = document.createElement('td');
@@ -34,12 +47,29 @@ async function loadAgents() {
                 if (a.status === 'pending') {
                     badge.className = 'badge badge-info';
                     badge.textContent = '未承認';
-                } else if (a.online) {
-                    badge.className = 'badge badge-success';
-                    badge.textContent = 'オンライン';
                 } else {
-                    badge.className = 'badge badge-secondary';
-                    badge.textContent = 'オフライン';
+                    const info = ONLINE_STATUS_MAP[a.online_status] || ONLINE_STATUS_MAP.offline;
+                    badge.className = 'badge ' + info.cls;
+                    badge.textContent = info.label;
+                    if (a.offline_pending_count > 0) {
+                        const cnt = document.createElement('span');
+                        cnt.className = 'badge badge-warning ml-xs';
+                        cnt.title = 'オフラインキャッシュ件数';
+                        cnt.textContent = `📦 ${a.offline_pending_count}`;
+                        statusTd.appendChild(badge);
+                        statusTd.appendChild(cnt);
+                        tr.appendChild(statusTd);
+                        const actionTd = document.createElement('td');
+                        actionTd.className = 'd-flex-gap';
+                        const detailBtn = document.createElement('a');
+                        detailBtn.className = 'btn btn-secondary text-xs';
+                        detailBtn.href = `/pcs/${a.id}`;
+                        detailBtn.textContent = '詳細';
+                        actionTd.appendChild(detailBtn);
+                        tr.appendChild(actionTd);
+                        tbody.appendChild(tr);
+                        return;
+                    }
                 }
                 statusTd.appendChild(badge);
                 tr.appendChild(statusTd);
@@ -58,8 +88,8 @@ async function loadAgents() {
         }
 
         // Update stat cards
-        const onlineCount = agents.filter(a => a.online && a.status !== 'pending').length;
-        const offlineCount = agents.filter(a => !a.online && a.status !== 'pending').length;
+        const onlineCount = agents.filter(a => a.online_status === 'online' && a.status !== 'pending').length;
+        const offlineCount = agents.filter(a => (a.online_status === 'offline' || a.online_status === 'stale') && a.status !== 'pending').length;
         const pendingCount = agents.filter(a => a.status === 'pending').length;
 
         const statOnline = document.getElementById('agent-stat-online');

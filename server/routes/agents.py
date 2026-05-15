@@ -66,8 +66,15 @@ def export_agents_csv():
             else:
                 last_seen_dt = pc.last_seen
 
-        online = last_seen_dt is not None and (now - last_seen_dt).total_seconds() < 300
-        status_label = "オンライン" if online else (pc.status or "不明")
+        elapsed = (now - last_seen_dt).total_seconds() if last_seen_dt else float("inf")
+        if elapsed < 300:
+            status_label = "オンライン"
+        elif elapsed < 1800:
+            status_label = "最近接続"
+        elif elapsed < 604800:
+            status_label = "オフライン"
+        else:
+            status_label = "古いデータ"
 
         snap = latest_snaps.get(pc.id)
         cpu_usage = snap.cpu_usage if snap else None
@@ -133,6 +140,19 @@ def list_agents():
         ):
             latest_snaps[snap.pc_id] = snap
 
+    def _online_status(last_seen_dt):
+        """Return 4-state online status based on last_seen age."""
+        if last_seen_dt is None:
+            return "stale"
+        elapsed = (now - last_seen_dt).total_seconds()
+        if elapsed < 300:
+            return "online"
+        if elapsed < 1800:
+            return "recently_seen"
+        if elapsed < 604800:
+            return "offline"
+        return "stale"
+
     def agent_dict(pc):
         last_seen_dt = None
         if pc.last_seen:
@@ -140,7 +160,7 @@ def list_agents():
                 last_seen_dt = pc.last_seen.replace(tzinfo=timezone.utc)
             else:
                 last_seen_dt = pc.last_seen
-        online = last_seen_dt is not None and (now - last_seen_dt).total_seconds() < 300
+        online_status = _online_status(last_seen_dt)
         snap = latest_snaps.get(pc.id)
         cpu_usage = snap.cpu_usage if snap else None
         memory_usage = None
@@ -156,7 +176,10 @@ def list_agents():
             "cpu_usage": cpu_usage,
             "memory_usage": memory_usage,
             "status": pc.status,
-            "online": online,
+            "online": online_status == "online",
+            "online_status": online_status,
+            "connection_type": pc.connection_type or "Unknown",
+            "offline_pending_count": pc.offline_pending_count or 0,
             "last_seen": pc.last_seen.isoformat() if pc.last_seen else None,
         }
 

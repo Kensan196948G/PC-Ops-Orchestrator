@@ -49,6 +49,11 @@ def collect():
     pc.mac_address = data.get("mac_address", pc.mac_address)
     pc.agent_version = data.get("agent_version", pc.agent_version)
     pc.last_seen = datetime.now(timezone.utc)
+    # VPN/offline sync: agent reports its connection type (LAN/SSL-VPN/Unknown)
+    if data.get("connection_type"):
+        pc.connection_type = data["connection_type"]
+    # Reset offline pending count on successful sync
+    pc.offline_pending_count = 0
 
     pc.health_score = _calculate_health_score(pc)
 
@@ -170,6 +175,86 @@ def collect_detail():
     db.session.commit()
 
     return jsonify({"message": "詳細情報を受信しました", "pc_id": pc.id})
+
+
+@collect_bp.route("/collect/sync", methods=["POST"])
+@limiter.limit("60 per minute")
+@agent_auth_required
+def collect_sync():
+    """Accept bulk offline cache entries from reconnected VPN agent."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "リクエストボディが必要です"}), 400
+
+    pc_name = data.get("pc_name", "").strip()
+    if not pc_name:
+        return jsonify({"error": "pc_name は必須です"}), 400
+
+    pc = PC.query.filter_by(pc_name=pc_name).first()
+    if not pc:
+        return jsonify({"error": f"PC {pc_name} が見つかりません"}), 404
+
+    entries = data.get("offline_cache", [])
+    if not isinstance(entries, list):
+        return jsonify({"error": "offline_cache はリスト形式で指定してください"}), 400
+
+    inserted = 0
+    skipped = 0
+    for entry in entries:
+        collected_at = None
+        if entry.get("collected_at"):
+            try:
+                collected_at = datetime.fromisoformat(entry["collected_at"])
+            except (ValueError, TypeError):
+                skipped += 1
+                continue
+
+        # Dedup: skip if a snapshot already exists at exact same timestamp
+        if collected_at:
+            dup = SystemSnapshot.query.filter_by(
+                pc_id=pc.id, collected_at=collected_at
+            ).first()
+            if dup:
+                skipped += 1
+                continue
+
+        snapshot = SystemSnapshot(
+            pc_id=pc.id,
+            cpu_usage=entry.get("cpu_usage"),
+            memory_available_gb=entry.get("memory_available_gb"),
+            disk_free_gb=entry.get("disk_free_gb"),
+            uptime_days=entry.get("uptime_days"),
+            pending_reboot=entry.get("pending_reboot", False),
+            windows_update_pending=entry.get("windows_update_pending", False),
+        )
+        if collected_at:
+            snapshot.collected_at = collected_at
+
+        if entry.get("last_boot_time"):
+            try:
+                snapshot.last_boot_time = datetime.fromisoformat(
+                    entry["last_boot_time"]
+                )
+            except (ValueError, TypeError):
+                pass
+
+        db.session.add(snapshot)
+        inserted += 1
+
+    if inserted:
+        _trim_snapshots(pc.id, keep=720)
+
+    pc.offline_pending_count = max(0, (pc.offline_pending_count or 0) - inserted)
+    db.session.commit()
+
+    return jsonify(
+        {
+            "message": "オフラインキャッシュを同期しました",
+            "pc_id": pc.id,
+            "inserted": inserted,
+            "skipped": skipped,
+        }
+    )
 
 
 def _trim_snapshots(pc_id, keep=720):
