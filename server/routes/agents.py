@@ -63,7 +63,7 @@ def export_agents_csv():
         if pc.last_seen:
             if pc.last_seen.tzinfo is None:
                 last_seen_dt = pc.last_seen.replace(tzinfo=timezone.utc)
-            else:
+            else:  # pragma: no cover - SQLite strips tzinfo; reachable only on PostgreSQL
                 last_seen_dt = pc.last_seen
 
         elapsed = (now - last_seen_dt).total_seconds() if last_seen_dt else float("inf")
@@ -158,7 +158,7 @@ def list_agents():
         if pc.last_seen:
             if pc.last_seen.tzinfo is None:
                 last_seen_dt = pc.last_seen.replace(tzinfo=timezone.utc)
-            else:
+            else:  # pragma: no cover - SQLite strips tzinfo; reachable only on PostgreSQL
                 last_seen_dt = pc.last_seen
         online_status = _online_status(last_seen_dt)
         snap = latest_snaps.get(pc.id)
