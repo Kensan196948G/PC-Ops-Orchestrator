@@ -300,7 +300,8 @@ jobs:
             "tests\PCOptimizer.Pester.Tests.ps1",
             "tests\AgentTeams.Pester.Tests.ps1",
             "tests\AgentMutex.Pester.Tests.ps1",
-            "tests\AgentSelfCheck.Pester.Tests.ps1"
+            "tests\AgentSelfCheck.Pester.Tests.ps1",
+            "tests\AgentDpapiApiKey.Pester.Tests.ps1"
           )
           $cfg.Run.Exit = $false
           $cfg.Run.PassThru = $true  # $result オブジェクトを取得するために必須
