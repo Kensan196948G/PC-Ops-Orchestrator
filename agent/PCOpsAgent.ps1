@@ -59,6 +59,13 @@ if (-not (Test-Path $LOG_DIR)) {
     New-Item -ItemType Directory -Path $LOG_DIR -Force | Out-Null
 }
 
+$CACHE_DIR = Join-Path $SCRIPT_DIR "cache"
+if (-not (Test-Path $CACHE_DIR)) {
+    New-Item -ItemType Directory -Path $CACHE_DIR -Force | Out-Null
+}
+$OFFLINE_CACHE_FILE = Join-Path $CACHE_DIR "offline_cache.json"
+$MAX_CACHE_ENTRIES = 2016  # 7 days * 24 h * 12 (5-min interval)
+
 # === ログ関数 ===
 function Write-AgentLog {
     param([string]$Message, [string]$Level = "INFO")
@@ -88,6 +95,110 @@ function Write-AgentDebug {
     param([string]$Message)
     if ($LOG_LEVEL -eq "DEBUG") {
         Write-AgentLog -Message $Message -Level "DEBUG"
+    }
+}
+
+# === VPN / Connection Detection ===
+function Get-ConnectionType {
+    # Check FortiClient SSL-VPN adapter
+    try {
+        $vpnAdapter = Get-NetAdapter -ErrorAction SilentlyContinue |
+            Where-Object { $_.InterfaceDescription -match "FortiSSL|Fortinet SSL" -or $_.Name -match "fortissl|FortiSSL" }
+        if ($vpnAdapter -and $vpnAdapter.Status -eq "Up") {
+            return "SSL-VPN"
+        }
+    } catch {}
+
+    # Fallback: check FortiClient process + any VPN adapter is up
+    try {
+        $fcProc = Get-Process -Name "FortiClient", "FortiTray", "FortiSSLVPN" -ErrorAction SilentlyContinue
+        if ($fcProc) {
+            $vpnIface = Get-NetIPInterface -ErrorAction SilentlyContinue |
+                Where-Object { $_.InterfaceAlias -match "VPN|vpn|Tunnel|tunnel" -and $_.ConnectionState -eq "Connected" }
+            if ($vpnIface) {
+                return "SSL-VPN"
+            }
+        }
+    } catch {}
+
+    return "LAN"
+}
+
+# === Server Reachability ===
+function Test-ServerReachable {
+    try {
+        $uri = [System.Uri]$SERVER_URL
+        $params = @{
+            Uri = "$SERVER_URL/api/health"
+            Method = "GET"
+            Headers = @{ "Authorization" = "Bearer $API_KEY" }
+            UseBasicParsing = $true
+            TimeoutSec = 10
+        }
+        if ($PROXY) { $params["Proxy"] = $PROXY }
+        if (-not $config.ssl_verify) {
+            [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+        }
+        $r = Invoke-RestMethod @params
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+# === Offline Cache ===
+function Read-OfflineCache {
+    if (-not (Test-Path $OFFLINE_CACHE_FILE)) {
+        return @()
+    }
+    try {
+        $raw = Get-Content $OFFLINE_CACHE_FILE -Raw -Encoding UTF8
+        return ConvertFrom-Json $raw
+    } catch {
+        Write-AgentError "オフラインキャッシュ読み込み失敗: $_"
+        return @()
+    }
+}
+
+function Write-OfflineCache {
+    param([array]$Entries)
+    try {
+        # Keep only last MAX_CACHE_ENTRIES to prevent unbounded growth
+        if ($Entries.Count -gt $MAX_CACHE_ENTRIES) {
+            $Entries = $Entries | Select-Object -Last $MAX_CACHE_ENTRIES
+        }
+        $Entries | ConvertTo-Json -Depth 10 -Compress | Set-Content -Path $OFFLINE_CACHE_FILE -Encoding UTF8
+    } catch {
+        Write-AgentError "オフラインキャッシュ書き込み失敗: $_"
+    }
+}
+
+function Add-ToOfflineCache {
+    param([hashtable]$Entry)
+    $cache = @(Read-OfflineCache)
+    $cache += $Entry
+    Write-OfflineCache -Entries $cache
+    Write-AgentInfo "オフラインキャッシュ追加: 合計 $($cache.Count) 件"
+}
+
+function Sync-OfflineCache {
+    param([string]$PcName)
+    $cache = @(Read-OfflineCache)
+    if ($cache.Count -eq 0) {
+        return
+    }
+
+    Write-AgentInfo "オフラインキャッシュ同期開始: $($cache.Count) 件"
+    $body = @{
+        pc_name = $PcName
+        offline_cache = $cache
+    }
+    $response = Invoke-AgentRequest -Method "POST" -Endpoint "/api/collect/sync" -Body $body
+    if ($response) {
+        Write-AgentInfo "同期完了: inserted=$($response.inserted) skipped=$($response.skipped)"
+        Remove-Item -Path $OFFLINE_CACHE_FILE -Force -ErrorAction SilentlyContinue
+    } else {
+        Write-AgentError "オフラインキャッシュ同期失敗、次回リトライ"
     }
 }
 
@@ -403,13 +514,36 @@ function Start-AgentLoop {
         try {
             Write-AgentInfo "=== 情報収集開始 ==="
 
+            # Detect connection type before collecting
+            $connectionType = Get-ConnectionType
+            Write-AgentDebug "接続種別: $connectionType"
+
             $systemInfo = Get-PCSystemInfo
             $systemInfo.pc_name = $pcName
+            $systemInfo.connection_type = $connectionType
+            $systemInfo.last_boot_time = (Get-CimInstance Win32_OperatingSystem -ErrorAction SilentlyContinue).LastBootUpTime.ToString("yyyy-MM-ddTHH:mm:ss")
             Write-AgentDebug "システム情報取得完了"
+
+            # Check server reachability
+            if (-not (Test-ServerReachable)) {
+                Write-AgentInfo "サーバー未到達 ($connectionType) — キャッシュに保存"
+                $cacheEntry = $systemInfo.Clone()
+                $cacheEntry.collected_at = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
+                Add-ToOfflineCache -Entry $cacheEntry
+                Write-AgentInfo "=== オフラインキャッシュ保存完了 ==="
+                Start-Sleep -Seconds ($COLLECT_INTERVAL * 60)
+                continue
+            }
+
+            # Server reachable — sync pending offline cache first
+            Sync-OfflineCache -PcName $pcName
 
             $response = Invoke-AgentRequest -Method "POST" -Endpoint "/api/collect" -Body $systemInfo
             if (-not $response) {
-                Write-AgentError "情報送信失敗、次回リトライ"
+                Write-AgentError "情報送信失敗 — オフラインキャッシュに追加"
+                $cacheEntry = $systemInfo.Clone()
+                $cacheEntry.collected_at = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
+                Add-ToOfflineCache -Entry $cacheEntry
                 Start-Sleep -Seconds ($COLLECT_INTERVAL * 60)
                 continue
             }

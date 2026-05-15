@@ -338,7 +338,7 @@ def test_export_csv_online_label():
 
 
 def test_export_csv_offline_label():
-    """PC with old last_seen shows status (not オンライン) in CSV."""
+    """PC with very old last_seen shows '古いデータ' (stale) in CSV."""
     _create_pc(
         "csvoffline",
         status="warning",
@@ -346,7 +346,7 @@ def test_export_csv_offline_label():
     )
     r = req("GET", "/api/agents/export.csv", token=_admin_token)
     content = r.data.decode("utf-8-sig")
-    assert "warning" in content
+    assert "古いデータ" in content
 
 
 def test_export_csv_naive_datetime_pc():
