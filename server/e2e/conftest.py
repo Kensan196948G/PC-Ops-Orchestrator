@@ -21,9 +21,14 @@ BASE_URL = f"http://127.0.0.1:{E2E_PORT}"
 
 
 @pytest.fixture(scope="session")
-def live_server():
-    """Start a Flask test server once for the entire E2E session."""
-    from werkzeug.serving import make_server
+def live_server_app():
+    """Build the Flask app used by the E2E session and seed baseline users.
+
+    Exposing the app instance separately lets per-test fixtures seed rows into
+    the SAME in-memory SQLite database that the live_server thread serves —
+    `sqlite:///:memory:` is engine-local, so calling create_app("testing")
+    twice creates two isolated DBs.
+    """
     from app import create_app
     from extensions import db
     from auth import hash_password
@@ -57,7 +62,15 @@ def live_server():
             )
         db.session.commit()
 
-    server = make_server("127.0.0.1", E2E_PORT, app)
+    return app
+
+
+@pytest.fixture(scope="session")
+def live_server(live_server_app):
+    """Start a Flask test server once for the entire E2E session."""
+    from werkzeug.serving import make_server
+
+    server = make_server("127.0.0.1", E2E_PORT, live_server_app)
     t = threading.Thread(target=server.serve_forever, daemon=True)
     t.start()
 

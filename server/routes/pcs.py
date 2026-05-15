@@ -1,8 +1,16 @@
 import csv
 import io
+from datetime import datetime, timezone, timedelta
 from flask import Blueprint, request, jsonify, make_response
 from extensions import db
-from models import PC, SystemSnapshot, Software, Task, WindowsUpdate
+from models import (
+    PC,
+    SystemSnapshot,
+    Software,
+    Task,
+    WindowsUpdate,
+    NetworkInterface,
+)
 from auth import login_required, admin_required, log_operation
 
 pcs_bp = Blueprint("pcs", __name__, url_prefix="/api/pcs")
@@ -136,6 +144,91 @@ def get_pc(pc_id):
     )
 
 
+@pcs_bp.route("/<int:pc_id>/details", methods=["GET"])
+@login_required
+def get_pc_details(pc_id):
+    """Consolidated endpoint for pc_detail page (Phase A-3 / Issue #176).
+
+    Returns PC info + recent snapshots + software + windows updates +
+    network interfaces + recent tasks in a single round-trip.
+    """
+    pc = db.session.get(PC, pc_id)
+    if not pc:
+        return jsonify({"error": f"PC {pc_id} が見つかりません"}), 404
+
+    history_days = min(request.args.get("history_days", 7, type=int), 90)
+    since = datetime.now(timezone.utc) - timedelta(days=history_days)
+
+    snapshots = (
+        SystemSnapshot.query.filter(
+            SystemSnapshot.pc_id == pc_id,
+            SystemSnapshot.collected_at >= since,
+        )
+        .order_by(SystemSnapshot.collected_at.asc())
+        .limit(500)
+        .all()
+    )
+
+    software = Software.query.filter_by(pc_id=pc_id).order_by(Software.name).all()
+
+    updates = (
+        WindowsUpdate.query.filter_by(pc_id=pc_id)
+        .order_by(WindowsUpdate.installed_at.desc().nullslast())
+        .limit(200)
+        .all()
+    )
+
+    network = (
+        NetworkInterface.query.filter_by(pc_id=pc_id)
+        .order_by(NetworkInterface.interface_name)
+        .all()
+    )
+
+    recent_tasks = (
+        Task.query.filter((Task.pc_id == pc_id) | (Task.pc_id.is_(None)))
+        .order_by(Task.created_at.desc())
+        .limit(20)
+        .all()
+    )
+
+    return jsonify(
+        {
+            "pc": pc.to_dict(),
+            "snapshots": [s.to_dict() for s in snapshots],
+            "software": [s.to_dict() for s in software],
+            "windows_updates": [u.to_dict() for u in updates],
+            "network_interfaces": [n.to_dict() for n in network],
+            "recent_tasks": [t.to_dict() for t in recent_tasks],
+            "counts": {
+                "software": len(software),
+                "windows_updates": len(updates),
+                "network_interfaces": len(network),
+                "snapshots": len(snapshots),
+            },
+        }
+    )
+
+
+@pcs_bp.route("/<int:pc_id>/network", methods=["GET"])
+@login_required
+def get_pc_network(pc_id):
+    pc = db.session.get(PC, pc_id)
+    if not pc:
+        return jsonify({"error": f"PC {pc_id} が見つかりません"}), 404
+    network = (
+        NetworkInterface.query.filter_by(pc_id=pc_id)
+        .order_by(NetworkInterface.interface_name)
+        .all()
+    )
+    return jsonify(
+        {
+            "pc_name": pc.pc_name,
+            "network_interfaces": [n.to_dict() for n in network],
+            "total": len(network),
+        }
+    )
+
+
 @pcs_bp.route("/<int:pc_id>/software", methods=["GET"])
 @login_required
 def get_pc_software(pc_id):
@@ -179,9 +272,6 @@ def get_pc_history(pc_id):
     if not pc:
         return jsonify({"error": f"PC {pc_id} が見つかりません"}), 404
     days = min(request.args.get("days", 7, type=int), 365)
-
-    from datetime import datetime, timezone, timedelta
-
     since = datetime.now(timezone.utc) - timedelta(days=days)
 
     snapshots = (

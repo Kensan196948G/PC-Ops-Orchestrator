@@ -1,59 +1,261 @@
 let historyChart = null;
+let _snapshotsCache = [];
+let _historyRendered = false;
 
-async function loadPCDetail() {
-    try {
-        const data = await apiFetch('/pcs/' + PC_ID);
-        const pc = data.pc;
+const STATUS_MAP = {
+    healthy:   ['status-healthy',   '正常'],
+    warning:   ['status-warning',   '要注意'],
+    critical:  ['status-critical',  '危険'],
+    unknown:   ['status-unknown',   '不明'],
+    pending:   ['status-pending',   '未処理'],
+    running:   ['status-running',   '実行中'],
+    completed: ['status-completed', '完了'],
+    failed:    ['status-failed',    '失敗'],
+};
 
-        document.getElementById('pc-name').textContent = pc.pc_name;
-        document.getElementById('d-pc-name').textContent = pc.pc_name;
-        document.getElementById('d-domain').textContent = pc.domain || '-';
-        document.getElementById('d-os').textContent = pc.os_version || '-';
-        document.getElementById('d-arch').textContent = pc.os_architecture || '-';
-        document.getElementById('d-ip').textContent = pc.ip_address || '-';
-        document.getElementById('d-mac').textContent = pc.mac_address || '-';
-        document.getElementById('d-status').innerHTML = statusBadge(pc.status);
-        document.getElementById('d-score').textContent = pc.health_score ?? '-';
-        document.getElementById('d-last-seen').textContent = pc.last_seen ? new Date(pc.last_seen).toLocaleString('ja-JP') : '-';
-        document.getElementById('d-agent-ver').textContent = pc.agent_version || '-';
+const SEVERITY_MAP = {
+    Critical:  ['status-critical', 'Critical'],
+    Important: ['status-warning',  'Important'],
+    Moderate:  ['status-pending',  'Moderate'],
+    Low:       ['status-unknown',  'Low'],
+};
 
-        document.getElementById('d-cpu').textContent = pc.cpu_name || '-';
-        document.getElementById('d-cores').textContent = pc.cpu_cores ?? '-';
-        document.getElementById('d-logical').textContent = pc.cpu_logical_processors ?? '-';
-        document.getElementById('d-mem-total').textContent = pc.memory_total_gb ? pc.memory_total_gb.toFixed(1) + ' GB' : '-';
-        document.getElementById('d-mem-free').textContent = pc.memory_available_gb ? pc.memory_available_gb.toFixed(1) + ' GB' : '-';
-        document.getElementById('d-disk-total').textContent = pc.disk_total_gb ? pc.disk_total_gb.toFixed(1) + ' GB' : '-';
-        document.getElementById('d-disk-free').textContent = pc.disk_free_gb ? pc.disk_free_gb.toFixed(1) + ' GB' : '-';
+const CONNECTION_MAP = {
+    online:   ['status-healthy',  'オンライン'],
+    offline:  ['status-critical', 'オフライン'],
+    vpn:      ['status-pending',  'VPN'],
+    unknown:  ['status-unknown',  '不明'],
+};
 
-        if (data.snapshots && data.snapshots.length > 0) {
-            renderHistoryChart(data.snapshots);
-        }
+function makeBadge(cls, label) {
+    const span = document.createElement('span');
+    span.className = 'status-badge ' + cls;
+    span.textContent = label;
+    return span;
+}
 
-        if (data.recent_tasks) {
-            const tbody = document.getElementById('recent-tasks-body');
-            if (data.recent_tasks.length > 0) {
-                // escapeHTML wraps every API-returned scalar to neutralize XSS
-                // payloads in task_type / status / result / error_message.
-                tbody.innerHTML = data.recent_tasks.map(t => `
-                    <tr>
-                        <td>#${escapeHTML(t.id)}</td>
-                        <td>${escapeHTML(t.task_type)}</td>
-                        <td><span class="status-badge status-${escapeHTML(t.status)}">${escapeHTML(t.status)}</span></td>
-                        <td>${escapeHTML(t.created_at ? new Date(t.created_at).toLocaleString('ja-JP') : '-')}</td>
-                        <td>${escapeHTML(t.result ? t.result.substring(0, 50) : t.error_message || '-')}</td>
-                    </tr>
-                `).join('');
-            } else {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center">タスク履歴はありません</td></tr>';
-            }
-        }
-    } catch (e) {
-        showError('PC情報の取得に失敗しました');
+function statusBadgeNode(status) {
+    const entry = STATUS_MAP[status];
+    if (entry) return makeBadge(entry[0], entry[1]);
+    return makeBadge('status-unknown', status || '-');
+}
+
+function severityBadgeNode(severity) {
+    if (!severity) return document.createTextNode('-');
+    const entry = SEVERITY_MAP[severity];
+    if (entry) return makeBadge(entry[0], entry[1]);
+    return document.createTextNode(severity);
+}
+
+function installedBadgeNode(installed) {
+    return installed
+        ? makeBadge('status-completed', 'インストール済')
+        : makeBadge('status-pending',   '未インストール');
+}
+
+function connectionBadgeNode(type) {
+    const entry = CONNECTION_MAP[type] || CONNECTION_MAP.unknown;
+    return makeBadge(entry[0], entry[1]);
+}
+
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value == null || value === '' ? '-' : value;
+}
+
+function setNode(id, node) {
+    const el = document.getElementById(id);
+    if (el) el.replaceChildren(node);
+}
+
+function fmtGB(v) {
+    return (v == null) ? '-' : v.toFixed(1) + ' GB';
+}
+
+function fmtDateTime(v) {
+    if (!v) return '-';
+    return new Date(v).toLocaleString('ja-JP');
+}
+
+function fmtDate(v) {
+    if (!v) return '-';
+    return new Date(v).toLocaleDateString('ja-JP');
+}
+
+function makeCell(value) {
+    const td = document.createElement('td');
+    td.textContent = (value == null || value === '') ? '-' : value;
+    return td;
+}
+
+function makeCellNode(node) {
+    const td = document.createElement('td');
+    td.appendChild(node);
+    return td;
+}
+
+function makeMessageRow(msg, cols, color) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = cols;
+    td.className = 'text-center';
+    if (color) td.style.color = color;
+    td.textContent = msg;
+    tr.appendChild(td);
+    return tr;
+}
+
+function activateTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        const active = btn.dataset.tab === name;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.toggle('hidden', panel.id !== 'tab-' + name);
+    });
+    if (history && history.replaceState) {
+        history.replaceState(null, '', '#' + name);
+    }
+    if (name === 'history' && !_historyRendered && _snapshotsCache.length > 0) {
+        renderHistoryChart(_snapshotsCache);
+        _historyRendered = true;
     }
 }
 
+function renderPCInfo(pc) {
+    document.getElementById('pc-name').textContent = 'PC: ' + (pc.pc_name || '-');
+    setText('d-pc-name', pc.pc_name);
+    setText('d-domain', pc.domain);
+    setText('d-os', pc.os_version);
+    setText('d-os-build', pc.os_build);
+    setText('d-arch', pc.os_architecture);
+    setText('d-ip', pc.ip_address);
+    setText('d-mac', pc.mac_address);
+    setNode('d-status', statusBadgeNode(pc.status));
+    setText('d-score', pc.health_score);
+    setNode('d-connection', connectionBadgeNode(pc.connection_type || 'unknown'));
+    setText('d-last-seen', fmtDateTime(pc.last_seen));
+    setText('d-agent-ver', pc.agent_version);
+
+    setText('d-cpu', pc.cpu_name);
+    setText('d-cores', pc.cpu_cores);
+    setText('d-logical', pc.cpu_logical_processors);
+    setText('d-mem-total', fmtGB(pc.memory_total_gb));
+    setText('d-mem-free', fmtGB(pc.memory_available_gb));
+    setText('d-disk-total', fmtGB(pc.disk_total_gb));
+    setText('d-disk-free', fmtGB(pc.disk_free_gb));
+}
+
+function renderRecentTasks(tasks) {
+    const tbody = document.getElementById('recent-tasks-body');
+    if (!tbody) return;
+    if (!tasks || tasks.length === 0) {
+        tbody.replaceChildren(makeMessageRow('タスク履歴はありません', 5));
+        return;
+    }
+    const frag = document.createDocumentFragment();
+    tasks.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.appendChild(makeCell('#' + t.id));
+        tr.appendChild(makeCell(t.task_type));
+        tr.appendChild(makeCellNode(statusBadgeNode(t.status)));
+        tr.appendChild(makeCell(fmtDateTime(t.created_at)));
+        const resultText = t.result
+            ? (t.result.length > 50 ? t.result.substring(0, 50) + '...' : t.result)
+            : (t.error_message || '-');
+        tr.appendChild(makeCell(resultText));
+        frag.appendChild(tr);
+    });
+    tbody.replaceChildren(frag);
+}
+
+function renderSoftware(list) {
+    const tbody = document.getElementById('software-body');
+    if (!tbody) return;
+    const total = list ? list.length : 0;
+    const title = document.getElementById('software-title');
+    if (title) title.textContent = 'インストール済みソフトウェア (' + total + '件)';
+    const counter = document.getElementById('cnt-software');
+    if (counter) counter.textContent = total;
+    if (total === 0) {
+        tbody.replaceChildren(makeMessageRow('ソフトウェア情報がありません', 4));
+        return;
+    }
+    const frag = document.createDocumentFragment();
+    list.forEach(sw => {
+        const tr = document.createElement('tr');
+        tr.appendChild(makeCell(sw.name));
+        tr.appendChild(makeCell(sw.version));
+        tr.appendChild(makeCell(sw.publisher));
+        tr.appendChild(makeCell(fmtDate(sw.install_date)));
+        frag.appendChild(tr);
+    });
+    tbody.replaceChildren(frag);
+}
+
+function renderUpdates(list) {
+    const tbody = document.getElementById('updates-body');
+    if (!tbody) return;
+    const total = list ? list.length : 0;
+    const title = document.getElementById('updates-title');
+    if (title) title.textContent = 'Windows Update 一覧 (' + total + '件)';
+    const counter = document.getElementById('cnt-updates');
+    if (counter) counter.textContent = total;
+    if (total === 0) {
+        tbody.replaceChildren(makeMessageRow('Windows Update 情報がありません', 5));
+        return;
+    }
+    const frag = document.createDocumentFragment();
+    list.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.appendChild(makeCell(u.kb_id));
+        tr.appendChild(makeCell(u.title));
+        tr.appendChild(makeCellNode(severityBadgeNode(u.severity)));
+        tr.appendChild(makeCellNode(installedBadgeNode(u.installed)));
+        tr.appendChild(makeCell(fmtDateTime(u.installed_at)));
+        frag.appendChild(tr);
+    });
+    tbody.replaceChildren(frag);
+}
+
+function renderNetwork(list) {
+    const tbody = document.getElementById('network-body');
+    if (!tbody) return;
+    const total = list ? list.length : 0;
+    const title = document.getElementById('network-title');
+    if (title) title.textContent = 'ネットワークインターフェース (' + total + '件)';
+    const counter = document.getElementById('cnt-network');
+    if (counter) counter.textContent = total;
+    if (total === 0) {
+        tbody.replaceChildren(makeMessageRow('ネットワーク情報がありません', 8));
+        return;
+    }
+    const frag = document.createDocumentFragment();
+    list.forEach(n => {
+        const tr = document.createElement('tr');
+        tr.appendChild(makeCell(n.interface_name));
+        tr.appendChild(makeCell(n.ip_address));
+        tr.appendChild(makeCell(n.subnet_mask));
+        tr.appendChild(makeCell(n.gateway));
+        tr.appendChild(makeCell(n.mac_address));
+        tr.appendChild(makeCell(n.dns_servers));
+        tr.appendChild(makeCell(n.link_speed_mbps != null ? n.link_speed_mbps + ' Mbps' : '-'));
+        tr.appendChild(makeCellNode(
+            n.is_active
+                ? makeBadge('status-healthy',  '有効')
+                : makeBadge('status-critical', '無効')
+        ));
+        frag.appendChild(tr);
+    });
+    tbody.replaceChildren(frag);
+}
+
 function renderHistoryChart(snapshots) {
-    const labels = snapshots.map(s => s.collected_at ? new Date(s.collected_at).toLocaleString('ja-JP') : '');
+    const canvas = document.getElementById('historyChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    const labels = snapshots.map(s => fmtDateTime(s.collected_at));
     const cpuData = snapshots.map(s => s.cpu_usage ?? null);
     const memAvail = snapshots.map(s => s.memory_available_gb ?? null);
     const diskFree = snapshots.map(s => s.disk_free_gb ?? null);
@@ -100,7 +302,7 @@ function renderHistoryChart(snapshots) {
 
     if (datasets.length === 0) return;
 
-    historyChart = new Chart(document.getElementById('historyChart'), {
+    historyChart = new Chart(canvas, {
         type: 'line',
         data: { labels, datasets },
         options: {
@@ -137,23 +339,32 @@ function renderHistoryChart(snapshots) {
     });
 }
 
-function statusBadge(status) {
-    const map = {
-        'healthy': '<span class="status-badge status-healthy">正常</span>',
-        'warning': '<span class="status-badge status-warning">要注意</span>',
-        'critical': '<span class="status-badge status-critical">危険</span>',
-        'unknown': '<span class="status-badge status-unknown">不明</span>',
-        'pending': '<span class="status-badge status-pending">未処理</span>',
-        'running': '<span class="status-badge status-running">実行中</span>',
-        'completed': '<span class="status-badge status-completed">完了</span>',
-        'failed': '<span class="status-badge status-failed">失敗</span>',
-    };
-    return map[status] || status;
+async function loadPCDetails() {
+    try {
+        const data = await apiFetch('/pcs/' + PC_ID + '/details');
+        renderPCInfo(data.pc || {});
+        renderSoftware(data.software || []);
+        renderUpdates(data.windows_updates || []);
+        renderNetwork(data.network_interfaces || []);
+        renderRecentTasks(data.recent_tasks || []);
+        _snapshotsCache = data.snapshots || [];
+        // Reset chart cache so the next history-tab activation re-renders
+        // with the freshest snapshots from the consolidated endpoint.
+        _historyRendered = false;
+        const activeHistory = document.querySelector('.tab-btn.active');
+        if (activeHistory && activeHistory.dataset.tab === 'history' && _snapshotsCache.length > 0) {
+            renderHistoryChart(_snapshotsCache);
+            _historyRendered = true;
+        }
+    } catch (e) {
+        if (typeof showError === 'function') showError('PC情報の取得に失敗しました');
+    }
 }
 
 async function executeTask() {
     const type = document.getElementById('task-type-select').value;
-    const command = document.getElementById('task-command').value.trim();
+    const cmdEl = document.getElementById('task-command');
+    const command = cmdEl ? cmdEl.value.trim() : '';
     const params = {};
 
     if (type === 'custom' && !command) {
@@ -175,134 +386,43 @@ async function executeTask() {
             }),
         });
 
-        if (res.task) {
+        if (res && res.task) {
             showSuccess('タスクを作成しました (ID: ' + res.task.id + ')');
-            loadPCDetail();
+            loadPCDetails();
         } else {
-            showError(res.error || 'タスク作成に失敗しました');
+            showError((res && res.error) || 'タスク作成に失敗しました');
         }
     } catch (e) {
         showError('APIエラー');
     }
 }
 
-document.getElementById('task-type-select').addEventListener('change', function() {
-    const cmdInput = document.getElementById('task-command');
-    this.value === 'custom' ? cmdInput.classList.remove('hidden') : cmdInput.classList.add('hidden');
-});
-
-const _severityBadge = {
-    'Critical':  '<span class="status-badge status-critical">Critical</span>',
-    'Important': '<span class="status-badge status-warning">Important</span>',
-    'Moderate':  '<span class="status-badge status-pending">Moderate</span>',
-    'Low':       '<span class="status-badge status-unknown">Low</span>',
-};
-
-function _upRow(cells, htmlCells) {
-    const tr = document.createElement('tr');
-    cells.forEach((text, i) => {
-        const td = document.createElement('td');
-        if (htmlCells && htmlCells[i] !== undefined) {
-            td.innerHTML = htmlCells[i];
-        } else {
-            td.textContent = text;
-        }
-        tr.appendChild(td);
-    });
-    return tr;
-}
-
-function _swRow(cells) {
-    const tr = document.createElement('tr');
-    cells.forEach(text => {
-        const td = document.createElement('td');
-        td.textContent = text;
-        tr.appendChild(td);
-    });
-    return tr;
-}
-
-function _upMessageRow(msg, cols) {
-    const tr = document.createElement('tr');
-    const td = document.createElement('td');
-    td.colSpan = cols;
-    td.className = 'text-center';
-    td.textContent = msg;
-    tr.appendChild(td);
-    return tr;
-}
-
-function _swMessageRow(msg, cols, color) {
-    const tr = document.createElement('tr');
-    const td = document.createElement('td');
-    td.colSpan = cols;
-    td.className = 'text-center';
-    if (color) td.style.color = color;
-    td.textContent = msg;
-    tr.appendChild(td);
-    return tr;
-}
-
-async function loadUpdates() {
-    const tbody = document.getElementById('updates-body');
-    try {
-        const data = await apiFetch('/pcs/' + PC_ID + '/updates');
-        const list = data.updates || [];
-        document.getElementById('updates-title').textContent =
-            'Windows Update 一覧 (' + (data.total || 0) + '件)';
-        if (list.length === 0) {
-            tbody.replaceChildren(_upMessageRow('Windows Update 情報がありません', 5));
-            return;
-        }
-        const fragment = document.createDocumentFragment();
-        list.forEach(u => {
-            const severityHtml = _severityBadge[u.severity] || (u.severity ? u.severity : '-');
-            const installedHtml = u.installed
-                ? '<span class="status-badge status-completed">インストール済</span>'
-                : '<span class="status-badge status-pending">未インストール</span>';
-            fragment.appendChild(_upRow(
-                [u.kb_id || '-', u.title || '-', '', '', u.installed_at ? new Date(u.installed_at).toLocaleString('ja-JP') : '-'],
-                { 2: severityHtml, 3: installedHtml }
-            ));
-        });
-        tbody.replaceChildren(fragment);
-    } catch (e) {
-        tbody.replaceChildren(_upMessageRow('読み込みに失敗しました', 5));
-    }
-}
-
-async function loadSoftware() {
-    const tbody = document.getElementById('software-body');
-    try {
-        const data = await apiFetch('/pcs/' + PC_ID + '/software');
-        const list = data.software || [];
-        document.getElementById('software-title').textContent =
-            'インストール済みソフトウェア (' + (data.total || 0) + '件)';
-        if (list.length === 0) {
-            tbody.replaceChildren(_swMessageRow('ソフトウェア情報がありません', 4, null));
-            return;
-        }
-        const fragment = document.createDocumentFragment();
-        list.forEach(sw => {
-            fragment.appendChild(_swRow([
-                sw.name || '-',
-                sw.version || '-',
-                sw.publisher || '-',
-                sw.install_date ? new Date(sw.install_date).toLocaleDateString('ja-JP') : '-',
-            ]));
-        });
-        tbody.replaceChildren(fragment);
-    } catch (e) {
-        tbody.replaceChildren(_swMessageRow('読み込みに失敗しました', 4, 'var(--danger)'));
-    }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => activateTab(btn.dataset.tab));
+    });
+
+    const typeSelect = document.getElementById('task-type-select');
+    if (typeSelect) {
+        typeSelect.addEventListener('change', () => {
+            const cmdInput = document.getElementById('task-command');
+            if (!cmdInput) return;
+            if (typeSelect.value === 'custom') {
+                cmdInput.classList.remove('hidden');
+            } else {
+                cmdInput.classList.add('hidden');
+            }
+        });
+    }
+
     const executeBtn = document.getElementById('btn-execute-task');
     if (executeBtn) executeBtn.addEventListener('click', executeTask);
 
-    loadPCDetail();
-    loadUpdates();
-    loadSoftware();
-    setInterval(() => { loadPCDetail(); loadUpdates(); loadSoftware(); }, 30000);
+    const initial = (window.location.hash || '').replace(/^#/, '');
+    if (initial && document.querySelector('.tab-btn[data-tab="' + CSS.escape(initial) + '"]')) {
+        activateTab(initial);
+    }
+
+    loadPCDetails();
+    setInterval(loadPCDetails, 30000);
 });
