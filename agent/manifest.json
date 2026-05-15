@@ -1,0 +1,12 @@
+{
+  "_comment": "SHA-256 manifest for Agent self-check (Issue #188 part 2). Regenerate via tools/Update-AgentManifest.ps1 when agent files change.",
+  "version": "1.0.0",
+  "algorithm": "SHA-256",
+  "files": {
+    "PCOpsAgent.ps1": "71847dca7a40effc7c929ce99965e76ae3e432a61a17963f70ffc23556affc97",
+    "Register-AgentTask.ps1": "6682dd312df491e15a39f8b1f82a4497896c040037e59047477da152c1de9986",
+    "collectors/Get-HardwareInfo.ps1": "1584972a880ccbc8962387d5f8a547c6c3dfc8535b31e565e9e1181f435308ae",
+    "collectors/Get-SoftwareInfo.ps1": "3cd6012430c72a5475b010eb207cb0a36c43bd196cc60943e750098997c3a83a",
+    "collectors/Get-NetworkInfo.ps1": "829e9fe3b0a727fdbb07f42d01c5b178272c4a6240b210f77b19503b19ec67cf"
+  }
+}

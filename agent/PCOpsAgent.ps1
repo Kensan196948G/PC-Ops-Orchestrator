@@ -636,6 +636,77 @@ function Start-AgentLoop {
     }
 }
 
+# === Self-check (Issue #188 part 2) ===
+# Verify the integrity of the Agent install before acquiring the single-instance
+# Mutex. A manifest.json shipped alongside PCOpsAgent.ps1 carries SHA-256 hashes
+# of every file the Agent loads (the entry script + collectors + scheduled-task
+# registrar). Mismatch or missing manifest is fail-closed: the Agent refuses to
+# start so a tampered binary cannot collect data or fetch tasks.
+#
+# This runs *before* the Mutex so a tampered second instance is rejected at the
+# earliest point. The manifest path is fixed alongside SCRIPT_DIR; an attacker
+# who can rewrite manifest.json can also rewrite the script itself, so this is a
+# tamper-evidence layer (not anti-tamper). Combined with later DPAPI api_key
+# protection (#188 part 3) and HMAC job signing (#188 part 4), it raises the bar
+# for an attacker swapping files on disk.
+function Test-AgentIntegrity {
+    param([string]$AgentRoot)
+
+    $manifestPath = Join-Path $AgentRoot "manifest.json"
+    if (-not (Test-Path $manifestPath)) {
+        Write-AgentError "Self-check失敗: manifest.json が見つかりません: $manifestPath"
+        return $false
+    }
+
+    try {
+        $manifest = Get-Content $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    } catch {
+        Write-AgentError "Self-check失敗: manifest.json 解析エラー: $_"
+        return $false
+    }
+
+    if (-not $manifest.files) {
+        Write-AgentError "Self-check失敗: manifest.json に files セクションがありません"
+        return $false
+    }
+
+    if ($manifest.algorithm -and $manifest.algorithm -ne "SHA-256") {
+        Write-AgentError "Self-check失敗: 未対応のアルゴリズム: $($manifest.algorithm)"
+        return $false
+    }
+
+    foreach ($prop in $manifest.files.PSObject.Properties) {
+        $relPath = $prop.Name
+        $expected = $prop.Value
+        if ([string]::IsNullOrWhiteSpace($expected) -or $expected -eq "PLACEHOLDER") {
+            Write-AgentError "Self-check失敗: $relPath のハッシュが未定義 (PLACEHOLDER)"
+            return $false
+        }
+        $absPath = Join-Path $AgentRoot $relPath
+        if (-not (Test-Path $absPath)) {
+            Write-AgentError "Self-check失敗: ファイル欠落: $relPath"
+            return $false
+        }
+        try {
+            $actual = (Get-FileHash -Path $absPath -Algorithm SHA256 -ErrorAction Stop).Hash
+        } catch {
+            Write-AgentError "Self-check失敗: ${relPath} のハッシュ計算エラー: $_"
+            return $false
+        }
+        if ($actual.ToUpperInvariant() -ne $expected.ToUpperInvariant()) {
+            Write-AgentError "Self-check失敗: ${relPath} 改竄検知 expected=$expected actual=$actual"
+            return $false
+        }
+    }
+    return $true
+}
+
+if (-not (Test-AgentIntegrity -AgentRoot $SCRIPT_DIR)) {
+    Write-AgentError "Agent 自己検証に失敗したため起動を中止します。manifest.json と配布物を確認してください。"
+    exit 1
+}
+Write-AgentInfo "Self-check成功: manifest 一致を確認"
+
 # === エントリーポイント ===
 # Single-instance enforcement (Issue #188 part 1).
 # A machine-wide named Mutex prevents a second PCOpsAgent process on the same
