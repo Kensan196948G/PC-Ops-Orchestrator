@@ -83,29 +83,80 @@ function Resolve-AgentApiKey {
         try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch {}
     }
 
-    $hasProtected = $Config.PSObject.Properties.Match('api_key_protected').Count -gt 0 `
-        -and -not [string]::IsNullOrWhiteSpace($Config.api_key_protected)
-    $hasPlain = $Config.PSObject.Properties.Match('api_key').Count -gt 0 `
-        -and -not [string]::IsNullOrWhiteSpace($Config.api_key)
+    # Hashtable / PSCustomObject 両対応 (config.json 欠落時は hashtable 経路に入る)
+    $isHashtable = ($Config -is [hashtable]) -or ($Config -is [System.Collections.IDictionary])
+
+    function Test-HasField {
+        param([string]$Name)
+        if ($isHashtable) {
+            return $Config.Contains($Name) `
+                -and -not [string]::IsNullOrWhiteSpace([string]$Config[$Name])
+        }
+        return $Config.PSObject.Properties.Match($Name).Count -gt 0 `
+            -and -not [string]::IsNullOrWhiteSpace([string]$Config.$Name)
+    }
+
+    function Get-Field {
+        param([string]$Name)
+        if ($isHashtable) { return $Config[$Name] }
+        return $Config.$Name
+    }
+
+    function Save-ProtectedConfig {
+        param([string]$ProtectedB64)
+        # api_key を必ず除去し api_key_protected を書き戻す (平文と protected の共存も解消)
+        $migrated = [ordered]@{}
+        if ($isHashtable) {
+            foreach ($p in $Config.Keys) {
+                if ($p -eq 'api_key') { continue }
+                if ($p -eq 'api_key_protected') { continue }
+                $migrated[$p] = $Config[$p]
+            }
+        } else {
+            foreach ($p in $Config.PSObject.Properties) {
+                if ($p.Name -eq 'api_key') { continue }
+                if ($p.Name -eq 'api_key_protected') { continue }
+                $migrated[$p.Name] = $p.Value
+            }
+        }
+        $migrated['api_key_protected'] = $ProtectedB64
+        $migrated | ConvertTo-Json -Depth 10 |
+            Set-Content -Path $ConfigPath -Encoding UTF8
+    }
+
+    $hasProtected = Test-HasField -Name 'api_key_protected'
+    $hasPlain = Test-HasField -Name 'api_key'
 
     if ($hasProtected) {
         try {
-            $cipherBytes = [Convert]::FromBase64String($Config.api_key_protected)
+            $cipherBytes = [Convert]::FromBase64String((Get-Field -Name 'api_key_protected'))
             $plainBytes = [System.Security.Cryptography.ProtectedData]::Unprotect(
                 $cipherBytes, $null,
                 [System.Security.Cryptography.DataProtectionScope]::CurrentUser
             )
-            return [System.Text.Encoding]::UTF8.GetString($plainBytes)
+            $resolved = [System.Text.Encoding]::UTF8.GetString($plainBytes)
         } catch {
             Write-Error "api_key_protected の復号に失敗 (DPAPI scope=CurrentUser): $_"
             exit 1
         }
+
+        # 平文と protected の共存があれば、復号成功後に平文を削除して config.json を書き直す
+        if ($hasPlain) {
+            Write-Warning "config.json に api_key_protected と平文 api_key が共存。平文を削除します。"
+            try {
+                Save-ProtectedConfig -ProtectedB64 (Get-Field -Name 'api_key_protected')
+            } catch {
+                Write-Error "config.json の平文削除書き込みに失敗: $_"
+                exit 1
+            }
+        }
+        return $resolved
     }
 
     if ($hasPlain) {
         Write-Warning "config.json に平文 api_key を検出。DPAPI で暗号化して書き直します。"
         try {
-            $plain = [string]$Config.api_key
+            $plain = [string](Get-Field -Name 'api_key')
             $plainBytes = [System.Text.Encoding]::UTF8.GetBytes($plain)
             $cipherBytes = [System.Security.Cryptography.ProtectedData]::Protect(
                 $plainBytes, $null,
@@ -117,17 +168,8 @@ function Resolve-AgentApiKey {
             exit 1
         }
 
-        # config.json を再構築 (api_key を削除し api_key_protected を追加)
-        $migrated = [ordered]@{}
-        foreach ($p in $Config.PSObject.Properties) {
-            if ($p.Name -eq 'api_key') { continue }
-            $migrated[$p.Name] = $p.Value
-        }
-        $migrated['api_key_protected'] = $b64
-
         try {
-            $migrated | ConvertTo-Json -Depth 10 |
-                Set-Content -Path $ConfigPath -Encoding UTF8
+            Save-ProtectedConfig -ProtectedB64 $b64
         } catch {
             Write-Error "config.json への migrate 書き込みに失敗: $_"
             exit 1
