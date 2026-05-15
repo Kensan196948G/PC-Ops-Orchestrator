@@ -55,6 +55,7 @@ class PC(db.Model):
     pc_name = db.Column(db.String(255), unique=True, nullable=False, index=True)
     domain = db.Column(db.String(255))
     os_version = db.Column(db.String(255))
+    os_build = db.Column(db.String(64))
     os_architecture = db.Column(db.String(32))
     cpu_name = db.Column(db.String(255))
     cpu_cores = db.Column(db.Integer)
@@ -100,6 +101,12 @@ class PC(db.Model):
     alerts = db.relationship(
         "Alert", backref="pc", lazy="dynamic", cascade="all, delete-orphan"
     )
+    network_interfaces = db.relationship(
+        "NetworkInterface",
+        backref="pc",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
 
     def to_dict(self):
         return {
@@ -107,6 +114,7 @@ class PC(db.Model):
             "pc_name": self.pc_name,
             "domain": self.domain,
             "os_version": self.os_version,
+            "os_build": self.os_build,
             "os_architecture": self.os_architecture,
             "cpu_name": self.cpu_name,
             "cpu_cores": self.cpu_cores,
@@ -671,3 +679,96 @@ class BackupJob(db.Model):
 
     def __repr__(self) -> str:
         return f"<BackupJob {self.id} {self.backup_type} {self.status}>"
+
+
+class NetworkInterface(db.Model):
+    __tablename__ = "network_interfaces"
+
+    id = db.Column(db.Integer, primary_key=True)
+    pc_id = db.Column(db.Integer, db.ForeignKey("pcs.id"), nullable=False, index=True)
+    interface_name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.String(255))
+    mac_address = db.Column(db.String(17))
+    ip_address = db.Column(db.String(45))
+    ipv6_address = db.Column(db.String(45))
+    subnet_mask = db.Column(db.String(45))
+    gateway = db.Column(db.String(45))
+    dns_servers = db.Column(db.Text)
+    link_speed_mbps = db.Column(db.Integer)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    collected_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "pc_id", "interface_name", name="uq_network_interface_pc_name"
+        ),
+    )
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "pc_id": self.pc_id,
+            "interface_name": self.interface_name,
+            "description": self.description,
+            "mac_address": self.mac_address,
+            "ip_address": self.ip_address,
+            "ipv6_address": self.ipv6_address,
+            "subnet_mask": self.subnet_mask,
+            "gateway": self.gateway,
+            "dns_servers": self.dns_servers,
+            "link_speed_mbps": self.link_speed_mbps,
+            "is_active": self.is_active,
+            "collected_at": self.collected_at.isoformat()
+            if self.collected_at
+            else None,
+        }
+
+    def __repr__(self) -> str:
+        return f"<NetworkInterface {self.pc_id}:{self.interface_name}>"
+
+
+class JobTemplate(db.Model):
+    """PowerShell job template skeleton (Phase A-1 prep for Phase B-1).
+
+    Phase B-1 will populate `script_body`, `parameters_schema`, `risk_level`
+    and approval requirements. A-1 only lays down the table so Phase A-2's
+    Agent collectors and Phase A-3's UI can reference template identifiers.
+    """
+
+    __tablename__ = "job_templates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    description = db.Column(db.Text)
+    category = db.Column(db.String(64), default="general")
+    script_body = db.Column(db.Text)
+    parameters_schema = db.Column(db.Text)
+    risk_level = db.Column(
+        db.String(16), nullable=False, default="low"
+    )  # low / medium / high
+    requires_approval = db.Column(db.Boolean, default=False, nullable=False)
+    is_enabled = db.Column(db.Boolean, default=True, nullable=False, index=True)
+    created_by = db.Column(db.String(255), default="system")
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "category": self.category,
+            "risk_level": self.risk_level,
+            "requires_approval": self.requires_approval,
+            "is_enabled": self.is_enabled,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    def __repr__(self) -> str:
+        return f"<JobTemplate {self.name} risk={self.risk_level}>"
