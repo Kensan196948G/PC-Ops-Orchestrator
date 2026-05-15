@@ -90,7 +90,7 @@
     "score": 0
   },
   "open_issues": {
-    "note": "PR #147 (全スタブ機能実機能化) CI実行中。343 tests PASS。data-stub-alert=0 達成。API キー/バックアップ/設定/証明書 CRUD 完了。次: PR #147 マージ後 v1.1.0 タグ検討。"
+    "note": "PR #153 (routes カバレッジ 95% 達成) CI実行待ち。730 tests PASS。routes coverage 95% (2079 stmts / 112 miss)。test_misc_coverage.py 29テスト追加済み。collect.py db.session.commit() バグ修正済み。"
   },
   "milestones": {
     "M1": {
