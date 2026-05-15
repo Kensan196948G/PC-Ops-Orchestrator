@@ -1,4 +1,8 @@
+import hashlib
+import hmac
+import json
 import logging
+import secrets
 from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -107,17 +111,40 @@ def collect():
 
     tasks = _get_pending_tasks(pc.id)
     _evaluate_alert_rules(pc, snapshot)
+
+    # HMAC-SHA256 job signing (Issue #188 part 4).
+    # Lazily issue a per-PC signing key on first contact. The freshly minted
+    # key is returned exactly once in this response so the agent can persist
+    # it (DPAPI-protected) locally. Subsequent responses sign with the same
+    # key but never re-deliver it — at-rest exposure stays bounded to the
+    # owning Windows user account.
+    newly_issued_key = None
+    if not pc.agent_signing_key:
+        pc.agent_signing_key = secrets.token_urlsafe(64)
+        newly_issued_key = pc.agent_signing_key
+
     db.session.commit()
 
-    return jsonify(
-        {
-            "message": "ok",
-            "pc_id": pc.id,
-            "health_score": pc.health_score,
-            "status": pc.status,
-            "pending_tasks": tasks,
-        }
-    )
+    canonical = json.dumps(tasks, sort_keys=True, separators=(",", ":"))
+    signature = hmac.new(
+        pc.agent_signing_key.encode("utf-8"),
+        canonical.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+    response_body = {
+        "message": "ok",
+        "pc_id": pc.id,
+        "health_score": pc.health_score,
+        "status": pc.status,
+        "pending_tasks": tasks,
+        "pending_tasks_sig": signature,
+        "pending_tasks_sig_alg": "HMAC-SHA256",
+    }
+    if newly_issued_key is not None:
+        response_body["agent_signing_key"] = newly_issued_key
+
+    return jsonify(response_body)
 
 
 @collect_bp.route("/collect/detail", methods=["POST"])

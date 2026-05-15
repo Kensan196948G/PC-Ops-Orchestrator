@@ -6,8 +6,11 @@ Covers:
 - _calculate_health_score branches (memory/disk thresholds)
 - _evaluate_alert_rules (cpu/memory/disk rules, existing alert dedup)
 - Edge cases: missing body, missing pc_name, invalid last_boot_time
+- HMAC-SHA256 pending_tasks signing (Issue #188 part 4)
 """
 
+import hashlib
+import hmac
 import json
 import sys
 import os
@@ -993,3 +996,89 @@ def test_trim_snapshots_deletes_oldest_beyond_limit():
         pc = PC.query.filter_by(pc_name=name).first()
         count = SystemSnapshot.query.filter_by(pc_id=pc.id).count()
         assert count <= 720
+
+
+# ── HMAC-SHA256 pending_tasks signing (Issue #188 part 4) ────────────────────
+
+
+def _compute_expected_sig(key: str, tasks):
+    """Replicate the server-side canonical-JSON + HMAC-SHA256 algorithm."""
+    canonical = json.dumps(tasks, sort_keys=True, separators=(",", ":"))
+    return hmac.new(
+        key.encode("utf-8"), canonical.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+
+
+def test_collect_first_call_issues_signing_key():
+    """First /api/collect for a new PC returns agent_signing_key + signed pending_tasks."""
+    name = f"SignFirst-{_unique}"
+    r = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    assert r.status_code == 200
+    data = json.loads(r.data)
+
+    assert "agent_signing_key" in data
+    assert isinstance(data["agent_signing_key"], str)
+    assert len(data["agent_signing_key"]) >= 64
+    assert data["pending_tasks_sig_alg"] == "HMAC-SHA256"
+    assert "pending_tasks_sig" in data
+    assert len(data["pending_tasks_sig"]) == 64  # SHA-256 hex = 64 chars
+
+    expected = _compute_expected_sig(data["agent_signing_key"], data["pending_tasks"])
+    assert hmac.compare_digest(expected, data["pending_tasks_sig"])
+
+
+def test_collect_second_call_omits_key_but_signs():
+    """Second /api/collect for the same PC: no agent_signing_key returned, but sig still valid."""
+    name = f"SignSecond-{_unique}"
+    r1 = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    issued_key = json.loads(r1.data)["agent_signing_key"]
+
+    r2 = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    assert r2.status_code == 200
+    data2 = json.loads(r2.data)
+
+    # Second response must NOT redeliver the key
+    assert "agent_signing_key" not in data2
+    assert data2["pending_tasks_sig_alg"] == "HMAC-SHA256"
+
+    # Recomputing with the originally issued key still verifies
+    expected = _compute_expected_sig(issued_key, data2["pending_tasks"])
+    assert hmac.compare_digest(expected, data2["pending_tasks_sig"])
+
+
+def test_collect_signing_key_persisted_on_pc():
+    """Issued signing key is stored on the PC row (non-empty, stable across calls)."""
+    name = f"SignPersist-{_unique}"
+    r1 = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    issued_key = json.loads(r1.data)["agent_signing_key"]
+
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        assert pc.agent_signing_key == issued_key
+
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        assert pc.agent_signing_key == issued_key  # unchanged on subsequent calls
+
+
+def test_collect_signature_detects_tampering():
+    """Tampering with pending_tasks invalidates the signature."""
+    name = f"SignTamper-{_unique}"
+    r = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    data = json.loads(r.data)
+    key = data["agent_signing_key"]
+
+    tampered = list(data["pending_tasks"]) + [{"id": 999, "task_type": "evil"}]
+    bad_sig = _compute_expected_sig(key, tampered)
+    assert not hmac.compare_digest(bad_sig, data["pending_tasks_sig"])
+
+
+def test_collect_signing_key_not_in_to_dict():
+    """PC.to_dict() must never leak agent_signing_key (server-internal secret)."""
+    name = f"SignNoLeak-{_unique}"
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        d = pc.to_dict()
+        assert "agent_signing_key" not in d
