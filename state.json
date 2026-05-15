@@ -31,8 +31,8 @@
     "week": 2
   },
   "kpi": {
-    "ci_success_rate": 1.0,
-    "test_pass_rate": 1.0,
+    "ci_success_rate": 1,
+    "test_pass_rate": 1,
     "review_blocker_count": 0,
     "security_issue_count": 0
   },
@@ -42,9 +42,9 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-09T19:00:01+09:00",
+    "current_session_start_at": "2026-05-15T05:12:54.807Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
-    "last_trigger": "cron",
+    "last_trigger": "manual",
     "last_cron_session_id": "20260509-190001-PC-Ops-Orchestrator"
   },
   "status": {
@@ -90,7 +90,7 @@
     "score": 0
   },
   "open_issues": {
-    "note": "PR #147 (全スタブ機能実機能化) CI実行中。343 tests PASS。data-stub-alert=0 達成。API キー/バックアップ/設定/証明書 CRUD 完了。次: PR #147 マージ後 v1.1.0 タグ検討。"
+    "note": "PR #153 (routes カバレッジ 95% 達成) CI実行待ち。730 tests PASS。routes coverage 95% (2079 stmts / 112 miss)。test_misc_coverage.py 29テスト追加済み。collect.py db.session.commit() バグ修正済み。"
   },
   "milestones": {
     "M1": {
@@ -150,42 +150,34 @@
     }
   },
   "session_summary": {
-    "id": "20260513-190001-v2-PC-Ops-Orchestrator",
-    "loop_phase": "Monitor → Build (全スタブ機能実機能化) → Verify (343 tests PASS) → Improve (README/state更新)",
-    "duration_minutes": 180,
-    "prs_merged": [139],
-    "prs_pending": [147],
+    "id": "20260515-session-coverage-improvement",
+    "loop_phase": "Improve (カバレッジ 74% → 83% — certificates/licenses/notification_channels テスト追加)",
+    "duration_minutes": 60,
+    "prs_merged": [
+      139,
+      147
+    ],
+    "prs_pending": [],
     "issues_closed": [],
     "issues_opened": [],
     "completed": [
-      "certs.html: ダミー行削除、登録/編集/削除モーダル実装、stat カード動的更新",
-      "certificates.js: inline style → d-flex-gap (CSP Phase 3 維持)",
-      "agents.html: API キー CRUD 実装 (一覧/作成/ローテート/削除/結果表示モーダル)",
-      "routes/api_keys.py: GET/POST/rotate/DELETE 4 エンドポイント",
-      "models.py: ApiKey モデル追加 (key_prefix + key_value, generate classmethod)",
-      "routes/settings.py: GET/PUT /api/settings (13 キー, key-value DB 保存)",
-      "models.py: SystemSetting モデル追加",
-      "settings.html: data-stub-alert 削除、フォーム入力有効化、settings.js 連携",
-      "routes/backups.py: GET /api/backups, POST /api/backups/trigger, POST /api/backups/integrity-check",
-      "models.py: BackupJob モデル追加",
-      "backups.html: 全 data-stub-alert 削除、動的テーブル + stat カード",
-      "backups.js: loadBackups / trigger / integrity-check / restore確認フロー",
-      "test_api.py: +10 テスト追加 (API キー 4 + バックアップ 3 + 設定 3 = 343 tests PASS)",
-      "data-stub-alert: 全テンプレートから完全削除 (0 件達成)",
-      "README.md: WebUI 機能一覧・API エンドポイント・テスト件数・M6 進捗更新",
-      "PR #147 作成・プッシュ (CI 実行中)"
+      "test_certificates_licenses.py: 79 テスト新規追加 (certificates.py 19%→97%, licenses.py 26%→99%)",
+      "test_notification_channels.py: 42 テスト新規追加 (notification_channels.py 49%→96%)",
+      "カバレッジ全体: 74% → 83% (目標 80%+ 達成)",
+      "ユニットテスト合計: 479 PASS (E2E除く)"
     ],
-    "ci_status": "PR #147 CI 実行中。ローカルテスト 343 passed, 0 failed。",
+    "ci_status": "ローカルテスト 479 passed, 0 failed (E2E除く)。カバレッジ 83%。",
     "verification": {
-      "pytest_unit": "358 passed, 0 failed",
+      "pytest_unit": "479 passed, 0 failed",
+      "coverage_total": "83%",
       "ruff_check": "All checks passed",
       "ruff_format": "All files formatted",
-      "data_stub_alert": "0 件 (全テンプレートから削除完了)"
+      "data_stub_alert": "0 件 (前セッションで全削除済み)"
     },
     "resume_point": {
-      "next_action": "PR #147 CI 全 PASS 確認後 merge → v1.1.0 タグ → 次: reports/dashboard 改善",
+      "next_action": "test_certificates_licenses.py / test_notification_channels.py を branch に commit → PR → CI → merge。次: collect.py (44%) テスト追加 or v1.1.0 タグ",
       "blocker": "なし",
-      "notes": "今セッション主成果: 全スタブ機能 (certs/agents API キー/backups/settings) 実機能化完了。data-stub-alert=0 達成。358 tests PASS。requirements.txt に requests 追加 (CI 修正)。PR #147 CI 13/13 PASS (run 25796484990)。api_keys.py 100% カバレッジ達成。"
+      "notes": "今セッション主成果: カバレッジ 83% 達成。test_certificates_licenses.py (79件) + test_notification_channels.py (42件) 追加。残課題: collect.py 44%, agents.py 59%。"
     }
   },
   "learning": {
@@ -231,5 +223,8 @@
       "Flask-Migrate は既存 DB に NOT NULL カラムを追加する場合 server_default を設定しないと OperationalError になる (SQLite の制約)",
       "reportlab TTFont で日本語 PDF を生成する場合 /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf が利用可能 (Ubuntu 22.04 以降は ipafont-gothic パッケージで提供)"
     ]
+  },
+  "compact": {
+    "last_pre_compact_at": "2026-05-15T05:11:10.338Z"
   }
 }
