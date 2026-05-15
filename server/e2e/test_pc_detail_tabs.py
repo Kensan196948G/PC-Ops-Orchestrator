@@ -16,14 +16,17 @@ TABS = ["overview", "hardware", "software", "network", "updates", "history", "ta
 
 
 @pytest.fixture(scope="module")
-def detail_pc_id():
-    """Insert one PC row + supporting rows into the live_server DB."""
-    from app import create_app
+def detail_pc_id(live_server_app):
+    """Insert one PC row + supporting rows into the live_server's DB.
+
+    Must use live_server_app (NOT a fresh create_app("testing")) — sqlite
+    in-memory engines are isolated per-app, so a separate app instance would
+    produce a different DB and the live_server thread would 404 on /details.
+    """
     from extensions import db
     from models import PC, Software, NetworkInterface, WindowsUpdate
 
-    app = create_app("testing")
-    with app.app_context():
+    with live_server_app.app_context():
         suffix = uuid.uuid4().hex[:6]
         pc = PC(
             pc_name=f"E2E-DETAIL-{suffix}",
