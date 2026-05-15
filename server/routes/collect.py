@@ -9,6 +9,7 @@ from models import (
     EventLog,
     AlertRule,
     Alert,
+    NetworkInterface,
 )
 from auth import agent_auth_required
 
@@ -35,6 +36,7 @@ def collect():
 
     pc.domain = data.get("domain", pc.domain)
     pc.os_version = data.get("os_version", pc.os_version)
+    pc.os_build = data.get("os_build", pc.os_build)
     pc.os_architecture = data.get("os_architecture", pc.os_architecture)
     pc.cpu_name = data.get("cpu_name", pc.cpu_name)
     pc.cpu_cores = data.get("cpu_cores", pc.cpu_cores)
@@ -54,6 +56,25 @@ def collect():
         pc.connection_type = data["connection_type"]
     # Reset offline pending count on successful sync
     pc.offline_pending_count = 0
+
+    # Phase A-2: hardware payload (optional flat-key alternative)
+    hardware = data.get("hardware")
+    if isinstance(hardware, dict):
+        pc.os_build = hardware.get("os_build", pc.os_build)
+        pc.cpu_name = hardware.get("cpu_name", pc.cpu_name)
+        pc.cpu_cores = hardware.get("cpu_cores", pc.cpu_cores)
+        pc.cpu_logical_processors = hardware.get(
+            "cpu_logical_processors", pc.cpu_logical_processors
+        )
+        pc.memory_total_gb = hardware.get("memory_total_gb", pc.memory_total_gb)
+        pc.memory_available_gb = hardware.get(
+            "memory_available_gb", pc.memory_available_gb
+        )
+
+    # Phase A-2: network array → NetworkInterface upsert
+    network_list = data.get("network", [])
+    if isinstance(network_list, list) and network_list:
+        _upsert_network_interfaces(pc.id, network_list)
 
     pc.health_score = _calculate_health_score(pc)
 
@@ -255,6 +276,39 @@ def collect_sync():
             "skipped": skipped,
         }
     )
+
+
+def _upsert_network_interfaces(pc_id, network_list):
+    """Phase A-2 (#175): upsert NetworkInterface rows by (pc_id, interface_name).
+
+    Idempotent — existing rows for the same (pc_id, interface_name) are updated
+    in place. Unknown adapter names create new rows. NICs not present in the
+    payload are left untouched (no implicit deactivation) to keep the operation
+    purely additive and safe to retry from an offline-cached agent push.
+    """
+    now = datetime.now(timezone.utc)
+    for nic in network_list:
+        if not isinstance(nic, dict):
+            continue
+        name = (nic.get("interface_name") or "").strip()
+        if not name:
+            continue
+        existing = NetworkInterface.query.filter_by(
+            pc_id=pc_id, interface_name=name
+        ).first()
+        if not existing:
+            existing = NetworkInterface(pc_id=pc_id, interface_name=name)
+            db.session.add(existing)
+        existing.description = nic.get("description", existing.description)
+        existing.mac_address = nic.get("mac_address", existing.mac_address)
+        existing.ip_address = nic.get("ip_address", existing.ip_address)
+        existing.ipv6_address = nic.get("ipv6_address", existing.ipv6_address)
+        existing.subnet_mask = nic.get("subnet_mask", existing.subnet_mask)
+        existing.gateway = nic.get("gateway", existing.gateway)
+        existing.dns_servers = nic.get("dns_servers", existing.dns_servers)
+        existing.link_speed_mbps = nic.get("link_speed_mbps", existing.link_speed_mbps)
+        existing.is_active = nic.get("is_active", True)
+        existing.collected_at = now
 
 
 def _trim_snapshots(pc_id, keep=720):
