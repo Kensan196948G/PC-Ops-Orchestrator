@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify, make_response, request
 from sqlalchemy import case
 from auth import login_required
 from extensions import db
-from models import PC, SystemSnapshot
+from models import PC, SystemSnapshot, Task
 
 agents_bp = Blueprint("agents", __name__, url_prefix="/api")
 
@@ -140,6 +140,18 @@ def list_agents():
         ):
             latest_snaps[snap.pc_id] = snap
 
+    # Aggregate pending/running task count per PC in one query to avoid N+1
+    pending_job_counts: dict[int, int] = {}
+    if pc_ids:
+        rows = (
+            db.session.query(Task.pc_id, db.func.count(Task.id))
+            .filter(Task.pc_id.in_(pc_ids))
+            .filter(Task.status.in_(("pending", "running")))
+            .group_by(Task.pc_id)
+            .all()
+        )
+        pending_job_counts = {pc_id: cnt for pc_id, cnt in rows if pc_id is not None}
+
     def _online_status(last_seen_dt):
         """Return 4-state online status based on last_seen age."""
         if last_seen_dt is None:
@@ -152,6 +164,22 @@ def list_agents():
         if elapsed < 604800:
             return "offline"
         return "stale"
+
+    def _sub_states(pc, pending_job_count):
+        """Derive Issue #180 sub-state flags (orthogonal to base online_status).
+
+        - vpn_required: PC is currently reaching the server via SSL-VPN
+        - pending_sync: agent has offline cache rows waiting to be flushed
+        - pending_job: server has pending/running tasks queued for this PC
+        """
+        flags = []
+        if (pc.connection_type or "").upper() in ("SSL-VPN", "VPN"):
+            flags.append("vpn_required")
+        if (pc.offline_pending_count or 0) > 0:
+            flags.append("pending_sync")
+        if pending_job_count > 0:
+            flags.append("pending_job")
+        return flags
 
     def agent_dict(pc):
         last_seen_dt = None
@@ -167,6 +195,7 @@ def list_agents():
         if pc.memory_total_gb and pc.memory_available_gb is not None:
             used = pc.memory_total_gb - pc.memory_available_gb
             memory_usage = round(used / pc.memory_total_gb * 100, 1)
+        pending_job_count = pending_job_counts.get(pc.id, 0)
         return {
             "id": pc.id,
             "pc_name": pc.pc_name,
@@ -180,6 +209,8 @@ def list_agents():
             "online_status": online_status,
             "connection_type": pc.connection_type or "Unknown",
             "offline_pending_count": pc.offline_pending_count or 0,
+            "pending_job_count": pending_job_count,
+            "sub_states": _sub_states(pc, pending_job_count),
             "last_seen": pc.last_seen.isoformat() if pc.last_seen else None,
         }
 

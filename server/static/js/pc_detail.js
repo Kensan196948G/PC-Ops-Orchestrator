@@ -58,6 +58,32 @@ function connectionBadgeNode(type) {
     return makeBadge(entry[0], entry[1]);
 }
 
+function makeSubStateChip(cls, label, title) {
+    const span = document.createElement('span');
+    span.className = 'badge ' + cls + ' ml-xs';
+    if (title) span.title = title;
+    span.textContent = label;
+    return span;
+}
+
+function subStatesNode(pc) {
+    const states = Array.isArray(pc && pc.sub_states) ? pc.sub_states : [];
+    if (states.length === 0) return document.createTextNode('—');
+    const frag = document.createDocumentFragment();
+    if (states.includes('vpn_required')) {
+        frag.appendChild(makeSubStateChip('badge-info', '🔒 VPN', 'SSL-VPN 経由で接続中'));
+    }
+    if (states.includes('pending_sync')) {
+        const cnt = pc.offline_pending_count ?? 0;
+        frag.appendChild(makeSubStateChip('badge-warning', `📦 同期待ち ${cnt}`, 'オフラインキャッシュ件数'));
+    }
+    if (states.includes('pending_job')) {
+        const cnt = pc.pending_job_count ?? 0;
+        frag.appendChild(makeSubStateChip('badge-primary', `🔧 ジョブ待ち ${cnt}`, 'サーバ側で実行待ちのジョブ件数'));
+    }
+    return frag;
+}
+
 function setText(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = value == null || value === '' ? '-' : value;
@@ -135,6 +161,7 @@ function renderPCInfo(pc) {
     setNode('d-status', statusBadgeNode(pc.status));
     setText('d-score', pc.health_score);
     setNode('d-connection', connectionBadgeNode(pc.connection_type || 'unknown'));
+    setNode('d-sub-states', subStatesNode(pc));
     setText('d-last-seen', fmtDateTime(pc.last_seen));
     setText('d-agent-ver', pc.agent_version);
 

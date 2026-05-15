@@ -42,10 +42,11 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-15T07:25:53.424Z",
+    "current_session_start_at": "2026-05-15T11:49:32.989Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "manual",
-    "last_cron_session_id": "20260509-190001-PC-Ops-Orchestrator"
+    "last_cron_session_id": "20260509-190001-PC-Ops-Orchestrator",
+    "last_stop_at": "2026-05-15T11:34:04.061Z"
   },
   "status": {
     "current_phase": "improve",
@@ -238,9 +239,155 @@
       "Flask-Migrate は既存 DB に NOT NULL カラムを追加する場合 server_default を設定しないと OperationalError になる (SQLite の制約)",
       "reportlab TTFont で日本語 PDF を生成する場合 /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf が利用可能 (Ubuntu 22.04 以降は ipafont-gothic パッケージで提供)",
       "4-state PC オンライン状態: online (<5分) / recently_seen (5-30分) / offline (30分-7日) / stale (>7日) の時間閾値設計。CSV エクスポートでも同一ラベルを使用する"
-    ]
+    ],
+    "usage_history": {
+      "agents": {
+        "pr-review-toolkit_silent-failure-hunter": {
+          "call_count": 1,
+          "last_used": "2026-05-15T10:11:08.920Z",
+          "last_description": "Silent failure hunt PR #181"
+        },
+        "_total_agent_calls": 2,
+        "_last_agent_call_at": "2026-05-15T10:11:17.793Z",
+        "pr-review-toolkit_code-reviewer": {
+          "call_count": 1,
+          "last_used": "2026-05-15T10:11:17.793Z",
+          "last_description": "PR #181 code review"
+        }
+      }
+    }
   },
   "compact": {
-    "last_pre_compact_at": "2026-05-15T07:24:21.410Z"
-  }
+    "last_pre_compact_at": "2026-05-15T11:47:48.797Z"
+  },
+  "dreaming": {
+    "patterns": [],
+    "curated_memories": [],
+    "recurring_mistakes": [],
+    "last_dreaming_run": null,
+    "dreaming_enabled": false
+  },
+  "warnings": [
+    {
+      "at": "2026-05-15T09:32:55.694Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 6 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/e2e/test_js_behavior.py",
+        "server/static/js/lib/chart.umd.min.js",
+        "server/test_app.py",
+        "server/test_config.py",
+        "server/test_scheduler.py",
+        "server/test_security_backend.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T10:21:14.614Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 8 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/e2e/test_js_behavior.py",
+        "server/migrations/versions/b2c3d4e5f6a7_phase_a1_schema.py",
+        "server/models.py",
+        "server/routes/collect.py",
+        "server/static/js/lib/chart.umd.min.js",
+        "server/test_collect_a2.py",
+        "server/test_phase_a1_models.py",
+        "server/test_security_backend.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T10:27:15.114Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 8 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/e2e/test_js_behavior.py",
+        "server/migrations/versions/b2c3d4e5f6a7_phase_a1_schema.py",
+        "server/models.py",
+        "server/routes/collect.py",
+        "server/static/js/lib/chart.umd.min.js",
+        "server/test_collect_a2.py",
+        "server/test_phase_a1_models.py",
+        "server/test_security_backend.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T10:57:09.313Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 10 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/e2e/conftest.py",
+        "server/e2e/test_pc_detail_tabs.py",
+        "server/migrations/versions/b2c3d4e5f6a7_phase_a1_schema.py",
+        "server/models.py",
+        "server/routes/collect.py",
+        "server/routes/pcs.py",
+        "server/static/js/pc_detail.js",
+        "server/test_collect_a2.py",
+        "server/test_pc_details.py",
+        "server/test_phase_a1_models.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T10:58:33.112Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 10 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/e2e/conftest.py",
+        "server/e2e/test_pc_detail_tabs.py",
+        "server/migrations/versions/b2c3d4e5f6a7_phase_a1_schema.py",
+        "server/models.py",
+        "server/routes/collect.py",
+        "server/routes/pcs.py",
+        "server/static/js/pc_detail.js",
+        "server/test_collect_a2.py",
+        "server/test_pc_details.py",
+        "server/test_phase_a1_models.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T11:21:21.579Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 13 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/e2e/conftest.py",
+        "server/e2e/test_js_behavior.py",
+        "server/e2e/test_pc_detail_tabs.py",
+        "server/migrations/versions/b2c3d4e5f6a7_phase_a1_schema.py",
+        "server/models.py",
+        "server/routes/collect.py",
+        "server/routes/pcs.py",
+        "server/static/js/lib/chart.umd.min.js",
+        "server/static/js/pc_detail.js",
+        "server/test_collect_a2.py",
+        "server/test_pc_details.py",
+        "server/test_phase_a1_models.py",
+        "server/test_security_backend.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T11:34:04.070Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 10 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/e2e/conftest.py",
+        "server/e2e/test_pc_detail_tabs.py",
+        "server/migrations/versions/b2c3d4e5f6a7_phase_a1_schema.py",
+        "server/models.py",
+        "server/routes/collect.py",
+        "server/routes/pcs.py",
+        "server/static/js/pc_detail.js",
+        "server/test_collect_a2.py",
+        "server/test_pc_details.py",
+        "server/test_phase_a1_models.py"
+      ],
+      "truncated": false
+    }
+  ]
 }
