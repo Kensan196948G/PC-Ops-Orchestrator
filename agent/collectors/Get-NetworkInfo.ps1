@@ -40,14 +40,20 @@ function Get-NetworkInfo {
         try {
             if ($adapter.LinkSpeed) {
                 $speed = $adapter.LinkSpeed
+                $mbps = $null
                 if ($speed -is [string]) {
                     if ($speed -match '([\d\.]+)\s*Gbps') {
-                        $entry.link_speed_mbps = [int]([double]$Matches[1] * 1000)
+                        $mbps = [int]([double]$Matches[1] * 1000)
                     } elseif ($speed -match '([\d\.]+)\s*Mbps') {
-                        $entry.link_speed_mbps = [int]([double]$Matches[1])
+                        $mbps = [int]([double]$Matches[1])
                     }
                 } else {
-                    $entry.link_speed_mbps = [int]([double]$speed / 1e6)
+                    $mbps = [int]([double]$speed / 1e6)
+                }
+                # 0 indicates "unknown" from the driver; persist as null
+                # so dashboards do not display a misleading 0 Mbps link.
+                if ($mbps -and $mbps -gt 0) {
+                    $entry.link_speed_mbps = $mbps
                 }
             }
         } catch {}

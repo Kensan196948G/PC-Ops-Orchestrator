@@ -203,6 +203,71 @@ def test_collect_network_missing_name_is_skipped(app, client, headers):
         assert NetworkInterface.query.filter_by(pc_id=pc.id).count() == 0
 
 
+def test_collect_network_is_active_explicit_false_persists(app, client, headers):
+    """is_active=False from the agent must NOT be silently coerced back to True."""
+    client.post(
+        "/api/collect",
+        json={
+            "pc_name": "A2-NET-PC",
+            "network": [{"interface_name": "Ethernet0", "ip_address": "10.0.0.10"}],
+        },
+        headers=headers,
+    )
+    client.post(
+        "/api/collect",
+        json={
+            "pc_name": "A2-NET-PC",
+            "network": [
+                {
+                    "interface_name": "Ethernet0",
+                    "ip_address": "10.0.0.10",
+                    "is_active": False,
+                }
+            ],
+        },
+        headers=headers,
+    )
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name="A2-NET-PC").first()
+        nic = NetworkInterface.query.filter_by(
+            pc_id=pc.id, interface_name="Ethernet0"
+        ).one()
+        assert nic.is_active is False
+
+
+def test_collect_network_is_active_missing_preserves_existing(app, client, headers):
+    """Subsequent payloads without is_active must NOT flip a disabled NIC back on."""
+    client.post(
+        "/api/collect",
+        json={
+            "pc_name": "A2-NET-PC",
+            "network": [
+                {
+                    "interface_name": "Ethernet0",
+                    "ip_address": "10.0.0.10",
+                    "is_active": False,
+                }
+            ],
+        },
+        headers=headers,
+    )
+    client.post(
+        "/api/collect",
+        json={
+            "pc_name": "A2-NET-PC",
+            "network": [{"interface_name": "Ethernet0", "ip_address": "10.0.0.99"}],
+        },
+        headers=headers,
+    )
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name="A2-NET-PC").first()
+        nic = NetworkInterface.query.filter_by(
+            pc_id=pc.id, interface_name="Ethernet0"
+        ).one()
+        assert nic.is_active is False
+        assert nic.ip_address == "10.0.0.99"
+
+
 def test_collect_v1_payload_remains_backward_compatible(app, client, headers):
     res = client.post(
         "/api/collect",

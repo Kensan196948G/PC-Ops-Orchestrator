@@ -1,5 +1,7 @@
+import logging
 from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from extensions import db, limiter
 from models import (
     PC,
@@ -14,6 +16,7 @@ from models import (
 from auth import agent_auth_required
 
 collect_bp = Blueprint("collect", __name__, url_prefix="/api")
+logger = logging.getLogger(__name__)
 
 
 @collect_bp.route("/collect", methods=["POST"])
@@ -278,6 +281,72 @@ def collect_sync():
     )
 
 
+def _coerce_is_active(nic, current):
+    """Resolve is_active from payload without forcing True on every upsert.
+
+    Missing key or explicit null → keep current (default True for new rows).
+    Explicit boolean / truthy → coerce to bool().
+    """
+    if "is_active" not in nic:
+        return True if current is None else current
+    value = nic.get("is_active")
+    if value is None:
+        return True if current is None else current
+    return bool(value)
+
+
+def _apply_nic_fields(row, nic, now):
+    row.description = nic.get("description", row.description)
+    row.mac_address = nic.get("mac_address", row.mac_address)
+    row.ip_address = nic.get("ip_address", row.ip_address)
+    row.ipv6_address = nic.get("ipv6_address", row.ipv6_address)
+    row.subnet_mask = nic.get("subnet_mask", row.subnet_mask)
+    row.gateway = nic.get("gateway", row.gateway)
+    row.dns_servers = nic.get("dns_servers", row.dns_servers)
+    row.link_speed_mbps = nic.get("link_speed_mbps", row.link_speed_mbps)
+    row.is_active = _coerce_is_active(nic, row.is_active)
+    row.collected_at = now
+
+
+def _upsert_one_network_interface(pc_id, nic, now):
+    """Upsert a single NIC row inside a SAVEPOINT so failures don't poison
+    the outer collect transaction.
+
+    Handles the check-then-act race on UNIQUE(pc_id, interface_name): if a
+    concurrent collect inserts the same row first, the SAVEPOINT rolls back
+    only the failed insert and the row that won the race is updated instead.
+    """
+    name = (nic.get("interface_name") or "").strip()
+    if not name:
+        return False
+
+    existing = NetworkInterface.query.filter_by(
+        pc_id=pc_id, interface_name=name
+    ).first()
+
+    if existing is not None:
+        _apply_nic_fields(existing, nic, now)
+        return True
+
+    # New row path — wrap in SAVEPOINT to isolate UNIQUE race.
+    try:
+        with db.session.begin_nested():
+            row = NetworkInterface(pc_id=pc_id, interface_name=name)
+            db.session.add(row)
+            _apply_nic_fields(row, nic, now)
+            db.session.flush()
+        return True
+    except IntegrityError:
+        # Concurrent insert won the race; update the surviving row in place.
+        winner = NetworkInterface.query.filter_by(
+            pc_id=pc_id, interface_name=name
+        ).first()
+        if winner is None:
+            raise
+        _apply_nic_fields(winner, nic, now)
+        return True
+
+
 def _upsert_network_interfaces(pc_id, network_list):
     """Phase A-2 (#175): upsert NetworkInterface rows by (pc_id, interface_name).
 
@@ -285,30 +354,24 @@ def _upsert_network_interfaces(pc_id, network_list):
     in place. Unknown adapter names create new rows. NICs not present in the
     payload are left untouched (no implicit deactivation) to keep the operation
     purely additive and safe to retry from an offline-cached agent push.
+
+    Per-NIC errors are isolated in SAVEPOINTs so one malformed entry cannot
+    poison the entire collect transaction; the failure is logged and processing
+    continues with the remaining NICs.
     """
     now = datetime.now(timezone.utc)
     for nic in network_list:
         if not isinstance(nic, dict):
             continue
-        name = (nic.get("interface_name") or "").strip()
-        if not name:
-            continue
-        existing = NetworkInterface.query.filter_by(
-            pc_id=pc_id, interface_name=name
-        ).first()
-        if not existing:
-            existing = NetworkInterface(pc_id=pc_id, interface_name=name)
-            db.session.add(existing)
-        existing.description = nic.get("description", existing.description)
-        existing.mac_address = nic.get("mac_address", existing.mac_address)
-        existing.ip_address = nic.get("ip_address", existing.ip_address)
-        existing.ipv6_address = nic.get("ipv6_address", existing.ipv6_address)
-        existing.subnet_mask = nic.get("subnet_mask", existing.subnet_mask)
-        existing.gateway = nic.get("gateway", existing.gateway)
-        existing.dns_servers = nic.get("dns_servers", existing.dns_servers)
-        existing.link_speed_mbps = nic.get("link_speed_mbps", existing.link_speed_mbps)
-        existing.is_active = nic.get("is_active", True)
-        existing.collected_at = now
+        try:
+            _upsert_one_network_interface(pc_id, nic, now)
+        except SQLAlchemyError as exc:
+            logger.warning(
+                "NIC upsert failed for pc_id=%s name=%r: %s",
+                pc_id,
+                nic.get("interface_name"),
+                exc,
+            )
 
 
 def _trim_snapshots(pc_id, keep=720):

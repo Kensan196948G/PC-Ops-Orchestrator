@@ -60,11 +60,20 @@ if (-not (Test-Path $LOG_DIR)) {
 }
 
 # === Phase A-2 (#175): dot-source collector modules ===
+# Missing collector files are reported (not silently skipped) so a corrupt
+# deployment surfaces immediately instead of degrading collection coverage
+# without warning.
 $COLLECTORS_DIR = Join-Path $SCRIPT_DIR "collectors"
 foreach ($mod in @("Get-HardwareInfo.ps1", "Get-SoftwareInfo.ps1", "Get-NetworkInfo.ps1")) {
     $modPath = Join-Path $COLLECTORS_DIR $mod
     if (Test-Path $modPath) {
-        . $modPath
+        try {
+            . $modPath
+        } catch {
+            Write-Warning "Collector module load failed: ${mod}: $_"
+        }
+    } else {
+        Write-Warning "Collector module not found: $modPath — agent will run with reduced coverage"
     }
 }
 
@@ -535,6 +544,8 @@ function Start-AgentLoop {
 
             # Phase A-2 (#175): augment payload with hardware block / network array / os_build flat key.
             # Old servers ignore unknown keys; new servers (routes/collect.py) ingest them.
+            # Collector failures are logged at WARN (not DEBUG) so operators can
+            # see when hardware/NIC coverage silently drops in production logs.
             try {
                 if (Get-Command Get-HardwareInfo -ErrorAction SilentlyContinue) {
                     $hardware = Get-HardwareInfo
@@ -544,7 +555,7 @@ function Start-AgentLoop {
                     }
                 }
             } catch {
-                Write-AgentDebug "Get-HardwareInfo 失敗: $_"
+                Write-AgentLog -Message "Get-HardwareInfo 失敗: $_" -Level "WARN"
             }
             try {
                 if (Get-Command Get-NetworkInfo -ErrorAction SilentlyContinue) {
@@ -552,7 +563,7 @@ function Start-AgentLoop {
                     if ($nics) { $systemInfo.network = @($nics) }
                 }
             } catch {
-                Write-AgentDebug "Get-NetworkInfo 失敗: $_"
+                Write-AgentLog -Message "Get-NetworkInfo 失敗: $_" -Level "WARN"
             }
 
             # Check server reachability
