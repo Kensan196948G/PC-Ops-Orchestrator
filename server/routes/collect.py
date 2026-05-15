@@ -1,4 +1,8 @@
+import hashlib
+import hmac
+import json
 import logging
+import secrets
 from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -107,17 +111,62 @@ def collect():
 
     tasks = _get_pending_tasks(pc.id)
     _evaluate_alert_rules(pc, snapshot)
-    db.session.commit()
 
-    return jsonify(
-        {
-            "message": "ok",
-            "pc_id": pc.id,
-            "health_score": pc.health_score,
-            "status": pc.status,
-            "pending_tasks": tasks,
-        }
+    # HMAC-SHA256 job signing (Issue #188 part 4).
+    # Lazily issue a per-PC signing key on first contact. The freshly minted
+    # key is returned exactly once in this response so the agent can persist
+    # it (DPAPI-protected) locally. Subsequent responses sign with the same
+    # key but never re-deliver it — at-rest exposure stays bounded to the
+    # owning Windows user account.
+    #
+    # Race-safe first-contact issuance (Codex P2): two concurrent /api/collect
+    # requests for a freshly provisioned PC must NOT both mint different keys
+    # and each sign with their own. We use a conditional UPDATE that only
+    # fires when agent_signing_key IS NULL — at most one transaction wins,
+    # and losers reload the persisted value before signing.
+    newly_issued_key = None
+    if not pc.agent_signing_key:
+        candidate_key = secrets.token_urlsafe(64)
+        rows = db.session.execute(
+            db.text(
+                "UPDATE pcs SET agent_signing_key = :k "
+                "WHERE id = :pid AND agent_signing_key IS NULL"
+            ),
+            {"k": candidate_key, "pid": pc.id},
+        ).rowcount
+        db.session.commit()
+        db.session.refresh(pc)
+        if rows == 1:
+            newly_issued_key = candidate_key
+    else:
+        db.session.commit()
+
+    # ensure_ascii=False (Codex P1): Python's default escapes non-ASCII to
+    # \uXXXX, but PowerShell ConvertTo-Json emits literal UTF-8. Without this
+    # flag every pending task containing Japanese (or any non-ASCII) text
+    # would fail HMAC verification on the agent side.
+    canonical = json.dumps(
+        tasks, sort_keys=True, separators=(",", ":"), ensure_ascii=False
     )
+    signature = hmac.new(
+        pc.agent_signing_key.encode("utf-8"),
+        canonical.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+    response_body = {
+        "message": "ok",
+        "pc_id": pc.id,
+        "health_score": pc.health_score,
+        "status": pc.status,
+        "pending_tasks": tasks,
+        "pending_tasks_sig": signature,
+        "pending_tasks_sig_alg": "HMAC-SHA256",
+    }
+    if newly_issued_key is not None:
+        response_body["agent_signing_key"] = newly_issued_key
+
+    return jsonify(response_body)
 
 
 @collect_bp.route("/collect/detail", methods=["POST"])

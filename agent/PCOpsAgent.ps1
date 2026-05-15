@@ -183,6 +183,189 @@ function Resolve-AgentApiKey {
 
 $API_KEY = Resolve-AgentApiKey -Config $config -ConfigPath $ConfigPath
 
+# === HMAC job-signing key (Issue #188 part 4) ===
+# The server issues a per-PC HMAC-SHA256 signing key on the first /api/collect
+# response. We persist that key in config.json as agent_signing_key_protected
+# (DPAPI/CurrentUser), and use it to verify pending_tasks_sig on every
+# subsequent response. Missing key is NOT fail-closed here: a fresh agent has
+# nothing until the server returns one. Corrupt ciphertext IS fail-closed.
+function Resolve-AgentSigningKey {
+    param(
+        [Parameter(Mandatory = $true)] $Config,
+        [Parameter(Mandatory = $true)] [string]$ConfigPath
+    )
+
+    if ($PSVersionTable.PSVersion.Major -le 5) {
+        try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch {}
+    }
+
+    $isHashtable = ($Config -is [hashtable]) -or ($Config -is [System.Collections.IDictionary])
+
+    $hasProtected = $false
+    $protectedB64 = $null
+    if ($isHashtable) {
+        if ($Config.Contains('agent_signing_key_protected') `
+                -and -not [string]::IsNullOrWhiteSpace([string]$Config['agent_signing_key_protected'])) {
+            $hasProtected = $true
+            $protectedB64 = [string]$Config['agent_signing_key_protected']
+        }
+    } else {
+        if ($Config.PSObject.Properties.Match('agent_signing_key_protected').Count -gt 0 `
+                -and -not [string]::IsNullOrWhiteSpace([string]$Config.agent_signing_key_protected)) {
+            $hasProtected = $true
+            $protectedB64 = [string]$Config.agent_signing_key_protected
+        }
+    }
+
+    if (-not $hasProtected) {
+        return $null
+    }
+
+    try {
+        $cipherBytes = [Convert]::FromBase64String($protectedB64)
+        $plainBytes = [System.Security.Cryptography.ProtectedData]::Unprotect(
+            $cipherBytes, $null,
+            [System.Security.Cryptography.DataProtectionScope]::CurrentUser
+        )
+        return [System.Text.Encoding]::UTF8.GetString($plainBytes)
+    } catch {
+        Write-Error "agent_signing_key_protected の復号に失敗 (DPAPI scope=CurrentUser): $_"
+        exit 1
+    }
+}
+
+function Save-AgentSigningKey {
+    param(
+        [Parameter(Mandatory = $true)] [string]$PlainKey,
+        [Parameter(Mandatory = $true)] [string]$ConfigPath
+    )
+
+    if ($PSVersionTable.PSVersion.Major -le 5) {
+        try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch {}
+    }
+
+    $plainBytes = [System.Text.Encoding]::UTF8.GetBytes($PlainKey)
+    $cipherBytes = [System.Security.Cryptography.ProtectedData]::Protect(
+        $plainBytes, $null,
+        [System.Security.Cryptography.DataProtectionScope]::CurrentUser
+    )
+    $b64 = [Convert]::ToBase64String($cipherBytes)
+
+    $current = @{}
+    if (Test-Path $ConfigPath) {
+        try {
+            $current = Get-Content -Path $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        } catch {
+            $current = @{}
+        }
+    }
+
+    $isHashtable = ($current -is [hashtable]) -or ($current -is [System.Collections.IDictionary])
+    $migrated = [ordered]@{}
+    if ($isHashtable) {
+        foreach ($p in $current.Keys) {
+            if ($p -eq 'agent_signing_key') { continue }
+            if ($p -eq 'agent_signing_key_protected') { continue }
+            $migrated[$p] = $current[$p]
+        }
+    } else {
+        foreach ($p in $current.PSObject.Properties) {
+            if ($p.Name -eq 'agent_signing_key') { continue }
+            if ($p.Name -eq 'agent_signing_key_protected') { continue }
+            $migrated[$p.Name] = $p.Value
+        }
+    }
+    $migrated['agent_signing_key_protected'] = $b64
+
+    $migrated | ConvertTo-Json -Depth 10 |
+        Set-Content -Path $ConfigPath -Encoding UTF8
+}
+
+# Canonical-JSON HMAC verification for pending_tasks.
+# Must mirror server: json.dumps(tasks, sort_keys=True, separators=(",", ":")).
+function ConvertTo-CanonicalJson {
+    param(
+        [Parameter(Mandatory = $false)]
+        [AllowNull()]
+        $Value
+    )
+
+    if ($null -eq $Value) { return 'null' }
+
+    if ($Value -is [bool]) { if ($Value) { return 'true' } else { return 'false' } }
+
+    if ($Value -is [string]) {
+        return ($Value | ConvertTo-Json -Compress)
+    }
+
+    if ($Value -is [int] -or $Value -is [long] -or $Value -is [double] -or $Value -is [decimal]) {
+        return ([string]$Value)
+    }
+
+    if ($Value -is [System.Collections.IDictionary]) {
+        $keys = @($Value.Keys) | Sort-Object
+        $parts = foreach ($k in $keys) {
+            $keyJson = ([string]$k | ConvertTo-Json -Compress)
+            $valJson = ConvertTo-CanonicalJson -Value $Value[$k]
+            "${keyJson}:${valJson}"
+        }
+        return '{' + ($parts -join ',') + '}'
+    }
+
+    if ($Value -is [System.Collections.IEnumerable] -and -not ($Value -is [string])) {
+        $items = foreach ($el in $Value) { ConvertTo-CanonicalJson -Value $el }
+        return '[' + ($items -join ',') + ']'
+    }
+
+    # PSCustomObject -> sort properties alphabetically
+    if ($Value.PSObject -and $Value.PSObject.Properties) {
+        $props = @($Value.PSObject.Properties) | Sort-Object Name
+        $parts = foreach ($p in $props) {
+            $keyJson = ($p.Name | ConvertTo-Json -Compress)
+            $valJson = ConvertTo-CanonicalJson -Value $p.Value
+            "${keyJson}:${valJson}"
+        }
+        return '{' + ($parts -join ',') + '}'
+    }
+
+    return ([string]$Value | ConvertTo-Json -Compress)
+}
+
+function Test-PendingTasksSignature {
+    param(
+        [Parameter(Mandatory = $true)] [string]$SigningKey,
+        [Parameter(Mandatory = $true)] $Tasks,
+        [Parameter(Mandatory = $true)] [string]$ExpectedHex
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ExpectedHex)) { return $false }
+
+    $canonical = ConvertTo-CanonicalJson -Value $Tasks
+    $keyBytes = [System.Text.Encoding]::UTF8.GetBytes($SigningKey)
+    $msgBytes = [System.Text.Encoding]::UTF8.GetBytes($canonical)
+
+    $hmac = [System.Security.Cryptography.HMACSHA256]::new($keyBytes)
+    try {
+        $computed = $hmac.ComputeHash($msgBytes)
+    } finally {
+        $hmac.Dispose()
+    }
+
+    $expectedHex = $ExpectedHex.ToLowerInvariant()
+    $computedHex = [BitConverter]::ToString($computed).Replace('-', '').ToLowerInvariant()
+
+    if ($expectedHex.Length -ne $computedHex.Length) { return $false }
+
+    # Constant-time comparison via accumulated XOR
+    $diff = 0
+    for ($i = 0; $i -lt $expectedHex.Length; $i++) {
+        $diff = $diff -bor ([int][char]$expectedHex[$i] -bxor [int][char]$computedHex[$i])
+    }
+    return ($diff -eq 0)
+}
+
+$SIGNING_KEY = Resolve-AgentSigningKey -Config $config -ConfigPath $ConfigPath
+
 $COLLECT_INTERVAL = [math]::Max(1, [int]$config.collection_interval_minutes)
 $RETRY_COUNT = [int]$config.retry_count
 $RETRY_DELAY = [int]$config.retry_delay_seconds
@@ -723,10 +906,33 @@ function Start-AgentLoop {
 
             Write-AgentInfo "情報送信成功: PC_ID=$($response.pc_id) Score=$($response.health_score) Status=$($response.status)"
 
+            # HMAC job signing (Issue #188 part 4) — persist newly issued key, then verify sig.
+            if ($response.PSObject.Properties.Match('agent_signing_key').Count -gt 0 `
+                    -and -not [string]::IsNullOrWhiteSpace([string]$response.agent_signing_key)) {
+                try {
+                    Save-AgentSigningKey -PlainKey ([string]$response.agent_signing_key) -ConfigPath $ConfigPath
+                    $SIGNING_KEY = [string]$response.agent_signing_key
+                    Write-AgentInfo "HMAC 署名鍵をサーバから受領・DPAPI 保存しました"
+                } catch {
+                    Write-AgentError "HMAC 署名鍵の保存失敗: $_ — pending_tasks は今回スキップ"
+                    Start-Sleep -Seconds ($COLLECT_INTERVAL * 60)
+                    continue
+                }
+            }
+
             if ($response.pending_tasks -and $response.pending_tasks.Count -gt 0) {
-                Write-AgentInfo "保留中のタスク: $($response.pending_tasks.Count)件"
-                foreach ($task in $response.pending_tasks) {
-                    Invoke-AssignedTask -TaskId $task.id -TaskType $task.task_type -Command $task.command -Parameters $task.parameters
+                if (-not $SIGNING_KEY) {
+                    Write-AgentError "署名鍵未設定のまま pending_tasks を受信 — 安全のため拒否"
+                } elseif (-not $response.pending_tasks_sig) {
+                    Write-AgentError "pending_tasks_sig が欠落 — fail-closed で拒否"
+                } elseif (-not (Test-PendingTasksSignature -SigningKey $SIGNING_KEY `
+                            -Tasks $response.pending_tasks -ExpectedHex ([string]$response.pending_tasks_sig))) {
+                    Write-AgentError "HMAC 検証失敗 — pending_tasks 拒否 (改竄またはキー不一致)"
+                } else {
+                    Write-AgentInfo "保留中のタスク: $($response.pending_tasks.Count)件 (HMAC 検証 OK)"
+                    foreach ($task in $response.pending_tasks) {
+                        Invoke-AssignedTask -TaskId $task.id -TaskType $task.task_type -Command $task.command -Parameters $task.parameters
+                    }
                 }
             } else {
                 Write-AgentDebug "保留タスクなし"

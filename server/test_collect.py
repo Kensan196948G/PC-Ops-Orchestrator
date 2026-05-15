@@ -6,8 +6,11 @@ Covers:
 - _calculate_health_score branches (memory/disk thresholds)
 - _evaluate_alert_rules (cpu/memory/disk rules, existing alert dedup)
 - Edge cases: missing body, missing pc_name, invalid last_boot_time
+- HMAC-SHA256 pending_tasks signing (Issue #188 part 4)
 """
 
+import hashlib
+import hmac
 import json
 import sys
 import os
@@ -17,7 +20,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from app import create_app
 from extensions import db
-from models import PC, AlertRule, Alert
+from models import PC, AlertRule, Alert, Task
 
 app = create_app("testing")
 client = app.test_client()
@@ -993,3 +996,228 @@ def test_trim_snapshots_deletes_oldest_beyond_limit():
         pc = PC.query.filter_by(pc_name=name).first()
         count = SystemSnapshot.query.filter_by(pc_id=pc.id).count()
         assert count <= 720
+
+
+# ── HMAC-SHA256 pending_tasks signing (Issue #188 part 4) ────────────────────
+
+
+def _compute_expected_sig(key: str, tasks):
+    """Replicate the server-side canonical-JSON + HMAC-SHA256 algorithm.
+
+    ensure_ascii=False keeps parity with the PowerShell agent, which emits
+    literal UTF-8 via ConvertTo-Json -Compress (Codex P1, PR #201).
+    """
+    canonical = json.dumps(
+        tasks, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    )
+    return hmac.new(
+        key.encode("utf-8"), canonical.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+
+
+def test_collect_first_call_issues_signing_key():
+    """First /api/collect for a new PC returns agent_signing_key + signed pending_tasks."""
+    name = f"SignFirst-{_unique}"
+    r = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    assert r.status_code == 200
+    data = json.loads(r.data)
+
+    assert "agent_signing_key" in data
+    assert isinstance(data["agent_signing_key"], str)
+    assert len(data["agent_signing_key"]) >= 64
+    assert data["pending_tasks_sig_alg"] == "HMAC-SHA256"
+    assert "pending_tasks_sig" in data
+    assert len(data["pending_tasks_sig"]) == 64  # SHA-256 hex = 64 chars
+
+    expected = _compute_expected_sig(data["agent_signing_key"], data["pending_tasks"])
+    assert hmac.compare_digest(expected, data["pending_tasks_sig"])
+
+
+def test_collect_second_call_omits_key_but_signs():
+    """Second /api/collect for the same PC: no agent_signing_key returned, but sig still valid."""
+    name = f"SignSecond-{_unique}"
+    r1 = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    issued_key = json.loads(r1.data)["agent_signing_key"]
+
+    r2 = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    assert r2.status_code == 200
+    data2 = json.loads(r2.data)
+
+    # Second response must NOT redeliver the key
+    assert "agent_signing_key" not in data2
+    assert data2["pending_tasks_sig_alg"] == "HMAC-SHA256"
+
+    # Recomputing with the originally issued key still verifies
+    expected = _compute_expected_sig(issued_key, data2["pending_tasks"])
+    assert hmac.compare_digest(expected, data2["pending_tasks_sig"])
+
+
+def test_collect_signing_key_persisted_on_pc():
+    """Issued signing key is stored on the PC row (non-empty, stable across calls)."""
+    name = f"SignPersist-{_unique}"
+    r1 = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    issued_key = json.loads(r1.data)["agent_signing_key"]
+
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        assert pc.agent_signing_key == issued_key
+
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        assert pc.agent_signing_key == issued_key  # unchanged on subsequent calls
+
+
+def test_collect_signature_detects_tampering():
+    """Tampering with pending_tasks invalidates the signature."""
+    name = f"SignTamper-{_unique}"
+    r = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    data = json.loads(r.data)
+    key = data["agent_signing_key"]
+
+    tampered = list(data["pending_tasks"]) + [{"id": 999, "task_type": "evil"}]
+    bad_sig = _compute_expected_sig(key, tampered)
+    assert not hmac.compare_digest(bad_sig, data["pending_tasks_sig"])
+
+
+def test_collect_signing_key_not_in_to_dict():
+    """PC.to_dict() must never leak agent_signing_key (server-internal secret)."""
+    name = f"SignNoLeak-{_unique}"
+    _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        d = pc.to_dict()
+        assert "agent_signing_key" not in d
+
+
+def test_collect_signature_non_ascii_tasks():
+    """Non-ASCII (Japanese) task payloads must verify under literal UTF-8 canonical JSON.
+
+    Codex P1 (PR #201): server's json.dumps used ensure_ascii=True by default,
+    emitting \\uXXXX escapes; the PowerShell agent emits literal UTF-8 bytes
+    via ConvertTo-Json -Compress. Without ensure_ascii=False on the server,
+    every pending task containing Japanese (or any non-ASCII) text would fail
+    HMAC verification on the agent side.
+    """
+    name = f"SignNonAscii-{_unique}"
+
+    # First collect to mint a signing key
+    r1 = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    assert r1.status_code == 200
+    key = json.loads(r1.data)["agent_signing_key"]
+
+    # Inject a pending Task with Japanese content addressed to this PC
+    with app.app_context():
+        pc = PC.query.filter_by(pc_name=name).first()
+        japanese_task = Task(
+            pc_id=pc.id,
+            task_type="再起動",
+            command="shutdown",
+            parameters=json.dumps(
+                {"args": ["日本語ファイル.txt", "メモ帳で開く"]},
+                ensure_ascii=False,
+            ),
+            status="pending",
+            priority=5,
+        )
+        db.session.add(japanese_task)
+        db.session.commit()
+
+    # Second collect should return the Japanese task and a valid signature
+    r2 = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    assert r2.status_code == 200
+    data2 = json.loads(r2.data)
+
+    # The non-ASCII content must round-trip without escape mangling
+    assert any(t.get("task_type") == "再起動" for t in data2["pending_tasks"])
+
+    # Signature must verify with the literal-UTF-8 canonical computation
+    expected = _compute_expected_sig(key, data2["pending_tasks"])
+    assert hmac.compare_digest(expected, data2["pending_tasks_sig"])
+
+
+def test_collect_concurrent_first_contact_single_key():
+    """Concurrent first-contact must mint exactly one signing key (Codex P2).
+
+    Simulates two /api/collect requests arriving before either has committed
+    a signing key. The server uses an atomic conditional UPDATE
+    (WHERE agent_signing_key IS NULL); only one row write wins. Both
+    callers must end up signing with the same persisted key.
+    """
+    name = f"SignRace-{_unique}"
+
+    # Pre-create the PC row with NULL signing key (no /api/collect yet)
+    with app.app_context():
+        pc = PC(pc_name=name, domain="TESTDOMAIN")
+        db.session.add(pc)
+        db.session.commit()
+        pc_id = pc.id
+        assert pc.agent_signing_key is None
+
+    # Simulate two concurrent collects racing on the same PC. Because Flask's
+    # test client is synchronous and SQLite serializes writes, we exercise the
+    # conditional-UPDATE branch by issuing both /api/collect calls back-to-back
+    # and asserting only the first response carries agent_signing_key (the
+    # second one finds it already set and must NOT redeliver a new key).
+    r1 = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    r2 = _agent_req("POST", "/api/collect", data=_pc_payload(pc_name=name))
+    assert r1.status_code == 200 and r2.status_code == 200
+    d1, d2 = json.loads(r1.data), json.loads(r2.data)
+
+    # Exactly one response carries the freshly minted key
+    issued = [d for d in (d1, d2) if "agent_signing_key" in d]
+    assert len(issued) == 1, f"Expected exactly one key issuance, got {len(issued)}"
+
+    # Persisted key must equal the one issued; both signatures verify against it
+    with app.app_context():
+        pc = PC.query.filter_by(id=pc_id).first()
+        persisted_key = pc.agent_signing_key
+    assert persisted_key == issued[0]["agent_signing_key"]
+    assert hmac.compare_digest(
+        _compute_expected_sig(persisted_key, d1["pending_tasks"]),
+        d1["pending_tasks_sig"],
+    )
+    assert hmac.compare_digest(
+        _compute_expected_sig(persisted_key, d2["pending_tasks"]),
+        d2["pending_tasks_sig"],
+    )
+
+
+def test_collect_race_safe_conditional_update_atomic():
+    """Direct DB-level proof that the conditional UPDATE is atomic.
+
+    Issues two raw UPDATE-with-WHERE statements with different candidate keys.
+    Only the first must succeed (rowcount == 1); the second must find the
+    column already non-NULL (rowcount == 0) and lose. This is the invariant
+    that backs the application-level race fix (Codex P2, PR #201).
+    """
+    name = f"SignRaceSQL-{_unique}"
+    with app.app_context():
+        pc = PC(pc_name=name, domain="TESTDOMAIN")
+        db.session.add(pc)
+        db.session.commit()
+        pc_id = pc.id
+
+        key_a, key_b = "key-winner-AAA", "key-loser-BBB"
+
+        rows_a = db.session.execute(
+            db.text(
+                "UPDATE pcs SET agent_signing_key = :k "
+                "WHERE id = :pid AND agent_signing_key IS NULL"
+            ),
+            {"k": key_a, "pid": pc_id},
+        ).rowcount
+        rows_b = db.session.execute(
+            db.text(
+                "UPDATE pcs SET agent_signing_key = :k "
+                "WHERE id = :pid AND agent_signing_key IS NULL"
+            ),
+            {"k": key_b, "pid": pc_id},
+        ).rowcount
+        db.session.commit()
+
+        assert rows_a == 1
+        assert rows_b == 0  # loser branch must not overwrite
+
+        pc = PC.query.filter_by(id=pc_id).first()
+        assert pc.agent_signing_key == key_a

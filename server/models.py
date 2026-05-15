@@ -73,6 +73,8 @@ class PC(db.Model):
     # VPN/offline sync fields (Issue #154)
     connection_type = db.Column(db.String(32), default="Unknown")
     offline_pending_count = db.Column(db.Integer, default=0)
+    # HMAC-SHA256 job signing key (Issue #188 part 4) — server-internal, never serialized
+    agent_signing_key = db.Column(db.String(128), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
