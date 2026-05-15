@@ -42,11 +42,11 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-15T11:49:32.989Z",
+    "current_session_start_at": "2026-05-15T13:54:11.435Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "manual",
     "last_cron_session_id": "20260509-190001-PC-Ops-Orchestrator",
-    "last_stop_at": "2026-05-15T11:34:04.061Z"
+    "last_stop_at": "2026-05-15T13:11:18.554Z"
   },
   "status": {
     "current_phase": "improve",
@@ -258,7 +258,7 @@
     }
   },
   "compact": {
-    "last_pre_compact_at": "2026-05-15T11:47:48.797Z"
+    "last_pre_compact_at": "2026-05-15T13:51:57.183Z"
   },
   "dreaming": {
     "patterns": [],
@@ -386,6 +386,87 @@
         "server/test_collect_a2.py",
         "server/test_pc_details.py",
         "server/test_phase_a1_models.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T12:16:08.540Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 8 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/e2e/conftest.py",
+        "server/e2e/test_pc_detail_tabs.py",
+        "server/routes/agents.py",
+        "server/routes/pcs.py",
+        "server/static/js/agents.js",
+        "server/static/js/pc_detail.js",
+        "server/test_agents_sub_states.py",
+        "server/test_pc_details.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T12:21:37.081Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 5 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/routes/agents.py",
+        "server/routes/pcs.py",
+        "server/static/js/agents.js",
+        "server/static/js/pc_detail.js",
+        "server/test_agents_sub_states.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T12:22:24.235Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 5 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/routes/agents.py",
+        "server/routes/pcs.py",
+        "server/static/js/agents.js",
+        "server/static/js/pc_detail.js",
+        "server/test_agents_sub_states.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T13:00:58.601Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 5 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/routes/agents.py",
+        "server/routes/pcs.py",
+        "server/static/js/agents.js",
+        "server/static/js/pc_detail.js",
+        "server/test_agents_sub_states.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T13:10:56.296Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 5 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/routes/agents.py",
+        "server/routes/pcs.py",
+        "server/static/js/agents.js",
+        "server/static/js/pc_detail.js",
+        "server/test_agents_sub_states.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T13:11:18.563Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 5 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/routes/agents.py",
+        "server/routes/pcs.py",
+        "server/static/js/agents.js",
+        "server/static/js/pc_detail.js",
+        "server/test_agents_sub_states.py"
       ],
       "truncated": false
     }
