@@ -57,7 +57,7 @@ Describe "Agent single-instance Mutex (Issue #188 part 1)" {
     It "PCOpsAgent.ps1 entry point declares Global Mutex with pc_name" {
         Test-Path $script:agentScript | Should -BeTrue
         $content = Get-Content -Raw -Path $script:agentScript
-        $content | Should -Match 'Global\\\\PCOpsAgent_'
+        $content | Should -Match 'Global\\PCOpsAgent_'
         $content | Should -Match 'System\.Threading\.Mutex'
         # Release path must exist so a crashed first instance doesn't permanently
         # block the next start.
