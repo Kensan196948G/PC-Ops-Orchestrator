@@ -285,7 +285,7 @@ def test_sync_alerts_resolves_stale():
 def test_sync_alerts_no_duplicate_on_repeat():
     """Calling sync twice with same bad PC should not create duplicate alerts."""
     _cleanup_alerts()
-    pc_id = _create_pc(health_score=30.0)
+    _create_pc(health_score=30.0)
 
     r1 = req("POST", "/api/alerts/sync", token=_admin_token)
     count_after_first = json.loads(r1.data)["created"]
@@ -370,7 +370,7 @@ def test_acknowledge_and_resolve_alert_success():
 def test_export_csv_with_data():
     """CSV export includes data rows when alerts exist (line 94-107)."""
     _cleanup_alerts()
-    pc_id = _create_pc(health_score=30.0)
+    _create_pc(health_score=30.0)
     req("POST", "/api/alerts/sync", token=_admin_token)
     r = req("GET", "/api/alerts/export.csv", token=_admin_token)
     assert r.status_code == 200

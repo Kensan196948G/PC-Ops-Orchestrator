@@ -101,7 +101,7 @@ def test_export_csv_with_status_filter():
     """export.csv?status=healthy covers line 57."""
     _create_pc("csvstatus", status="healthy", ip_address="10.0.0.1")
     r = client.open(
-        f"/api/pcs/export.csv?status=healthy",
+        "/api/pcs/export.csv?status=healthy",
         method="GET",
         headers={"Authorization": f"Bearer {_admin_token}"},
     )
@@ -113,10 +113,9 @@ def test_export_csv_with_status_filter():
 
 def test_export_csv_with_search_filter():
     """export.csv?search=... covers line 59."""
-    pc_name_suffix = f"srchpc-{_unique}"
     _create_pc("srchpc", ip_address="10.1.2.3")
     r = client.open(
-        f"/api/pcs/export.csv?search=TestPC-srchpc",
+        "/api/pcs/export.csv?search=TestPC-srchpc",
         method="GET",
         headers={"Authorization": f"Bearer {_admin_token}"},
     )
@@ -140,7 +139,7 @@ def test_export_csv_with_os_filter():
 
 def test_export_csv_for_loop_body():
     """CSV export with PCs in DB covers the for loop body (line 88)."""
-    pc_id = _create_pc("csvloop", status="healthy", health_score=95.0, ip_address="192.168.1.10")
+    _create_pc("csvloop", status="healthy", health_score=95.0, ip_address="192.168.1.10")
     r = client.open(
         "/api/pcs/export.csv",
         method="GET",

@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from app import create_app
 from extensions import db
 from auth import hash_password
-from models import AlertRule, User
+from models import User
 
 app = create_app("testing")
 client = app.test_client()

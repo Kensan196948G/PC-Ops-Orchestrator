@@ -15,8 +15,6 @@ import sys
 import os
 import uuid
 from datetime import datetime, timedelta, timezone
-from unittest.mock import patch
-
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app import create_app

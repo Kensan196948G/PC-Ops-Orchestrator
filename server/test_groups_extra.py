@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from app import create_app
 from extensions import db
 from auth import hash_password
-from models import PC, PCGroup, User
+from models import PC, User
 
 app = create_app("testing")
 client = app.test_client()
@@ -144,13 +144,12 @@ def test_update_group_duplicate_name():
     """PUT with name that already exists for another group → 409 (line 122)."""
     group_id1 = _create_group("dup1")
     name2 = f"DupGroup2-{_unique}"
-    group_id2 = _create_group(f"dup2", )
+    group_id2 = _create_group("dup2")
     # Rename group2 to a name not yet used
     req("PUT", f"/api/groups/{group_id2}", token=_admin_token,
         data={"name": name2})
 
     # Now try to rename group1 to name2
-    grp1_data = json.loads(req("GET", f"/api/groups/{group_id1}", token=_admin_token).data)
     r = req("PUT", f"/api/groups/{group_id1}", token=_admin_token,
             data={"name": name2})
     assert r.status_code == 409
