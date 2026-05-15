@@ -42,7 +42,7 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-15T06:23:57.142Z",
+    "current_session_start_at": "2026-05-15T06:54:28.233Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "manual",
     "last_cron_session_id": "20260509-190001-PC-Ops-Orchestrator"
@@ -85,14 +85,15 @@
       129,
       130,
       147,
-      153
+      153,
+      158
     ]
   },
   "priority": {
     "score": 0
   },
   "open_issues": {
-    "note": "PR #153 MERGED (2026-05-15)。routes カバレッジ 95% 達成。730 tests PASS。v1.1.0 タグ済み。"
+    "note": "PR #158 MERGED (2026-05-15)。Issue #154 FortiClient SSL-VPN オフライン同期 完全実装。744 tests PASS。v1.2.0 リリース予定。"
   },
   "milestones": {
     "M1": {
@@ -152,37 +153,43 @@
     }
   },
   "session_summary": {
-    "id": "20260515-session-coverage-95pct",
-    "loop_phase": "Improve (カバレッジ 83% → 95% — misc coverage tests + 730 tests)",
-    "duration_minutes": 90,
+    "id": "20260515-session-vpn-offline-sync",
+    "loop_phase": "Build (Issue #154 — FortiClient SSL-VPN offline sync + 4-state online detection)",
+    "duration_minutes": 120,
     "prs_merged": [
       139,
       147,
-      153
+      153,
+      158
     ],
     "prs_pending": [],
-    "issues_closed": [],
+    "issues_closed": [
+      154
+    ],
     "issues_opened": [],
     "completed": [
-      "test_misc_coverage.py: 29 テスト新規追加 (13 routes ファイルの未カバー行を網羅)",
-      "test_collect.py + test_agents.py + 各 extra テスト: 730 tests PASS",
-      "collect.py バグ修正: db.session.commit() 欠落 (_evaluate_alert_rules 後)",
-      "カバレッジ全体: 83% → 95% (routes 95%達成)",
-      "ruff lint/format 完全対応 (F401/F841/F541 修正 + 12ファイル整形)",
-      "PR #153 CI成功 → マージ完了 (2026-05-15T06:19:08Z)"
+      "Issue #154: FortiClient SSL-VPN オフライン同期 完全実装",
+      "DB マイグレーション: connection_type / offline_pending_count カラム追加 (Flask-Migrate batch_alter)",
+      "/api/collect: connection_type 保存 + offline_pending_count リセット",
+      "/api/collect/sync: バルクオフラインキャッシュ同期 (dedup + insert)",
+      "/api/agents: 4-state online_status (online/recently_seen/offline/stale)",
+      "PCOpsAgent.ps1: FortiClient SSL-VPN 検知 + オフラインキャッシュ管理 (最大2016件)",
+      "test_vpn_offline_sync.py: 14 テスト新規追加",
+      "test_agents.py: CSV 4-state ラベル対応 (古いデータ → 古いデータ assert)",
+      "PR #158 CI全ジョブ SUCCESS → squash merge 完了 (2026-05-15)"
     ],
-    "ci_status": "CI success (25903421569)。730 passed, 0 failed (E2E除く)。routes coverage 95%。",
+    "ci_status": "CI success (25904465511)。744 tests PASS (E2E除く)。全ジョブ SUCCESS。",
     "verification": {
-      "pytest_unit": "730 passed, 0 failed",
+      "pytest_unit": "744 passed, 0 failed",
       "coverage_routes": "95%",
       "ruff_check": "All checks passed",
-      "ruff_format": "All files formatted",
+      "ruff_format": "All checks passed",
       "data_stub_alert": "0 件"
     },
     "resume_point": {
-      "next_action": "v1.1.0 GitHub Release 作成。残課題: collect.py カバレッジ改善 (任意)。",
+      "next_action": "v1.2.0 GitHub Release 作成。README.md VPN/offline sync アーキテクチャ記載。",
       "blocker": "なし",
-      "notes": "今セッション主成果: routes coverage 95% 達成。730 tests。PR #153 MERGED。v1.1.0 タグ作成予定。"
+      "notes": "今セッション主成果: Issue #154 FortiClient SSL-VPN オフライン同期。744 tests。PR #158 MERGED。v1.2.0 リリース予定。"
     }
   },
   "learning": {
@@ -198,7 +205,8 @@
       "Flask jsonify は ensure_ascii=True がデフォルト。テストで非 ASCII 文字を assert するときは json.loads でデシリアライズする",
       "test_api.py の request() ヘルパは data={} を「body 無し」と扱うため、`is not None` で明示判定が必要",
       "pytest-django がインストールされていると DJANGO_SETTINGS_MODULE 未設定で全テストが skip される。pytest.ini に -p no:django を追加して回避する",
-      "pytest-playwright の page フィクスチャは conftest.py を自動認識するが、from conftest import X はできない（pytest が conftest をモジュールとして扱わないため）"
+      "pytest-playwright の page フィクスチャは conftest.py を自動認識するが、from conftest import X はできない（pytest が conftest をモジュールとして扱わないため）",
+      "Flask のテストで login_required エンドポイントを呼ぶ場合、session_transaction() ではなく JWT Bearer トークンが必要。setup_module() でログイン API を叩いてトークンを取得し Authorization ヘッダに渡す"
     ],
     "success_patterns": [
       "Flask Application Factory + Blueprint pattern works well for modular API",
@@ -226,10 +234,11 @@
       "CSP に cdn.jsdelivr.net (Chart.js) を script-src で許可しないと dashboard が壊れる。CONTENT_SECURITY_POLICY config キーで運用上書き可能にすると安全",
       "パスワードポリシーの強化 (大小英字+数字+記号) は既存テストのパスワードも同時に更新する必要がある。test_api.py / test_security_backend.py の弱いパスワードを一括 sed で置換するのが効率的",
       "Flask-Migrate は既存 DB に NOT NULL カラムを追加する場合 server_default を設定しないと OperationalError になる (SQLite の制約)",
-      "reportlab TTFont で日本語 PDF を生成する場合 /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf が利用可能 (Ubuntu 22.04 以降は ipafont-gothic パッケージで提供)"
+      "reportlab TTFont で日本語 PDF を生成する場合 /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf が利用可能 (Ubuntu 22.04 以降は ipafont-gothic パッケージで提供)",
+      "4-state PC オンライン状態: online (<5分) / recently_seen (5-30分) / offline (30分-7日) / stale (>7日) の時間閾値設計。CSV エクスポートでも同一ラベルを使用する"
     ]
   },
   "compact": {
-    "last_pre_compact_at": "2026-05-15T06:22:01.148Z"
+    "last_pre_compact_at": "2026-05-15T06:52:56.997Z"
   }
 }

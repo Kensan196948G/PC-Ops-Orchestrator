@@ -46,6 +46,80 @@ graph TB
 
 ---
 
+## 🔒 FortiClient SSL-VPN / オフライン同期アーキテクチャ（Issue #154）
+
+VPN 接続 PC・一時的なネットワーク切断時でも、データロスなく収集情報を安全に同期する設計です。
+
+### 📡 接続種別の自動検知
+
+Agent (PCOpsAgent.ps1) がネットワーク状態を自律的に検知し、`connection_type` フィールドに記録します。
+
+| 接続種別 | 検知方法 | 表示 |
+|---|---|---|
+| `LAN` | FortiSSL アダプター・FortiClient プロセスなし | 🏢 LAN |
+| `SSL-VPN` | FortiSSL アダプター存在 or FortiClient プロセス実行中 | 🔒 SSL-VPN |
+| `Unknown` | 判定不能 | — |
+
+### 🟢 4-State PC オンライン状態
+
+`/api/agents` レスポンスの `online_status` フィールドが 4 段階で PC の接続状態を返します。
+
+| 状態 | 閾値 | バッジ色 | 意味 |
+|---|---|---|---|
+| `online` | last_seen < 5 分 | 🟢 緑 | リアルタイム接続中 |
+| `recently_seen` | 5 分 ≤ last_seen < 30 分 | 🟡 黄 | 最近接続（一時切断等） |
+| `offline` | 30 分 ≤ last_seen < 7 日 | ⚫ 灰 | オフライン |
+| `stale` | last_seen ≥ 7 日 | 🔴 赤 | 長期未接続・古いデータ |
+
+### 💾 オフラインキャッシュ同期フロー
+
+```mermaid
+sequenceDiagram
+    participant PC as 📡 Agent (PC)
+    participant NET as 🌐 ネットワーク
+    participant API as 🖥️ API Server
+
+    PC->>PC: 5分ごと情報収集
+    alt オンライン状態
+        PC->>API: POST /api/collect (connection_type, data)
+        API-->>PC: 200 OK (offline_pending_count=0 リセット)
+    else オフライン / VPN 切断
+        PC->>PC: Write-OfflineCache (最大 2016 件 = 7日分)
+        Note over PC: offline_pending_count インクリメント
+    end
+
+    PC->>NET: ネットワーク復旧確認 (Test-ServerReachable)
+    NET-->>PC: 接続OK
+    PC->>API: POST /api/collect/sync (offline_cache[])
+    API->>API: タイムスタンプ重複排除 (dedup)
+    API-->>PC: {inserted: N, skipped: M}
+    Note over PC: 同期完了 → キャッシュクリア
+```
+
+### 📋 オフライン同期 API
+
+| Method | Endpoint | Auth | 説明 |
+|---|---|---|---|
+| POST | `/api/collect/sync` | API Key | バルクオフラインキャッシュ同期（dedup + insert） |
+
+**リクエスト例:**
+```json
+{
+  "pc_name": "MyPC-001",
+  "offline_cache": [
+    {"collected_at": "2026-05-14T10:00:00", "cpu_usage": 30.0, "memory_available_gb": 4.0, "disk_free_gb": 100.0},
+    {"collected_at": "2026-05-14T10:05:00", "cpu_usage": 35.0, "memory_available_gb": 3.5, "disk_free_gb": 99.0}
+  ]
+}
+```
+
+**レスポンス例:**
+```json
+{"message": "オフラインキャッシュを同期しました", "pc_id": 1, "inserted": 2, "skipped": 0}
+```
+
+---
+
 ## 🎯 既存機能：PC Optimizer（スタンドアロン最適化ツール）
 
 PC が重い・遅い・容量が足りない、そんな悩みを **ワンクリックで解決** する従来の最適化エンジンです。
