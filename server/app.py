@@ -41,7 +41,7 @@ def create_app(config_name=None):
     # been migrated to external CSS classes, so 'unsafe-inline' is removed from style-src.
     _CSP_SCRIPT_TMPL = (
         "default-src 'self'; "
-        "script-src 'self' https://cdn.jsdelivr.net 'nonce-{nonce}'; "
+        "script-src 'self' 'nonce-{nonce}'; "
         "style-src 'self'; "
         "img-src 'self' data:; "
         "font-src 'self' data:; "

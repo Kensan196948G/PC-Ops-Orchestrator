@@ -22,18 +22,16 @@ def test_no_console_errors_on_dashboard(page_with_login, live_server):
             console_errors.append(msg.text)
 
     p.on("console", capture)
-    # CDN-hosted Chart.js can stall the "load" event in CI; wait for DOM only.
+    # Chart.js is now self-hosted, but keep DOM-only wait for resilience.
     p.goto(f"{live_server}/", wait_until="domcontentloaded")
     p.wait_for_load_state("networkidle", timeout=10000)
 
     # Filter out known benign errors:
-    # - Chart.js CDN failures in offline environments
     # - Network-level errors (net::ERR_*)
     # - "Failed to fetch" from chart rendering on a second page load where
     #   Chart.js may not be fully ready (timing issue in test env)
     def is_ignorable(msg: str) -> bool:
         keywords = [
-            "cdn.jsdelivr.net",
             "net::",
             "Failed to fetch",
             "chart error",

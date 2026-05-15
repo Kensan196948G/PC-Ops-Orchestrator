@@ -17,7 +17,7 @@
             } catch (e) { /* ignore storage errors */ }
         })();
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='js/lib/chart.umd.min.js') }}" nonce="{{ csp_nonce }}"></script>
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -305,13 +305,14 @@
                     return 0;
                 } catch (e) { return 0; }
             };
-            const [pcs, tasks] = await Promise.all([
+            const [pcs, tasks, agents] = await Promise.all([
                 fetchCount('/pcs?per_page=1', 'total'),
                 fetchCount('/tasks?status=running&per_page=1', 'total'),
+                fetchCount('/agents?per_page=1', 'total'),
             ]);
             setBadge('pcs-badge', pcs);
             setBadge('tasks-badge', tasks);
-            // /api/agents is not implemented yet; agents-badge stays hidden until that endpoint lands.
+            setBadge('agents-badge', agents);
         }
 
         async function apiFetchRaw(path, options = {}) {
