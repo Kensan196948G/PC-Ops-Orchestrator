@@ -1,2 +1,8 @@
 *.bat text eol=crlf
 
+# Agent integrity manifest depends on stable file hashes. Force LF on tracked
+# Agent files so SHA-256 in agent/manifest.json matches across Linux dev and
+# Windows CI runners (Issue #188 part 2).
+agent/**/*.ps1 text eol=lf
+agent/manifest.json text eol=lf
+tools/Update-AgentManifest.ps1 text eol=lf
