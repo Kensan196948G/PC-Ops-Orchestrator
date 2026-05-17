@@ -27,8 +27,8 @@
     }
   },
   "phase": {
-    "current": "improve",
-    "week": 2
+    "current": "verify",
+    "week": 3
   },
   "kpi": {
     "ci_success_rate": 1,
@@ -42,16 +42,18 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-15T13:54:11.435Z",
+    "current_session_start_at": "2026-05-17T11:21:00.000Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
-    "last_trigger": "manual",
-    "last_cron_session_id": "20260509-190001-PC-Ops-Orchestrator",
-    "last_stop_at": "2026-05-15T13:11:18.554Z"
+    "last_trigger": "cron",
+    "last_cron_session_id": "20260517-200430-PC-Ops-Orchestrator",
+    "last_stop_at": "2026-05-15T14:17:27.708Z"
   },
   "status": {
-    "current_phase": "improve",
+    "current_phase": "verify",
     "stable": true,
-    "pending_prs": [],
+    "pending_prs": [
+      207
+    ],
     "merged_prs": [
       136,
       36,
@@ -88,14 +90,23 @@
       147,
       153,
       158,
-      161
+      161,
+      173,
+      178,
+      179,
+      182,
+      191,
+      196,
+      199,
+      201,
+      206
     ]
   },
   "priority": {
     "score": 0
   },
   "open_issues": {
-    "note": "PR #161 MERGED (2026-05-15)。Issue #160 collect.py カバレッジ 100% 達成。762 tests PASS。v1.4.0 リリース完了。"
+    "note": "PR #207 CI再実行中 (BLOB→TEXT修正 + NETWORK_DESIGN.md追加 commit cf504a3)。Issue #208/#209 は CI通過後クローズ予定。Issue #189 は PR #207 で対応済み。"
   },
   "milestones": {
     "M1": {
@@ -155,44 +166,40 @@
     }
   },
   "session_summary": {
-    "id": "20260515-session-collect-coverage-100pct",
-    "loop_phase": "Build + Verify (Issue #160 — collect.py カバレッジ 78% → 100%)",
+    "id": "20260517-session-issue186-sqlite-cache",
+    "loop_phase": "Build (Issue #186 — SQLite+AES-256 offline cache migration)",
     "duration_minutes": 180,
     "prs_merged": [
-      158,
-      161
+      206
     ],
-    "prs_pending": [],
+    "prs_pending": [
+      207
+    ],
     "issues_closed": [
-      154,
-      160
+      177
     ],
     "issues_opened": [],
     "completed": [
-      "Issue #160: routes/collect.py カバレッジ 78% → 100% 達成",
-      "test_collect.py: 55 tests (218 stmts / 0 miss)",
-      "Werkzeug 3.x 回避: data={} (空辞書=falsy JSON) で if not data: ガードを到達",
-      "_trim_snapshots() 削除パス: 722件 bulk_save_objects で発火",
-      "last_boot_time fromisoformat 正常+不正両経路カバー",
-      "_matches() 不明演算子 fallback (line 348) カバー",
-      "ruff check + ruff format --check 両方 PASS",
-      "PR #161 CI全ジョブ SUCCESS → squash merge 完了 (2026-05-15)",
-      "v1.4.0 GitHub Release 作成完了",
-      "PR #158 MERGED: FortiClient SSL-VPN オフライン同期 (Issue #154)"
+      "PR #206 MERGED (Issue #177: KPI Dashboard /api/dashboard/kpi + /timeline + /stats 拡張)",
+      "Issue #186: agent/OfflineCacheDB.ps1 新規作成 (SQLite+AES-256-CBC+HMAC-SHA256+DPAPI)",
+      "Issue #186: agent/PCOpsAgent.ps1 修正 (_EnsureCacheDB / Add-ToOfflineCache / Sync-OfflineCache を SQLite ベースへ)",
+      "Issue #186: tests/AgentOfflineCacheDB.Pester.Tests.ps1 新規作成 (20 Pester tests)",
+      "Issue #186: .github/workflows/ci.yml 修正 (PSSQLite インストール + テスト追加)",
+      "PR #207 作成: feature/186-sqlite-aes256-cache → main",
+      "systemd 再起動 (PR #206 merge 後の新 KPI endpoint 反映)"
     ],
-    "ci_status": "CI success (25905822408)。762 tests PASS (E2E除く)。全ジョブ SUCCESS。",
+    "ci_status": "PR #207 CI 進行中 (Pester Aggregated pending)",
     "verification": {
-      "pytest_unit": "762 passed, 0 failed",
-      "coverage_collect": "100% (218 stmts, 0 miss)",
-      "coverage_routes": "95%+",
       "ruff_check": "All checks passed",
       "ruff_format": "All checks passed",
-      "data_stub_alert": "0 件"
+      "pr207_lint": "PASS",
+      "pr207_flask_api": "PASS",
+      "pr207_pester": "pending"
     },
     "resume_point": {
-      "next_action": "次 Issue 調査。他 routes のカバレッジ向上 or 新機能 Issue 対応。open issues なし → 新規 Issue 生成検討。",
+      "next_action": "PR #207 CI 確認 → merge。次: Issue #189 (FortiGate docs) または新規 Issue 確認。",
       "blocker": "なし",
-      "notes": "今セッション主成果: Issue #160 collect.py 100% カバレッジ。762 tests。PR #161 MERGED。v1.4.0 リリース完了。"
+      "notes": "Issue #186 完全実装: SQLite+AES-256 暗号化キャッシュ + DPAPI 鍵保護 + HMAC 改ざん検知 + 30日 TTL + legacy JSON migration。PR #207 CI 待ち。"
     }
   },
   "learning": {
@@ -258,7 +265,7 @@
     }
   },
   "compact": {
-    "last_pre_compact_at": "2026-05-15T13:51:57.183Z"
+    "last_pre_compact_at": "2026-05-17T11:19:25.495Z"
   },
   "dreaming": {
     "patterns": [],
@@ -467,6 +474,40 @@
         "server/static/js/agents.js",
         "server/static/js/pc_detail.js",
         "server/test_agents_sub_states.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T14:13:42.371Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 9 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/migrations/versions/c3d4e5f6a7b8_add_agent_signing_key.py",
+        "server/models.py",
+        "server/routes/agents.py",
+        "server/routes/collect.py",
+        "server/routes/pcs.py",
+        "server/static/js/agents.js",
+        "server/static/js/pc_detail.js",
+        "server/test_agents_sub_states.py",
+        "server/test_collect.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-15T14:17:27.717Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 9 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/migrations/versions/c3d4e5f6a7b8_add_agent_signing_key.py",
+        "server/models.py",
+        "server/routes/agents.py",
+        "server/routes/collect.py",
+        "server/routes/pcs.py",
+        "server/static/js/agents.js",
+        "server/static/js/pc_detail.js",
+        "server/test_agents_sub_states.py",
+        "server/test_collect.py"
       ],
       "truncated": false
     }

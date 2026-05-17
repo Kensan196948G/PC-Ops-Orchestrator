@@ -288,7 +288,8 @@ jobs:
       - name: Install Pester
         run: |
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-          Install-Module Pester -Scope CurrentUser -Force -SkipPublisherCheck -MinimumVersion 5.0.0
+          Install-Module Pester   -Scope CurrentUser -Force -SkipPublisherCheck -MinimumVersion 5.0.0
+          Install-Module PSSQLite -Scope CurrentUser -Force -SkipPublisherCheck
 
       - name: Run aggregated Invoke-Pester
         run: |
@@ -301,7 +302,8 @@ jobs:
             "tests\AgentTeams.Pester.Tests.ps1",
             "tests\AgentMutex.Pester.Tests.ps1",
             "tests\AgentSelfCheck.Pester.Tests.ps1",
-            "tests\AgentDpapiApiKey.Pester.Tests.ps1"
+            "tests\AgentDpapiApiKey.Pester.Tests.ps1",
+            "tests\AgentOfflineCacheDB.Pester.Tests.ps1"
           )
           $cfg.Run.Exit = $false
           $cfg.Run.PassThru = $true  # $result オブジェクトを取得するために必須
