@@ -602,7 +602,9 @@ class User(db.Model):
             "is_locked": self.is_locked,
             "locked_at": self.locked_at.isoformat() if self.locked_at else None,
             "ad_dn": self.ad_dn,
-            "ad_synced_at": self.ad_synced_at.isoformat() if self.ad_synced_at else None,
+            "ad_synced_at": self.ad_synced_at.isoformat()
+            if self.ad_synced_at
+            else None,
         }
 
 
