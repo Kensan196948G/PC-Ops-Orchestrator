@@ -395,12 +395,22 @@ foreach ($mod in @("Get-HardwareInfo.ps1", "Get-SoftwareInfo.ps1", "Get-NetworkI
     }
 }
 
-$CACHE_DIR = Join-Path $SCRIPT_DIR "cache"
-if (-not (Test-Path $CACHE_DIR)) {
-    New-Item -ItemType Directory -Path $CACHE_DIR -Force | Out-Null
+# === Offline cache module (Issue #186): SQLite + AES-256 ===
+$offlineCacheModule = Join-Path $SCRIPT_DIR "OfflineCacheDB.ps1"
+if (Test-Path $offlineCacheModule) {
+    . $offlineCacheModule
+} else {
+    Write-Warning "OfflineCacheDB.ps1 not found — offline cache disabled"
 }
-$OFFLINE_CACHE_FILE = Join-Path $CACHE_DIR "offline_cache.json"
-$MAX_CACHE_ENTRIES = 2016  # 7 days * 24 h * 12 (5-min interval)
+
+# Legacy JSON cache path (used for one-time migration)
+$LEGACY_CACHE_DIR  = Join-Path $SCRIPT_DIR "cache"
+$LEGACY_CACHE_FILE = Join-Path $LEGACY_CACHE_DIR "offline_cache.json"
+
+# New SQLite cache paths under ProgramData
+$CACHE_DB_DIR   = Join-Path $env:ProgramData "PCOpsAgent"
+$OFFLINE_CACHE_DB  = Join-Path $CACHE_DB_DIR "cache.db"
+$OFFLINE_CACHE_KEY = Join-Path $CACHE_DB_DIR "cache_key.bin"
 
 # Resolved early so the Mutex name and the main loop see the same identity even
 # if config.json is reloaded later. Renaming pc_name in config.json starts a
@@ -484,59 +494,64 @@ function Test-ServerReachable {
     }
 }
 
-# === Offline Cache ===
-function Read-OfflineCache {
-    if (-not (Test-Path $OFFLINE_CACHE_FILE)) {
-        return @()
-    }
-    try {
-        $raw = Get-Content $OFFLINE_CACHE_FILE -Raw -Encoding UTF8
-        return ConvertFrom-Json $raw
-    } catch {
-        Write-AgentError "オフラインキャッシュ読み込み失敗: $_"
-        return @()
-    }
-}
+# === Offline Cache (SQLite + AES-256, Issue #186) ===
 
-function Write-OfflineCache {
-    param([array]$Entries)
+function _EnsureCacheDB {
+    # Initializes DB schema and migrates legacy JSON if present.
+    # No-op when OfflineCacheDB module is not loaded (reduced-coverage path).
+    if (-not (Get-Command Initialize-OfflineCacheDB -ErrorAction SilentlyContinue)) { return }
     try {
-        # Keep only last MAX_CACHE_ENTRIES to prevent unbounded growth
-        if ($Entries.Count -gt $MAX_CACHE_ENTRIES) {
-            $Entries = $Entries | Select-Object -Last $MAX_CACHE_ENTRIES
+        Initialize-OfflineCacheDB -DbPath $OFFLINE_CACHE_DB
+        if (Test-Path $LEGACY_CACHE_FILE) {
+            Migrate-LegacyJsonCache -JsonPath $LEGACY_CACHE_FILE -DbPath $OFFLINE_CACHE_DB -KeyPath $OFFLINE_CACHE_KEY
         }
-        $Entries | ConvertTo-Json -Depth 10 -Compress | Set-Content -Path $OFFLINE_CACHE_FILE -Encoding UTF8
+        Remove-ExpiredEntries -DbPath $OFFLINE_CACHE_DB
     } catch {
-        Write-AgentError "オフラインキャッシュ書き込み失敗: $_"
+        Write-AgentError "キャッシュDB初期化失敗: $_"
     }
 }
 
 function Add-ToOfflineCache {
     param([hashtable]$Entry)
-    $cache = @(Read-OfflineCache)
-    $cache += $Entry
-    Write-OfflineCache -Entries $cache
-    Write-AgentInfo "オフラインキャッシュ追加: 合計 $($cache.Count) 件"
+    if (-not (Get-Command Add-ToOfflineCacheDB -ErrorAction SilentlyContinue)) {
+        Write-AgentError "OfflineCacheDB モジュール未ロード — キャッシュ保存をスキップ"
+        return
+    }
+    try {
+        _EnsureCacheDB
+        Add-ToOfflineCacheDB -DbPath $OFFLINE_CACHE_DB -KeyPath $OFFLINE_CACHE_KEY -Entry $Entry
+        $cnt = (Invoke-SqliteQuery -DataSource $OFFLINE_CACHE_DB -Query "SELECT COUNT(*) AS c FROM offline_cache").c
+        Write-AgentInfo "オフラインキャッシュ追加 (SQLite): 合計 $cnt 件"
+    } catch {
+        Write-AgentError "オフラインキャッシュ追加失敗: $_"
+    }
 }
 
 function Sync-OfflineCache {
     param([string]$PcName)
-    $cache = @(Read-OfflineCache)
-    if ($cache.Count -eq 0) {
-        return
-    }
+    if (-not (Get-Command Read-OfflineCacheDB -ErrorAction SilentlyContinue)) { return }
+    try {
+        _EnsureCacheDB
+        $cache = @(Read-OfflineCacheDB -DbPath $OFFLINE_CACHE_DB -KeyPath $OFFLINE_CACHE_KEY)
+        if ($cache.Count -eq 0) { return }
 
-    Write-AgentInfo "オフラインキャッシュ同期開始: $($cache.Count) 件"
-    $body = @{
-        pc_name = $PcName
-        offline_cache = $cache
-    }
-    $response = Invoke-AgentRequest -Method "POST" -Endpoint "/api/collect/sync" -Body $body
-    if ($response) {
-        Write-AgentInfo "同期完了: inserted=$($response.inserted) skipped=$($response.skipped)"
-        Remove-Item -Path $OFFLINE_CACHE_FILE -Force -ErrorAction SilentlyContinue
-    } else {
-        Write-AgentError "オフラインキャッシュ同期失敗、次回リトライ"
+        Write-AgentInfo "オフラインキャッシュ同期開始 (SQLite): $($cache.Count) 件"
+        $ids = @($cache | ForEach-Object { [int]$_._cache_id })
+        $payload = $cache | ForEach-Object {
+            $ht = @{}
+            $_.Keys | Where-Object { $_ -ne '_cache_id' } | ForEach-Object { $ht[$_] = $_[$_] }
+            $ht
+        }
+        $body = @{ pc_name = $PcName; offline_cache = $payload }
+        $response = Invoke-AgentRequest -Method "POST" -Endpoint "/api/collect/sync" -Body $body
+        if ($response) {
+            Write-AgentInfo "同期完了: inserted=$($response.inserted) skipped=$($response.skipped)"
+            Remove-SyncedEntries -DbPath $OFFLINE_CACHE_DB -Ids $ids
+        } else {
+            Write-AgentError "オフラインキャッシュ同期失敗、次回リトライ"
+        }
+    } catch {
+        Write-AgentError "Sync-OfflineCache 失敗: $_"
     }
 }
 
