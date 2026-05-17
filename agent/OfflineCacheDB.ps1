@@ -182,7 +182,7 @@ function Initialize-OfflineCacheDB {
 CREATE TABLE IF NOT EXISTS offline_cache (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     collected_at TEXT    NOT NULL,
-    payload      BLOB    NOT NULL,
+    payload      TEXT    NOT NULL,
     attempts     INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_collected_at ON offline_cache (collected_at);
@@ -237,7 +237,7 @@ function Read-OfflineCacheDB {
     $results = @()
     foreach ($row in $rows) {
         try {
-            $json = Unprotect-CachePayload -Base64Blob $row.payload -AesKey $keys.AesKey -HmacKey $keys.HmacKey
+            $json = Unprotect-CachePayload -Base64Blob ([string]$row.payload) -AesKey $keys.AesKey -HmacKey $keys.HmacKey
             $obj  = $json | ConvertFrom-Json
             $ht   = @{ _cache_id = $row.id }
             $obj.PSObject.Properties | ForEach-Object { $ht[$_.Name] = $_.Value }
