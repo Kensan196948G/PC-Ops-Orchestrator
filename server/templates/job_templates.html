@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}ジョブテンプレート{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">ジョブテンプレート</h2>
+    <div class="page-actions">
+        <button class="btn btn-primary role-admin-only" id="btn-show-create-template">+ 新規テンプレート</button>
+    </div>
+</div>
+
+<!-- Template list filters -->
+<div class="card">
+    <div class="page-actions">
+        <select id="template-category-filter" class="form-input">
+            <option value="">すべてのカテゴリ</option>
+            <option value="general">一般</option>
+            <option value="maintenance">メンテナンス</option>
+            <option value="security">セキュリティ</option>
+            <option value="diagnostics">診断</option>
+            <option value="update">更新</option>
+        </select>
+        <select id="template-risk-filter" class="form-input">
+            <option value="">すべてのリスク</option>
+            <option value="low">低</option>
+            <option value="medium">中</option>
+            <option value="high">高</option>
+        </select>
+        <label class="form-input filter-checkbox-label">
+            <input type="checkbox" id="template-show-disabled"> 無効テンプレートも表示
+        </label>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>名前</th>
+                <th>カテゴリ</th>
+                <th>リスク</th>
+                <th>承認要</th>
+                <th>状態</th>
+                <th>作成者</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="templates-body">
+            <tr><td colspan="7" class="text-center">読み込み中...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Execution history -->
+<div class="card">
+    <h3 class="card-title">実行履歴</h3>
+    <div class="page-actions">
+        <select id="exec-status-filter" class="form-input">
+            <option value="">すべての状態</option>
+            <option value="pending_approval">承認待ち</option>
+            <option value="pending">待機中</option>
+            <option value="running">実行中</option>
+            <option value="completed">完了</option>
+            <option value="failed">失敗</option>
+            <option value="cancelled">キャンセル</option>
+        </select>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>テンプレート</th>
+                <th>PC</th>
+                <th>状態</th>
+                <th>要求者</th>
+                <th>承認者</th>
+                <th>作成日時</th>
+                <th>完了日時</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="executions-body">
+            <tr><td colspan="9" class="text-center">読み込み中...</td></tr>
+        </tbody>
+    </table>
+    <div class="pagination" id="exec-pagination"></div>
+</div>
+
+<!-- Create/Edit Template Modal -->
+<div id="template-modal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 class="modal-title" id="template-modal-title">テンプレート作成</h3>
+            <button class="modal-close" id="btn-close-template-modal" aria-label="閉じる">×</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="template-edit-id">
+            <div class="form-group">
+                <label class="form-label">テンプレート名 *</label>
+                <input type="text" id="template-name" class="form-input" placeholder="例: ディスククリーンアップ">
+            </div>
+            <div class="form-group">
+                <label class="form-label">説明</label>
+                <textarea id="template-description" class="form-input" rows="2" placeholder="テンプレートの説明"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">カテゴリ</label>
+                <select id="template-category" class="form-input">
+                    <option value="general">一般</option>
+                    <option value="maintenance">メンテナンス</option>
+                    <option value="security">セキュリティ</option>
+                    <option value="diagnostics">診断</option>
+                    <option value="update">更新</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">リスクレベル</label>
+                <select id="template-risk-level" class="form-input">
+                    <option value="low">低</option>
+                    <option value="medium">中</option>
+                    <option value="high">高</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">スクリプト本体 (PowerShell)</label>
+                <textarea id="template-script-body" class="form-input" rows="8"
+                    placeholder="# PowerShell スクリプトを記述&#10;Write-Output 'Hello'"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">承認必須</label>
+                <select id="template-requires-approval" class="form-input">
+                    <option value="true">はい</option>
+                    <option value="false">いいえ</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">有効</label>
+                <select id="template-is-enabled" class="form-input">
+                    <option value="true">有効</option>
+                    <option value="false">無効</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="btn-cancel-template">キャンセル</button>
+            <button class="btn btn-primary" id="btn-save-template">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- Execute Template Modal -->
+<div id="execute-modal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 class="modal-title">ジョブ実行</h3>
+            <button class="modal-close" id="btn-close-execute-modal" aria-label="閉じる">×</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="execute-template-id">
+            <p id="execute-template-desc" class="text-muted"></p>
+            <div class="form-group">
+                <label class="form-label">対象 PC *</label>
+                <select id="execute-pc-id" class="form-input">
+                    <option value="">PCを選択...</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="btn-cancel-execute">キャンセル</button>
+            <button class="btn btn-primary" id="btn-run-execute">実行</button>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Execution Modal -->
+<div id="reject-modal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 class="modal-title">実行を却下</h3>
+            <button class="modal-close" id="btn-close-reject-modal" aria-label="閉じる">×</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="reject-execution-id">
+            <div class="form-group">
+                <label class="form-label">却下理由 *</label>
+                <textarea id="reject-reason" class="form-input" rows="3" placeholder="却下理由を入力してください"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="btn-cancel-reject">キャンセル</button>
+            <button class="btn btn-danger" id="btn-submit-reject">却下する</button>
+        </div>
+    </div>
+</div>
+
+<!-- Execution Detail Modal -->
+<div id="exec-detail-modal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 class="modal-title">実行詳細</h3>
+            <button class="modal-close" id="btn-close-exec-detail" aria-label="閉じる">×</button>
+        </div>
+        <div class="modal-body" id="exec-detail-body"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/job_templates.js"></script>
+{% endblock %}

@@ -13,6 +13,7 @@ SIDEBAR_PAGES = [
     ("/groups", "groups"),
     ("/alert-rules", "alert-rules"),
     ("/agents", "agents"),
+    ("/job-templates", "job-templates"),
     ("/certs", "certs"),
     ("/licenses", "licenses"),
     ("/notifications-config", "notifications-config"),
