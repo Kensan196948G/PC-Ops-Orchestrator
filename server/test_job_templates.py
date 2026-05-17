@@ -1,4 +1,4 @@
-"""Phase B-1 (#212) — Job Templates & Executions API tests.
+"""Phase B-1 (#212) + Phase B-2 (#214) — Job Templates & Executions API tests.
 
 Covers:
 - Template CRUD (admin required)
@@ -6,6 +6,7 @@ Covers:
 - Delete guard: template with executions cannot be deleted
 - JobExecution lifecycle: create / list / get / cancel
 - Input validation: name required, risk_level enum, script_body length
+- Phase B-2: requires_approval flow (pending_approval → approve/reject)
 """
 
 import json
@@ -568,3 +569,215 @@ def test_list_executions_status_filter():
 def test_web_ui_page_requires_login():
     r = client.get("/job-templates")
     assert r.status_code in (302, 401)
+
+
+# ---------------------------------------------------------------------------
+# Phase B-2: requires_approval workflow
+# ---------------------------------------------------------------------------
+
+
+def _create_approval_template(suffix=""):
+    """Create a template with requires_approval=true."""
+    suf = suffix or uuid.uuid4().hex[:6]
+    r = _req(
+        "POST",
+        "/api/job-templates",
+        token=_admin_token,
+        data={
+            "name": f"Approval-Tmpl-{suf}",
+            "risk_level": "high",
+            "category": "security",
+            "script_body": "Write-Output 'needs approval'",
+            "requires_approval": True,
+            "is_enabled": True,
+        },
+    )
+    assert r.status_code == 201
+    return json.loads(r.data)["template"]["id"]
+
+
+def test_execute_requires_approval_creates_pending_approval():
+    """requires_approval=true → initial status must be pending_approval."""
+    pc_id = _create_pc()
+    tid = _create_approval_template()
+    r = _req(
+        "POST",
+        f"/api/job-templates/{tid}/execute",
+        token=_operator_token,
+        data={"pc_id": pc_id},
+    )
+    assert r.status_code == 201
+    body = json.loads(r.data)
+    assert body["execution"]["status"] == "pending_approval"
+    assert "承認待ち" in body["message"]
+
+
+def test_approve_execution_transitions_to_pending():
+    """Admin approve → status becomes pending (ready for agent)."""
+    pc_id = _create_pc()
+    tid = _create_approval_template()
+    r = _req(
+        "POST",
+        f"/api/job-templates/{tid}/execute",
+        token=_operator_token,
+        data={"pc_id": pc_id},
+    )
+    eid = json.loads(r.data)["execution"]["id"]
+
+    r2 = _req("POST", f"/api/job-executions/{eid}/approve", token=_admin_token)
+    assert r2.status_code == 200
+    body = json.loads(r2.data)
+    assert body["execution"]["status"] == "pending"
+    assert body["execution"]["approved_by"] is not None
+
+
+def test_approve_requires_admin():
+    """Operator cannot approve executions."""
+    pc_id = _create_pc()
+    tid = _create_approval_template()
+    r = _req(
+        "POST",
+        f"/api/job-templates/{tid}/execute",
+        token=_operator_token,
+        data={"pc_id": pc_id},
+    )
+    eid = json.loads(r.data)["execution"]["id"]
+
+    r2 = _req("POST", f"/api/job-executions/{eid}/approve", token=_operator_token)
+    assert r2.status_code in (401, 403)
+
+
+def test_approve_wrong_status_returns_422():
+    """Cannot approve a non-pending_approval execution."""
+    pc_id = _create_pc()
+    tid = _create_enabled_template("no-approval")
+    r = _req(
+        "POST",
+        f"/api/job-templates/{tid}/execute",
+        token=_operator_token,
+        data={"pc_id": pc_id},
+    )
+    eid = json.loads(r.data)["execution"]["id"]
+
+    r2 = _req("POST", f"/api/job-executions/{eid}/approve", token=_admin_token)
+    assert r2.status_code == 422
+
+
+def test_reject_execution_transitions_to_cancelled():
+    """Admin reject with reason → status becomes cancelled + rejection_reason set."""
+    pc_id = _create_pc()
+    tid = _create_approval_template()
+    r = _req(
+        "POST",
+        f"/api/job-templates/{tid}/execute",
+        token=_operator_token,
+        data={"pc_id": pc_id},
+    )
+    eid = json.loads(r.data)["execution"]["id"]
+
+    r2 = _req(
+        "POST",
+        f"/api/job-executions/{eid}/reject",
+        token=_admin_token,
+        data={"reason": "セキュリティポリシー違反"},
+    )
+    assert r2.status_code == 200
+    body = json.loads(r2.data)
+    assert body["execution"]["status"] == "cancelled"
+    assert body["execution"]["rejection_reason"] == "セキュリティポリシー違反"
+
+
+def test_reject_requires_reason():
+    """Reject without reason returns 400."""
+    pc_id = _create_pc()
+    tid = _create_approval_template()
+    r = _req(
+        "POST",
+        f"/api/job-templates/{tid}/execute",
+        token=_operator_token,
+        data={"pc_id": pc_id},
+    )
+    eid = json.loads(r.data)["execution"]["id"]
+
+    r2 = _req(
+        "POST",
+        f"/api/job-executions/{eid}/reject",
+        token=_admin_token,
+        data={"reason": ""},
+    )
+    assert r2.status_code == 400
+
+
+def test_reject_requires_admin():
+    """Operator cannot reject executions."""
+    pc_id = _create_pc()
+    tid = _create_approval_template()
+    r = _req(
+        "POST",
+        f"/api/job-templates/{tid}/execute",
+        token=_operator_token,
+        data={"pc_id": pc_id},
+    )
+    eid = json.loads(r.data)["execution"]["id"]
+
+    r2 = _req(
+        "POST",
+        f"/api/job-executions/{eid}/reject",
+        token=_operator_token,
+        data={"reason": "unauthorized attempt"},
+    )
+    assert r2.status_code in (401, 403)
+
+
+def test_cancel_pending_approval_allowed():
+    """pending_approval execution can be cancelled (operator or admin)."""
+    pc_id = _create_pc()
+    tid = _create_approval_template()
+    r = _req(
+        "POST",
+        f"/api/job-templates/{tid}/execute",
+        token=_operator_token,
+        data={"pc_id": pc_id},
+    )
+    eid = json.loads(r.data)["execution"]["id"]
+
+    r2 = _req("POST", f"/api/job-executions/{eid}/cancel", token=_operator_token)
+    assert r2.status_code == 200
+    assert json.loads(r2.data)["execution"]["status"] == "cancelled"
+
+
+def test_list_executions_pending_approval_filter():
+    """Status filter for pending_approval works correctly."""
+    pc_id = _create_pc()
+    tid = _create_approval_template()
+    _req(
+        "POST",
+        f"/api/job-templates/{tid}/execute",
+        token=_operator_token,
+        data={"pc_id": pc_id},
+    )
+    r = _req(
+        "GET",
+        "/api/job-executions?status=pending_approval",
+        token=_viewer_token,
+    )
+    assert r.status_code == 200
+    body = json.loads(r.data)
+    for e in body["executions"]:
+        assert e["status"] == "pending_approval"
+
+
+def test_execution_to_dict_includes_approval_fields():
+    """to_dict() includes approved_by, approved_at, rejection_reason."""
+    pc_id = _create_pc()
+    tid = _create_approval_template()
+    r = _req(
+        "POST",
+        f"/api/job-templates/{tid}/execute",
+        token=_operator_token,
+        data={"pc_id": pc_id},
+    )
+    body = json.loads(r.data)["execution"]
+    assert "approved_by" in body
+    assert "approved_at" in body
+    assert "rejection_reason" in body

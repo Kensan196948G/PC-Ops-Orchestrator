@@ -254,10 +254,11 @@ def execute_job_template(template_id: int):
     if params is not None and not isinstance(params, str):
         params = json.dumps(params, ensure_ascii=False)
 
+    initial_status = "pending_approval" if template.requires_approval else "pending"
     execution = JobExecution(
         template_id=template_id,
         pc_id=pc_id,
-        status="pending",
+        status=initial_status,
         parameters=params,
         requested_by=request.current_user.username,
     )
@@ -272,13 +273,18 @@ def execute_job_template(template_id: int):
                 "template_name": template.name,
                 "pc_name": pc.pc_name,
                 "risk_level": template.risk_level,
+                "requires_approval": template.requires_approval,
+                "initial_status": initial_status,
             },
             ensure_ascii=False,
         ),
     )
-    return jsonify(
-        {"message": "実行リクエストを作成しました", "execution": execution.to_dict()}
-    ), 201
+    message = (
+        "承認待ちで実行リクエストを作成しました"
+        if initial_status == "pending_approval"
+        else "実行リクエストを作成しました"
+    )
+    return jsonify({"message": message, "execution": execution.to_dict()}), 201
 
 
 @job_templates_bp.route("/api/job-executions", methods=["GET"])
@@ -328,10 +334,13 @@ def cancel_job_execution(execution_id: int):
     execution = db.session.get(JobExecution, execution_id)
     if not execution:
         return jsonify({"error": f"実行 {execution_id} が見つかりません"}), 404
-    if execution.status not in ("pending",):
+    if execution.status not in ("pending", "pending_approval"):
         return jsonify(
             {
-                "error": f"status={execution.status} の実行はキャンセルできません (pending のみ可)"
+                "error": (
+                    f"status={execution.status} の実行はキャンセルできません"
+                    " (pending / pending_approval のみ可)"
+                )
             }
         ), 422
 
@@ -342,3 +351,72 @@ def cancel_job_execution(execution_id: int):
     return jsonify(
         {"message": "実行をキャンセルしました", "execution": execution.to_dict()}
     )
+
+
+@job_templates_bp.route(
+    "/api/job-executions/<int:execution_id>/approve", methods=["POST"]
+)
+@admin_required
+def approve_job_execution(execution_id: int):
+    execution = db.session.get(JobExecution, execution_id)
+    if not execution:
+        return jsonify({"error": f"実行 {execution_id} が見つかりません"}), 404
+    if execution.status != "pending_approval":
+        return jsonify(
+            {
+                "error": (
+                    f"status={execution.status} の実行は承認できません"
+                    " (pending_approval のみ可)"
+                )
+            }
+        ), 422
+
+    now = datetime.now(timezone.utc)
+    execution.status = "pending"
+    execution.approved_by = request.current_user.username
+    execution.approved_at = now
+    db.session.commit()
+    log_operation(
+        "approve_job_execution",
+        f"execution:{execution_id}",
+        json.dumps({"approved_by": request.current_user.username}, ensure_ascii=False),
+    )
+    return jsonify({"message": "実行を承認しました", "execution": execution.to_dict()})
+
+
+@job_templates_bp.route(
+    "/api/job-executions/<int:execution_id>/reject", methods=["POST"]
+)
+@admin_required
+def reject_job_execution(execution_id: int):
+    execution = db.session.get(JobExecution, execution_id)
+    if not execution:
+        return jsonify({"error": f"実行 {execution_id} が見つかりません"}), 404
+    if execution.status != "pending_approval":
+        return jsonify(
+            {
+                "error": (
+                    f"status={execution.status} の実行は却下できません"
+                    " (pending_approval のみ可)"
+                )
+            }
+        ), 422
+
+    data = request.get_json() or {}
+    reason = data.get("reason", "").strip()
+    if not reason:
+        return jsonify({"error": "reason は必須です"}), 400
+
+    execution.status = "cancelled"
+    execution.rejection_reason = reason
+    execution.completed_at = datetime.now(timezone.utc)
+    db.session.commit()
+    log_operation(
+        "reject_job_execution",
+        f"execution:{execution_id}",
+        json.dumps(
+            {"rejected_by": request.current_user.username, "reason": reason},
+            ensure_ascii=False,
+        ),
+    )
+    return jsonify({"message": "実行を却下しました", "execution": execution.to_dict()})

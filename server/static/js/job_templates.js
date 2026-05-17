@@ -9,6 +9,7 @@ const RISK_CLASSES = { low: 'status-completed', medium: 'status-pending', high: 
 
 function statusBadge(status) {
     const map = {
+        pending_approval: '<span class="status-badge status-pending">承認待ち</span>',
         pending: '<span class="status-badge status-pending">待機中</span>',
         running: '<span class="status-badge status-running">実行中</span>',
         completed: '<span class="status-badge status-completed">完了</span>',
@@ -96,7 +97,7 @@ async function loadExecutions(page) {
     currentExecPage = page || currentExecPage;
     const status = document.getElementById('exec-status-filter').value;
     const tbody = document.getElementById('executions-body');
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center">読み込み中...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center">読み込み中...</td></tr>';
 
     try {
         const params = new URLSearchParams();
@@ -106,26 +107,43 @@ async function loadExecutions(page) {
 
         const data = await apiFetch('/api/job-executions?' + params.toString());
         if (!data.executions || data.executions.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center">実行履歴がありません</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">実行履歴がありません</td></tr>';
         } else {
-            tbody.innerHTML = data.executions.map(e => `
+            tbody.innerHTML = data.executions.map(e => {
+                let actionBtns = '';
+                if (e.status === 'pending_approval') {
+                    actionBtns = `
+                        <button class="btn btn-primary role-admin-only"
+                            style="padding:0.2rem 0.5rem;font-size:0.75rem;"
+                            onclick="event.stopPropagation();approveExecution(${Number(e.id)})">
+                            承認
+                        </button>
+                        <button class="btn btn-danger role-admin-only"
+                            style="padding:0.2rem 0.5rem;font-size:0.75rem;"
+                            onclick="event.stopPropagation();openRejectModal(${Number(e.id)})">
+                            却下
+                        </button>`;
+                } else if (e.status === 'pending') {
+                    actionBtns = `
+                        <button class="btn btn-danger role-operator-or-admin"
+                            style="padding:0.2rem 0.5rem;font-size:0.75rem;"
+                            onclick="event.stopPropagation();cancelExecution(${Number(e.id)})">
+                            キャンセル
+                        </button>`;
+                }
+                return `
                 <tr style="cursor:pointer;" onclick="showExecDetail(${Number(e.id)})">
                     <td>#${escapeHTML(e.id)}</td>
-                    <td>${escapeHTML(e.template_id)}</td>
-                    <td>${escapeHTML(e.pc_id)}</td>
+                    <td>${escapeHTML(e.template_name || e.template_id)}</td>
+                    <td>${escapeHTML(e.pc_name || e.pc_id)}</td>
                     <td>${statusBadge(e.status)}</td>
                     <td>${escapeHTML(e.requested_by || '-')}</td>
+                    <td>${escapeHTML(e.approved_by || '-')}</td>
                     <td>${escapeHTML(formatTime(e.created_at))}</td>
                     <td>${escapeHTML(formatTime(e.completed_at))}</td>
-                    <td>${e.status === 'pending'
-                        ? `<button class="btn btn-danger role-operator-or-admin"
-                               style="padding:0.2rem 0.5rem;font-size:0.75rem;"
-                               onclick="event.stopPropagation();cancelExecution(${Number(e.id)})">
-                               キャンセル
-                           </button>`
-                        : ''}</td>
-                </tr>
-            `).join('');
+                    <td>${actionBtns}</td>
+                </tr>`;
+            }).join('');
         }
 
         const pagination = document.getElementById('exec-pagination');
@@ -139,7 +157,7 @@ async function loadExecutions(page) {
             pagination.innerHTML = '';
         }
     } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center" style="color:var(--danger);">読み込みに失敗しました</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="color:var(--danger);">読み込みに失敗しました</td></tr>';
     }
 }
 
@@ -298,6 +316,39 @@ async function cancelExecution(execId) {
     }
 }
 
+async function approveExecution(execId) {
+    if (!confirm('実行 #' + execId + ' を承認しますか？')) return;
+    try {
+        await apiFetch(`/api/job-executions/${execId}/approve`, { method: 'POST' });
+        loadExecutions(currentExecPage);
+    } catch (e) {
+        alert('承認に失敗しました: ' + (e.message || e));
+    }
+}
+
+function openRejectModal(execId) {
+    document.getElementById('reject-execution-id').value = execId;
+    document.getElementById('reject-reason').value = '';
+    openModal('reject-modal');
+}
+
+async function submitReject() {
+    const execId = Number(document.getElementById('reject-execution-id').value);
+    const reason = document.getElementById('reject-reason').value.trim();
+    if (!reason) { alert('却下理由を入力してください'); return; }
+    try {
+        await apiFetch(`/api/job-executions/${execId}/reject`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason }),
+        });
+        closeModal('reject-modal');
+        loadExecutions(currentExecPage);
+    } catch (e) {
+        alert('却下に失敗しました: ' + (e.message || e));
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Modal helpers
 // ---------------------------------------------------------------------------
@@ -313,7 +364,7 @@ function closeModal(id) {
 
 function handleModalKey(e) {
     if (e.key === 'Escape') {
-        ['template-modal', 'execute-modal', 'exec-detail-modal'].forEach(id => closeModal(id));
+        ['template-modal', 'execute-modal', 'reject-modal', 'exec-detail-modal'].forEach(id => closeModal(id));
         document.removeEventListener('keydown', handleModalKey);
     }
 }
@@ -336,6 +387,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-close-execute-modal').addEventListener('click', () => closeModal('execute-modal'));
 
     document.getElementById('btn-close-exec-detail').addEventListener('click', () => closeModal('exec-detail-modal'));
+
+    document.getElementById('btn-submit-reject').addEventListener('click', submitReject);
+    document.getElementById('btn-cancel-reject').addEventListener('click', () => closeModal('reject-modal'));
+    document.getElementById('btn-close-reject-modal').addEventListener('click', () => closeModal('reject-modal'));
 
     document.getElementById('template-category-filter').addEventListener('change', loadTemplates);
     document.getElementById('template-risk-filter').addEventListener('change', loadTemplates);

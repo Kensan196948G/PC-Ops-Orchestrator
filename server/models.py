@@ -787,16 +787,19 @@ class JobTemplate(db.Model):
 
 
 class JobExecution(db.Model):
-    """Records a single execution of a JobTemplate on a target PC (Phase B-1).
+    """Records a single execution of a JobTemplate on a target PC.
 
-    Status flow: pending → running → completed / failed / cancelled
+    Status flow (Phase B-1): pending → running → completed / failed / cancelled
+    Status flow (Phase B-2): [requires_approval=true] → pending_approval → pending → running → …
     Agent polls /api/tasks/pending-jobs and updates status via /api/job-executions/<id>/result.
     """
 
     __tablename__ = "job_executions"
     __table_args__ = (
         db.CheckConstraint(
-            "status IN ('pending','running','completed','failed','cancelled')",
+            "status IN ("
+            "'pending','running','completed','failed','cancelled','pending_approval'"
+            ")",
             name="ck_job_executions_status",
         ),
     )
@@ -819,6 +822,9 @@ class JobExecution(db.Model):
     result_output = db.Column(db.Text)
     result_exit_code = db.Column(db.Integer)
     requested_by = db.Column(db.String(255), nullable=False)
+    approved_by = db.Column(db.String(255))
+    approved_at = db.Column(db.DateTime)
+    rejection_reason = db.Column(db.Text)
     executed_at = db.Column(db.DateTime)
     completed_at = db.Column(db.DateTime)
     created_at = db.Column(
@@ -842,6 +848,9 @@ class JobExecution(db.Model):
             "result_output": self.result_output,
             "result_exit_code": self.result_exit_code,
             "requested_by": self.requested_by,
+            "approved_by": self.approved_by,
+            "approved_at": (self.approved_at.isoformat() if self.approved_at else None),
+            "rejection_reason": self.rejection_reason,
             "executed_at": (self.executed_at.isoformat() if self.executed_at else None),
             "completed_at": (
                 self.completed_at.isoformat() if self.completed_at else None
