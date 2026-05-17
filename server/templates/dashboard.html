@@ -120,6 +120,54 @@
     </div>
 </div>
 
+<!-- KPI Rate Cards (range-aware) -->
+<div class="kpi-grid kpi-grid-rate mb-lg" id="kpi-rate-grid">
+    <div class="kpi info">
+        <div class="kpi-head">
+            <span class="kpi-label">稼働率</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value" id="stat-uptime-rate">—<small>%</small></div>
+        <div class="kpi-delta neutral" id="kpi-uptime-delta">期間内オンライン率</div>
+    </div>
+    <div class="kpi warning">
+        <div class="kpi-head">
+            <span class="kpi-label">アラート発生率</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value" id="stat-alert-rate">—<small>%</small></div>
+        <div class="kpi-delta neutral" id="kpi-alert-rate-delta">PC あたりアラート率</div>
+    </div>
+    <div class="kpi success">
+        <div class="kpi-head">
+            <span class="kpi-label">ジョブ成功率</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value" id="stat-job-success-rate">—<small>%</small></div>
+        <div class="kpi-delta neutral" id="kpi-job-rate-delta">タスク完了/合計</div>
+    </div>
+</div>
+
+<!-- Trend chart (timeline) -->
+<div class="card card-framed mb-lg">
+    <div class="card-header">
+        <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            トレンド (タスク / アラート)
+        </div>
+        <span class="card-subtitle" id="trend-range-label">過去 24時間</span>
+    </div>
+    <div class="card-body">
+        <canvas id="trendChart" height="80"></canvas>
+    </div>
+</div>
+
 <!-- Charts row: Health ring + OS breakdown -->
 <div class="charts-grid mb-lg">
     <div class="card card-framed">
