@@ -376,6 +376,9 @@ class Alert(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     pc_id = db.Column(db.Integer, db.ForeignKey("pcs.id"), nullable=True, index=True)
+    alert_rule_id = db.Column(
+        db.Integer, db.ForeignKey("alert_rules.id"), nullable=True, index=True
+    )
     alert_type = db.Column(db.String(64), nullable=False, index=True)
     severity = db.Column(db.String(16), nullable=False, index=True)
     message = db.Column(db.Text, nullable=False)
@@ -390,6 +393,8 @@ class Alert(db.Model):
 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+    rule = db.relationship("AlertRule", backref="alerts", lazy="select")
+
     __table_args__ = (
         db.UniqueConstraint("source_key", "resolved", name="uq_alert_source_active"),
     )
@@ -398,6 +403,7 @@ class Alert(db.Model):
         return {
             "id": self.id,
             "pc_id": self.pc_id,
+            "alert_rule_id": self.alert_rule_id,
             "alert_type": self.alert_type,
             "severity": self.severity,
             "message": self.message,

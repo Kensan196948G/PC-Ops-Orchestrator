@@ -4,12 +4,13 @@ from datetime import datetime, timezone, timedelta
 from flask import Blueprint, request, jsonify, make_response
 from sqlalchemy.orm import joinedload
 from extensions import db, limiter
-from models import PC, Alert
+from models import PC, Alert, AlertRule
 from auth import login_required, require_role
-from notify import notify_alert
+from notify import notify_alert, dispatch_via_rule
 
 alerts_bp = Blueprint("alerts", __name__, url_prefix="/api/alerts")
 
+# Fallback constants used when no AlertRule rows are defined.
 _OFFLINE_THRESHOLD_MINUTES = 30
 _DISK_LOW_PCT = 10.0
 _MEM_HIGH_PCT = 90.0
@@ -158,8 +159,8 @@ def resolve_alert(alert_id):
 def sync_alerts():
     """Generate/update alerts from current PC state (idempotent)."""
     now = datetime.now(timezone.utc)
-    offline_threshold = now - timedelta(minutes=_OFFLINE_THRESHOLD_MINUTES)
     pcs = PC.query.all()
+    rules = AlertRule.query.filter_by(is_enabled=True).all()
 
     created, resolved_count = 0, 0
 
@@ -173,14 +174,28 @@ def sync_alerts():
     active_keys: set[str] = set()
 
     for pc in pcs:
-        candidates = _build_candidates(pc, offline_threshold)
+        if rules:
+            candidates = _build_candidates_from_rules(pc, rules, now)
+        else:
+            # Fallback to hardcoded thresholds when no rules are configured.
+            offline_threshold = now - timedelta(minutes=_OFFLINE_THRESHOLD_MINUTES)
+            candidates = _build_candidates(pc, offline_threshold)
+
         for candidate in candidates:
             active_keys.add(candidate["source_key"])
             if candidate["source_key"] not in existing_keys:
                 new_alert = Alert(**candidate)
                 db.session.add(new_alert)
                 db.session.flush()  # populate id before notify
-                notify_alert(new_alert)
+                rule = (
+                    db.session.get(AlertRule, candidate["alert_rule_id"])
+                    if candidate.get("alert_rule_id")
+                    else None
+                )
+                if rule:
+                    dispatch_via_rule(new_alert, rule)
+                else:
+                    notify_alert(new_alert)
                 created += 1
 
     stale = Alert.query.filter(
@@ -201,6 +216,96 @@ def sync_alerts():
             "total_active": Alert.query.filter_by(resolved=False).count(),
         }
     )
+
+
+def _eval_operator(value: float, operator: str, threshold: float) -> bool:
+    if operator == "gt":
+        return value > threshold
+    if operator == "gte":
+        return value >= threshold
+    if operator == "lt":
+        return value < threshold
+    if operator == "lte":
+        return value <= threshold
+    return False
+
+
+def _get_metric_value(pc: PC, metric: str, now: datetime) -> float | None:
+    """Return the current metric value for a PC, or None if unavailable."""
+    if metric == "cpu":
+        from models import SystemSnapshot
+
+        snap = (
+            SystemSnapshot.query.filter_by(pc_id=pc.id)
+            .order_by(SystemSnapshot.collected_at.desc())
+            .first()
+        )
+        return snap.cpu_usage if snap else None
+
+    if metric == "memory":
+        if (
+            pc.memory_total_gb
+            and pc.memory_available_gb is not None
+            and pc.memory_total_gb > 0
+        ):
+            return (
+                (pc.memory_total_gb - pc.memory_available_gb) / pc.memory_total_gb * 100
+            )
+        return None
+
+    if metric == "disk":
+        if pc.disk_total_gb and pc.disk_free_gb is not None and pc.disk_total_gb > 0:
+            # Usage percentage (not free).
+            return (pc.disk_total_gb - pc.disk_free_gb) / pc.disk_total_gb * 100
+        return None
+
+    if metric == "offline":
+        last_seen = pc.last_seen
+        if last_seen is None:
+            return None
+        if last_seen.tzinfo is None:
+            last_seen = last_seen.replace(tzinfo=timezone.utc)
+        return (now - last_seen).total_seconds() / 60.0
+
+    return None
+
+
+def _build_message(pc: PC, rule: "AlertRule", value: float) -> str:
+    unit_map = {"cpu": "%", "memory": "%", "disk": "%", "offline": "分"}
+    unit = unit_map.get(rule.metric, "")
+    label_map = {
+        "cpu": "CPU使用率",
+        "memory": "メモリ使用率",
+        "disk": "ディスク使用率",
+        "offline": "オフライン経過時間",
+    }
+    label = label_map.get(rule.metric, rule.metric)
+    return (
+        f"{pc.pc_name} の{label}が {value:.1f}{unit} (しきい値: {rule.threshold}{unit})"
+    )
+
+
+def _build_candidates_from_rules(
+    pc: PC, rules: list["AlertRule"], now: datetime
+) -> list[dict]:
+    """Evaluate enabled AlertRule objects against current PC metrics."""
+    candidates = []
+    for rule in rules:
+        value = _get_metric_value(pc, rule.metric, now)
+        if value is None:
+            continue
+        if _eval_operator(value, rule.operator, rule.threshold):
+            candidates.append(
+                {
+                    "pc_id": pc.id,
+                    "alert_rule_id": rule.id,
+                    "alert_type": rule.metric,
+                    "severity": rule.severity,
+                    "message": _build_message(pc, rule, value),
+                    "source_key": f"pc_{pc.id}_rule_{rule.id}",
+                }
+            )
+    return candidates
 
 
 def _build_candidates(pc: PC, offline_threshold: datetime) -> list[dict]:
