@@ -18,16 +18,30 @@ def upgrade():
     op.create_table(
         "job_executions",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("template_id", sa.Integer(), sa.ForeignKey("job_templates.id", ondelete="RESTRICT"), nullable=False),
-        sa.Column("pc_id", sa.Integer(), sa.ForeignKey("pcs.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "template_id",
+            sa.Integer(),
+            sa.ForeignKey("job_templates.id", ondelete="RESTRICT"),
+            nullable=False,
+        ),
+        sa.Column(
+            "pc_id",
+            sa.Integer(),
+            sa.ForeignKey("pcs.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("status", sa.String(16), nullable=False, server_default="pending"),
         sa.Column("parameters", sa.Text()),
         sa.Column("result_output", sa.Text()),
         sa.Column("result_exit_code", sa.Integer()),
-        sa.Column("requested_by", sa.String(255), nullable=False, server_default="system"),
+        sa.Column(
+            "requested_by", sa.String(255), nullable=False, server_default="system"
+        ),
         sa.Column("executed_at", sa.DateTime()),
         sa.Column("completed_at", sa.DateTime()),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.func.current_timestamp()),
+        sa.Column(
+            "created_at", sa.DateTime(), server_default=sa.func.current_timestamp()
+        ),
         sa.CheckConstraint(
             "status IN ('pending','running','completed','failed','cancelled')",
             name="ck_job_executions_status",
