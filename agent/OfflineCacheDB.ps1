@@ -260,8 +260,9 @@ function Remove-SyncedEntries {
     )
 
     if (-not $Ids -or $Ids.Count -eq 0) { return }
-    $placeholders = ($Ids | ForEach-Object { "?" }) -join ","
-    Invoke-SqliteQuery -DataSource $DbPath -Query "DELETE FROM offline_cache WHERE id IN ($placeholders)" -SqlParameters $Ids
+    # Build literal int list — safe because $Ids is typed [int[]]
+    $idList = ($Ids | ForEach-Object { [int]$_ }) -join ","
+    Invoke-SqliteQuery -DataSource $DbPath -Query "DELETE FROM offline_cache WHERE id IN ($idList)"
 }
 
 function Remove-ExpiredEntries {
