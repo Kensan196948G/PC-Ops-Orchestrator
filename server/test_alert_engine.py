@@ -126,7 +126,9 @@ def test_cpu_rule_creates_alert_when_breached():
     """CPU rule triggers alert when latest snapshot cpu_usage > threshold."""
     with app.app_context():
         pc = _make_pc(cpu_usage=95.0)
-        rule = _make_rule(metric="cpu", operator="gt", threshold=80.0, severity="critical")
+        rule = _make_rule(
+            metric="cpu", operator="gt", threshold=80.0, severity="critical"
+        )
         db.session.commit()
         pc_id, rule_id = pc.id, rule.id
 
@@ -169,7 +171,9 @@ def test_memory_rule_creates_alert():
     with app.app_context():
         # 7.5 GB used / 8.0 GB total = 93.75%
         pc = _make_pc(memory_total_gb=8.0, memory_available_gb=0.5)
-        rule = _make_rule(metric="memory", operator="gt", threshold=90.0, severity="warning")
+        rule = _make_rule(
+            metric="memory", operator="gt", threshold=90.0, severity="warning"
+        )
         db.session.commit()
         pc_id, rule_id = pc.id, rule.id
 
@@ -193,7 +197,9 @@ def test_disk_rule_creates_alert():
     with app.app_context():
         # 95 GB used / 100 GB total = 95%
         pc = _make_pc(disk_total_gb=100.0, disk_free_gb=5.0)
-        rule = _make_rule(metric="disk", operator="gt", threshold=90.0, severity="critical")
+        rule = _make_rule(
+            metric="disk", operator="gt", threshold=90.0, severity="critical"
+        )
         db.session.commit()
         pc_id, rule_id = pc.id, rule.id
 
@@ -217,7 +223,9 @@ def test_offline_rule_creates_alert():
     with app.app_context():
         stale_time = datetime.now(timezone.utc) - timedelta(minutes=60)
         pc = _make_pc(last_seen=stale_time)
-        rule = _make_rule(metric="offline", operator="gt", threshold=30.0, severity="high")
+        rule = _make_rule(
+            metric="offline", operator="gt", threshold=30.0, severity="high"
+        )
         db.session.commit()
         pc_id, rule_id = pc.id, rule.id
 
@@ -318,7 +326,9 @@ def test_lte_operator():
     """lte operator generates alert when value <= threshold."""
     with app.app_context():
         pc = _make_pc(cpu_usage=20.0)  # snapshot created internally
-        rule = _make_rule(metric="cpu", operator="lte", threshold=20.0, severity="warning")
+        rule = _make_rule(
+            metric="cpu", operator="lte", threshold=20.0, severity="warning"
+        )
         db.session.commit()
         pc_id, rule_id = pc.id, rule.id
 

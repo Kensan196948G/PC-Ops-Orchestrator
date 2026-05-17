@@ -16,9 +16,7 @@ depends_on = None
 
 def upgrade():
     with op.batch_alter_table("alerts", schema=None) as batch_op:
-        batch_op.add_column(
-            sa.Column("alert_rule_id", sa.Integer(), nullable=True)
-        )
+        batch_op.add_column(sa.Column("alert_rule_id", sa.Integer(), nullable=True))
         batch_op.create_index("ix_alerts_alert_rule_id", ["alert_rule_id"])
         batch_op.create_foreign_key(
             "fk_alerts_alert_rule_id",
