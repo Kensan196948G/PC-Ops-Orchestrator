@@ -97,6 +97,7 @@ def create_app(config_name=None):
     from routes.backups import backups_bp
     from routes.seed import seed_bp
     from routes.job_templates import job_templates_bp
+    from routes.ad_sync import ad_sync_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(collect_bp)
@@ -119,6 +120,7 @@ def create_app(config_name=None):
     app.register_blueprint(backups_bp)
     app.register_blueprint(seed_bp, url_prefix="/api")
     app.register_blueprint(job_templates_bp)
+    app.register_blueprint(ad_sync_bp)
 
     # Rate limiter -> /metrics integration:
     # increment the in-process counter every time Flask-Limiter rejects a
