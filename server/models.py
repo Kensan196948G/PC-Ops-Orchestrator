@@ -587,6 +587,8 @@ class User(db.Model):
     failed_login_count = db.Column(db.Integer, default=0, nullable=False)
     is_locked = db.Column(db.Boolean, default=False, nullable=False)
     locked_at = db.Column(db.DateTime, nullable=True)
+    ad_dn = db.Column(db.Text, nullable=True, index=True)
+    ad_synced_at = db.Column(db.DateTime, nullable=True)
 
     def to_dict(self):
         return {
@@ -599,6 +601,8 @@ class User(db.Model):
             "failed_login_count": self.failed_login_count,
             "is_locked": self.is_locked,
             "locked_at": self.locked_at.isoformat() if self.locked_at else None,
+            "ad_dn": self.ad_dn,
+            "ad_synced_at": self.ad_synced_at.isoformat() if self.ad_synced_at else None,
         }
 
 
