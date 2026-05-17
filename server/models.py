@@ -764,8 +764,8 @@ class JobTemplate(db.Model):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    def to_dict(self) -> dict:
-        return {
+    def to_dict(self, include_script: bool = False) -> dict:
+        d = {
             "id": self.id,
             "name": self.name,
             "description": self.description,
@@ -777,6 +777,79 @@ class JobTemplate(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+        if include_script:
+            d["script_body"] = self.script_body
+            d["parameters_schema"] = self.parameters_schema
+        return d
 
     def __repr__(self) -> str:
         return f"<JobTemplate {self.name} risk={self.risk_level}>"
+
+
+class JobExecution(db.Model):
+    """Records a single execution of a JobTemplate on a target PC (Phase B-1).
+
+    Status flow: pending → running → completed / failed / cancelled
+    Agent polls /api/tasks/pending-jobs and updates status via /api/job-executions/<id>/result.
+    """
+
+    __tablename__ = "job_executions"
+    __table_args__ = (
+        db.CheckConstraint(
+            "status IN ('pending','running','completed','failed','cancelled')",
+            name="ck_job_executions_status",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    template_id = db.Column(
+        db.Integer,
+        db.ForeignKey("job_templates.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    pc_id = db.Column(
+        db.Integer,
+        db.ForeignKey("pcs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    status = db.Column(db.String(16), nullable=False, default="pending", index=True)
+    parameters = db.Column(db.Text)  # JSON string of runtime params
+    result_output = db.Column(db.Text)
+    result_exit_code = db.Column(db.Integer)
+    requested_by = db.Column(db.String(255), nullable=False)
+    executed_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), index=True
+    )
+
+    template = db.relationship(
+        "JobTemplate", backref=db.backref("executions", lazy="dynamic")
+    )
+    pc = db.relationship("PC", backref=db.backref("job_executions", lazy="dynamic"))
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "template_id": self.template_id,
+            "template_name": self.template.name if self.template else None,
+            "pc_id": self.pc_id,
+            "pc_name": self.pc.pc_name if self.pc else None,
+            "status": self.status,
+            "parameters": self.parameters,
+            "result_output": self.result_output,
+            "result_exit_code": self.result_exit_code,
+            "requested_by": self.requested_by,
+            "executed_at": (self.executed_at.isoformat() if self.executed_at else None),
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
+            "created_at": (self.created_at.isoformat() if self.created_at else None),
+        }
+
+    def __repr__(self) -> str:
+        return (
+            f"<JobExecution {self.id} template={self.template_id} status={self.status}>"
+        )
