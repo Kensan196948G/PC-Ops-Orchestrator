@@ -132,15 +132,9 @@ def monthly_list():
     return jsonify({"reports": rows, "count": len(rows)})
 
 
-@reports_bp.route("/monthly/export.csv", methods=["GET"])
-@require_role("admin", "operator")
-def export_csv():
-    """Download monthly report as CSV (UTF-8 BOM for Excel compatibility)."""
-    now = datetime.now(timezone.utc)
-    year = request.args.get("year", now.year, type=int)
-    month = request.args.get("month", now.month, type=int)
+def _build_csv_bytes(year: int, month: int) -> bytes:
+    """Generate CSV report bytes (UTF-8 with BOM) for the given year/month."""
     data = _aggregate(year, month)
-
     buf = io.StringIO()
     buf.write("﻿")  # BOM
     writer = csv.writer(buf)
@@ -161,19 +155,11 @@ def export_csv():
     writer.writerow(["Low アラート", data["alerts"]["low"]])
     writer.writerow(["操作ログ件数", data["operations"]["total"]])
     writer.writerow(["SLA (%)", data["sla"]])
-
-    resp = make_response(buf.getvalue())
-    resp.headers["Content-Type"] = "text/csv; charset=utf-8-sig"
-    resp.headers["Content-Disposition"] = (
-        f"attachment; filename=monthly_report_{data['period']}.csv"
-    )
-    return resp
+    return buf.getvalue().encode("utf-8")
 
 
-@reports_bp.route("/monthly/export.pdf", methods=["GET"])
-@require_role("admin", "operator")
-def export_pdf():
-    """Download monthly report as PDF (Japanese IPA Gothic font)."""
+def _build_pdf_bytes(year: int, month: int) -> bytes | None:
+    """Generate PDF report bytes for the given year/month. Returns None if reportlab missing."""
     try:
         from reportlab.lib import colors
         from reportlab.lib.pagesizes import A4
@@ -182,21 +168,18 @@ def export_pdf():
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
         from reportlab.platypus import (
-            SimpleDocTemplate,
             Paragraph,
+            SimpleDocTemplate,
             Spacer,
             Table,
             TableStyle,
         )
     except ImportError:
-        return jsonify({"error": "reportlab not installed"}), 500
+        return None
 
     now = datetime.now(timezone.utc)
-    year = request.args.get("year", now.year, type=int)
-    month = request.args.get("month", now.month, type=int)
     data = _aggregate(year, month)
 
-    # Register Japanese font
     try:
         pdfmetrics.registerFont(TTFont("IPAGothic", _IPA_FONT))
         jp_font = "IPAGothic"
@@ -238,10 +221,7 @@ def export_pdf():
     story = []
     story.append(Paragraph(f"月次レポート — {data['period']}", title_style))
     story.append(
-        Paragraph(
-            f"作成日時: {now.strftime('%Y-%m-%d %H:%M')} UTC",
-            body_style,
-        )
+        Paragraph(f"作成日時: {now.strftime('%Y-%m-%d %H:%M')} UTC", body_style)
     )
     story.append(Spacer(1, 0.4 * cm))
 
@@ -282,7 +262,6 @@ def export_pdf():
             ]
         )
     )
-
     story.append(Paragraph("タスク実行状況", section_style))
     story.append(
         kv_table(
@@ -295,7 +274,6 @@ def export_pdf():
             ]
         )
     )
-
     story.append(Paragraph("アラート状況", section_style))
     story.append(
         kv_table(
@@ -309,7 +287,6 @@ def export_pdf():
             ]
         )
     )
-
     story.append(Paragraph("SLA・操作ログ", section_style))
     story.append(
         kv_table(
@@ -320,12 +297,99 @@ def export_pdf():
             ]
         )
     )
-
     doc.build(story)
+    return buf.getvalue()
 
-    resp = make_response(buf.getvalue())
-    resp.headers["Content-Type"] = "application/pdf"
+
+@reports_bp.route("/monthly/export.csv", methods=["GET"])
+@require_role("admin", "operator")
+def export_csv():
+    """Download monthly report as CSV (UTF-8 BOM for Excel compatibility)."""
+    now = datetime.now(timezone.utc)
+    year = request.args.get("year", now.year, type=int)
+    month = request.args.get("month", now.month, type=int)
+    period = f"{year:04d}-{month:02d}"
+    resp = make_response(_build_csv_bytes(year, month))
+    resp.headers["Content-Type"] = "text/csv; charset=utf-8-sig"
     resp.headers["Content-Disposition"] = (
-        f"attachment; filename=monthly_report_{data['period']}.pdf"
+        f"attachment; filename=monthly_report_{period}.csv"
     )
     return resp
+
+
+@reports_bp.route("/monthly/export.pdf", methods=["GET"])
+@require_role("admin", "operator")
+def export_pdf():
+    """Download monthly report as PDF (Japanese IPA Gothic font)."""
+    now = datetime.now(timezone.utc)
+    year = request.args.get("year", now.year, type=int)
+    month = request.args.get("month", now.month, type=int)
+    pdf_bytes = _build_pdf_bytes(year, month)
+    if pdf_bytes is None:
+        return jsonify({"error": "reportlab not installed"}), 500
+    period = f"{year:04d}-{month:02d}"
+    resp = make_response(pdf_bytes)
+    resp.headers["Content-Type"] = "application/pdf"
+    resp.headers["Content-Disposition"] = (
+        f"attachment; filename=monthly_report_{period}.pdf"
+    )
+    return resp
+
+
+@reports_bp.route("/monthly/send", methods=["POST"])
+@require_role("admin", "operator")
+def send_monthly_report():
+    """Send monthly report as email attachment (PDF / CSV / both)."""
+    import os
+
+    from notify import send_report_email
+
+    data = request.get_json() or {}
+    now = datetime.now(timezone.utc)
+
+    year = data.get("year", now.year)
+    month = data.get("month", now.month)
+    fmt = data.get("format", "pdf")
+    recipients = data.get("recipients")
+
+    if not isinstance(year, int) or not isinstance(month, int):
+        return jsonify({"error": "year と month は整数で指定してください"}), 400
+    if not (1 <= month <= 12):
+        return jsonify({"error": "month は 1-12 で指定してください"}), 400
+    if year < 2000 or year > 2100:
+        return jsonify({"error": "year が範囲外です"}), 400
+    if fmt not in ("pdf", "csv", "both"):
+        return jsonify(
+            {"error": "format は pdf / csv / both のいずれかで指定してください"}
+        ), 400
+    if recipients is not None and not isinstance(recipients, list):
+        return jsonify({"error": "recipients はリストで指定してください"}), 400
+    if recipients is not None and len(recipients) == 0:
+        return jsonify({"error": "recipients が空です"}), 400
+
+    if not os.environ.get("SMTP_HOST"):
+        return jsonify({"error": "SMTP が設定されていません"}), 503
+
+    pdf_bytes = _build_pdf_bytes(year, month) if fmt in ("pdf", "both") else None
+    csv_bytes = _build_csv_bytes(year, month) if fmt in ("csv", "both") else None
+
+    ok = send_report_email(
+        year=year,
+        month=month,
+        pdf_bytes=pdf_bytes,
+        csv_bytes=csv_bytes,
+        recipients=recipients,
+    )
+    if not ok:
+        return jsonify({"error": "送信に失敗しました"}), 503
+
+    return jsonify(
+        {
+            "message": "レポートを送信しました",
+            "year": year,
+            "month": month,
+            "format": fmt,
+            "recipients": recipients or [],
+            "sent_at": now.isoformat(),
+        }
+    )
