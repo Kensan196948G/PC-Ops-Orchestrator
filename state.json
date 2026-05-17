@@ -42,7 +42,7 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-17T11:21:00.000Z",
+    "current_session_start_at": "2026-05-17T13:01:09.372Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "cron",
     "last_cron_session_id": "20260517-200430-PC-Ops-Orchestrator",
@@ -52,7 +52,8 @@
     "current_phase": "verify",
     "stable": true,
     "pending_prs": [
-      207
+      207,
+      231
     ],
     "merged_prs": [
       136,
@@ -166,40 +167,44 @@
     }
   },
   "session_summary": {
-    "id": "20260517-session-issue186-sqlite-cache",
-    "loop_phase": "Build (Issue #186 — SQLite+AES-256 offline cache migration)",
-    "duration_minutes": 180,
+    "id": "20260517-session-phase-c2-c3",
+    "loop_phase": "Build + Verify (Phase C-2 merge確認 + Phase C-3 AD基本連携実装)",
+    "duration_minutes": 90,
     "prs_merged": [
-      206
+      229
     ],
     "prs_pending": [
-      207
+      207,
+      231
     ],
     "issues_closed": [
-      177
+      228
     ],
     "issues_opened": [],
     "completed": [
-      "PR #206 MERGED (Issue #177: KPI Dashboard /api/dashboard/kpi + /timeline + /stats 拡張)",
-      "Issue #186: agent/OfflineCacheDB.ps1 新規作成 (SQLite+AES-256-CBC+HMAC-SHA256+DPAPI)",
-      "Issue #186: agent/PCOpsAgent.ps1 修正 (_EnsureCacheDB / Add-ToOfflineCache / Sync-OfflineCache を SQLite ベースへ)",
-      "Issue #186: tests/AgentOfflineCacheDB.Pester.Tests.ps1 新規作成 (20 Pester tests)",
-      "Issue #186: .github/workflows/ci.yml 修正 (PSSQLite インストール + テスト追加)",
-      "PR #207 作成: feature/186-sqlite-aes256-cache → main",
-      "systemd 再起動 (PR #206 merge 後の新 KPI endpoint 反映)"
+      "PR #229 MERGED (Phase C-2: Issue #228 — /api/reports/monthly/send メール送信エンドポイント)",
+      "Phase C-3 worktree /home/kensan/Projects/PC-Ops-Orchestrator-c3 に実装完了",
+      "ad_client.py: ldap3 search_ad_users / test_ad_connection (fail-safe ImportError handle)",
+      "routes/ad_sync.py: GET/PUT /api/ad/config, GET /api/ad/status, POST /api/ad/sync (admin_required)",
+      "models.py: User.ad_dn (Text, indexed) + User.ad_synced_at (DateTime) 追加",
+      "Alembic migration h8i9j0k1l2m3: batch_alter_table で nullable カラム追加",
+      "app.py: ad_sync_bp 登録",
+      "requirements.txt: ldap3>=2.9.1 追加",
+      "test_ad_sync.py: 15テスト全通過 / ruff check+format OK",
+      "main rebase 完了 (C-2 merge 取り込み)",
+      "PR #231 作成: feature/230-ad-basic-sync → main"
     ],
-    "ci_status": "PR #207 CI 進行中 (Pester Aggregated pending)",
+    "ci_status": "PR #231 CI 進行中 (Lint+Pester+Flask tests running)",
     "verification": {
       "ruff_check": "All checks passed",
-      "ruff_format": "All checks passed",
-      "pr207_lint": "PASS",
-      "pr207_flask_api": "PASS",
-      "pr207_pester": "pending"
+      "ruff_format": "3 files already formatted",
+      "test_ad_sync": "15 passed",
+      "pr231_ci": "IN_PROGRESS"
     },
     "resume_point": {
-      "next_action": "PR #207 CI 確認 → merge。次: Issue #189 (FortiGate docs) または新規 Issue 確認。",
+      "next_action": "PR #231 CI確認 → merge。PR #207 (Issue #186 SQLite cache) も CI確認 → merge。",
       "blocker": "なし",
-      "notes": "Issue #186 完全実装: SQLite+AES-256 暗号化キャッシュ + DPAPI 鍵保護 + HMAC 改ざん検知 + 30日 TTL + legacy JSON migration。PR #207 CI 待ち。"
+      "notes": "Phase C-3 実装完了: AD LDAP連携 (GET/PUT config, GET status, POST sync) + User ad_dn/ad_synced_at + ldap3 fail-safe。PR #231 CI待ち。"
     }
   },
   "learning": {
@@ -265,7 +270,7 @@
     }
   },
   "compact": {
-    "last_pre_compact_at": "2026-05-17T11:19:25.495Z"
+    "last_pre_compact_at": "2026-05-17T12:59:54.015Z"
   },
   "dreaming": {
     "patterns": [],
