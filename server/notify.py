@@ -12,6 +12,9 @@ import smtplib
 import time
 import urllib.error
 import urllib.request
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate
 from typing import Any, Optional
@@ -312,6 +315,117 @@ def notify_alert(alert) -> None:
             "Failed to send Slack notification for %s",
             getattr(alert, "source_key", "?"),
         )
+
+
+def send_report_email_via_smtp(
+    *,
+    host: str,
+    port: int,
+    user: str,
+    password: str,
+    from_addr: str,
+    to_addrs: list[str],
+    year: int,
+    month: int,
+    pdf_bytes: Optional[bytes] = None,
+    csv_bytes: Optional[bytes] = None,
+    timeout: int = 10,
+) -> bool:
+    """Send monthly report email with PDF/CSV attachments via SMTP STARTTLS."""
+    if not host or not to_addrs:
+        return False
+
+    period = f"{year:04d}-{month:02d}"
+    msg = MIMEMultipart()
+    msg["Subject"] = f"[PC-Ops] 月次レポート {period}"
+    msg["From"] = from_addr
+    msg["To"] = ", ".join(to_addrs)
+    msg["Date"] = formatdate(localtime=True)
+    msg.attach(
+        MIMEText(
+            f"月次レポート {period} を添付しました。\n\nPC運用管理システム (PC-Ops)",
+            "plain",
+            "utf-8",
+        )
+    )
+
+    if pdf_bytes:
+        pdf_part = MIMEBase("application", "pdf")
+        pdf_part.set_payload(pdf_bytes)
+        encoders.encode_base64(pdf_part)
+        pdf_part.add_header(
+            "Content-Disposition",
+            f'attachment; filename="monthly_report_{period}.pdf"',
+        )
+        msg.attach(pdf_part)
+
+    if csv_bytes:
+        csv_part = MIMEBase("text", "csv")
+        csv_part.set_payload(csv_bytes)
+        encoders.encode_base64(csv_part)
+        csv_part.add_header(
+            "Content-Disposition",
+            f'attachment; filename="monthly_report_{period}.csv"',
+        )
+        msg.attach(csv_part)
+
+    try:
+        with smtplib.SMTP(host, port, timeout=timeout) as server:
+            server.starttls()
+            if user and password:
+                server.login(user, password)
+            server.sendmail(from_addr, to_addrs, msg.as_string())
+        logger.info("Report email sent for %s to %s", period, to_addrs)
+        return True
+    except (smtplib.SMTPException, OSError) as exc:
+        logger.warning("Report SMTP send failed: %s", exc)
+        return False
+
+
+def send_report_email(
+    *,
+    year: int,
+    month: int,
+    pdf_bytes: Optional[bytes] = None,
+    csv_bytes: Optional[bytes] = None,
+    recipients: Optional[list[str]] = None,
+) -> bool:
+    """Send monthly report email using SMTP_* environment variables.
+
+    Returns False when SMTP is not configured (caller should surface 503).
+    """
+    smtp_host = os.environ.get("SMTP_HOST", "")
+    if not smtp_host:
+        return False
+    try:
+        smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    except ValueError:
+        logger.warning("SMTP_PORT is not a valid integer; skipping report email")
+        return False
+    smtp_user = os.environ.get("SMTP_USER", "")
+    smtp_password = os.environ.get("SMTP_PASSWORD", "")
+    from_addr = os.environ.get("ALERT_EMAIL_FROM", smtp_user)
+
+    if recipients:
+        to_addrs = [a.strip() for a in recipients if a and a.strip()]
+    else:
+        to_addrs_raw = os.environ.get("ALERT_EMAIL_TO", "")
+        to_addrs = [a.strip() for a in to_addrs_raw.split(",") if a.strip()]
+    if not to_addrs:
+        return False
+
+    return send_report_email_via_smtp(
+        host=smtp_host,
+        port=smtp_port,
+        user=smtp_user,
+        password=smtp_password,
+        from_addr=from_addr,
+        to_addrs=to_addrs,
+        year=year,
+        month=month,
+        pdf_bytes=pdf_bytes,
+        csv_bytes=csv_bytes,
+    )
 
 
 def dispatch_via_rule(alert, rule) -> dict[str, bool]:
