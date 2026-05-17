@@ -303,6 +303,10 @@ class OperationLog(db.Model):
     user_agent = db.Column(db.String(512))
     created_by = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    # Phase B-3: immutable audit chain
+    log_hash = db.Column(db.String(64))
+    previous_value = db.Column(db.Text)
+    new_value = db.Column(db.Text)
 
     def to_dict(self):
         return {
@@ -314,6 +318,9 @@ class OperationLog(db.Model):
             "user_agent": self.user_agent,
             "created_by": self.created_by,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "log_hash": self.log_hash,
+            "previous_value": self.previous_value,
+            "new_value": self.new_value,
         }
 
 

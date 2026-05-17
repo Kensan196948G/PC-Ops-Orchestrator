@@ -1,10 +1,11 @@
 import csv
+import hashlib
 import io
 from datetime import datetime, timezone
 
 from flask import Blueprint, request, jsonify, make_response
 from models import OperationLog
-from auth import require_role
+from auth import admin_required, require_role
 
 audit_bp = Blueprint("audit", __name__, url_prefix="/api/audit")
 
@@ -85,3 +86,43 @@ def export_csv():
     resp.headers["Content-Type"] = "text/csv; charset=utf-8-sig"
     resp.headers["Content-Disposition"] = "attachment; filename=audit_logs.csv"
     return resp
+
+
+@audit_bp.route("/logs/verify", methods=["GET"])
+@admin_required
+def verify_chain():
+    """Verify the SHA-256 chain integrity of all audit logs."""
+    logs = OperationLog.query.order_by(OperationLog.id.asc()).all()
+
+    violations = []
+    prev_hash = ""
+    for log in logs:
+        if log.log_hash is None:
+            prev_hash = ""
+            continue
+
+        _ts_fmt = "%Y-%m-%dT%H:%M:%S.%f"
+        created_at_str = log.created_at.strftime(_ts_fmt) if log.created_at else ""
+        expected = hashlib.sha256(
+            f"{prev_hash}|{log.action}|{log.target or ''}|{created_at_str}".encode()
+        ).hexdigest()
+
+        if log.log_hash != expected:
+            violations.append(
+                {
+                    "id": log.id,
+                    "action": log.action,
+                    "created_at": created_at_str,
+                    "stored_hash": log.log_hash,
+                    "expected_hash": expected,
+                }
+            )
+        prev_hash = log.log_hash
+
+    return jsonify(
+        {
+            "ok": len(violations) == 0,
+            "total_checked": len(logs),
+            "violations": violations,
+        }
+    )

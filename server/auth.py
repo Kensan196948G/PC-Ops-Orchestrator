@@ -1,5 +1,6 @@
 from datetime import datetime, timezone, timedelta
 from functools import wraps
+import hashlib
 import hmac
 
 import jwt
@@ -127,12 +128,31 @@ def agent_auth_required(f):
     return decorated
 
 
-def log_operation(action, target=None, details=None):
+_TS_FMT = "%Y-%m-%dT%H:%M:%S.%f"
+
+
+def _compute_log_hash(
+    prev_hash: str, action: str, target: str, created_at_str: str
+) -> str:
+    payload = f"{prev_hash}|{action}|{target or ''}|{created_at_str}"
+    return hashlib.sha256(payload.encode()).hexdigest()
+
+
+def log_operation(action, target=None, details=None, before=None, after=None):
     if hasattr(request, "current_user") and request.current_user is not None:
         user = request.current_user
         created_by = f"{user.username}[{user.role}]"
     else:
         created_by = "system"
+
+    now = datetime.now(timezone.utc)
+
+    # Fetch previous log hash for chain integrity
+    prev = db.session.query(OperationLog).order_by(OperationLog.id.desc()).first()
+    prev_hash = prev.log_hash if (prev and prev.log_hash) else ""
+
+    # Use naive-UTC strftime so hash is stable across SQLite round-trips
+    log_hash = _compute_log_hash(prev_hash, action, target or "", now.strftime(_TS_FMT))
 
     op = OperationLog(
         action=action,
@@ -141,6 +161,10 @@ def log_operation(action, target=None, details=None):
         ip_address=request.remote_addr,
         user_agent=request.user_agent.string if request.user_agent else None,
         created_by=created_by,
+        created_at=now,
+        log_hash=log_hash,
+        previous_value=before,
+        new_value=after,
     )
     db.session.add(op)
     db.session.commit()
