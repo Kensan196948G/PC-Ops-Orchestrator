@@ -42,22 +42,22 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-17T13:01:09.372Z",
+    "current_session_start_at": "2026-05-17T13:23:12.861Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "cron",
     "last_cron_session_id": "20260517-200430-PC-Ops-Orchestrator",
-    "last_stop_at": "2026-05-15T14:17:27.708Z"
+    "last_stop_at": "2026-05-17T13:05:44.143Z"
   },
   "status": {
     "current_phase": "verify",
     "stable": true,
     "pending_prs": [
-      207,
-      231
+      237
     ],
     "merged_prs": [
       136,
       36,
+      231,
       38,
       40,
       43,
@@ -167,44 +167,51 @@
     }
   },
   "session_summary": {
-    "id": "20260517-session-phase-c2-c3",
-    "loop_phase": "Build + Verify (Phase C-2 merge確認 + Phase C-3 AD基本連携実装)",
-    "duration_minutes": 90,
+    "id": "20260517-session-phase-c3-c4",
+    "loop_phase": "Build + Verify (Phase C-3 merge + Phase C-4 admin ops + 本番DB修復)",
+    "duration_minutes": 270,
     "prs_merged": [
-      229
-    ],
-    "prs_pending": [
-      207,
+      229,
       231
     ],
+    "prs_pending": [
+      237
+    ],
     "issues_closed": [
-      228
+      228,
+      230
     ],
-    "issues_opened": [],
+    "issues_opened": [
+      236
+    ],
     "completed": [
-      "PR #229 MERGED (Phase C-2: Issue #228 — /api/reports/monthly/send メール送信エンドポイント)",
-      "Phase C-3 worktree /home/kensan/Projects/PC-Ops-Orchestrator-c3 に実装完了",
-      "ad_client.py: ldap3 search_ad_users / test_ad_connection (fail-safe ImportError handle)",
-      "routes/ad_sync.py: GET/PUT /api/ad/config, GET /api/ad/status, POST /api/ad/sync (admin_required)",
-      "models.py: User.ad_dn (Text, indexed) + User.ad_synced_at (DateTime) 追加",
-      "Alembic migration h8i9j0k1l2m3: batch_alter_table で nullable カラム追加",
-      "app.py: ad_sync_bp 登録",
-      "requirements.txt: ldap3>=2.9.1 追加",
-      "test_ad_sync.py: 15テスト全通過 / ruff check+format OK",
-      "main rebase 完了 (C-2 merge 取り込み)",
-      "PR #231 作成: feature/230-ad-basic-sync → main"
+      "PR #231 MERGED (Phase C-3: Issue #230 — AD基本連携 ldap3 + User.ad_dn/ad_synced_at)",
+      "本番DB修復: server/instance/pc_ops.db に ALTER TABLE で不足カラム追加 + alembic_version stamp",
+      "admin ユーザー作成 (Admin123!) → http://192.168.0.185:5300/login 動作確認",
+      "Phase C-4 実装 (Issue #236): routes/admin_ops.py — POST /api/admin/backup/db, GET /api/admin/backup/list, GET /api/admin/logs/app, GET /api/admin/logs/error",
+      "test_admin_ops.py: 15テスト (backup 401/404/real-file/list/rotation, logs app/error) ruff clean",
+      "README.md: Phase C-3 AD + Phase C-4 admin ops endpoints 追記 (commit 84e7395 on feature/236)",
+      "PR #237 作成: feature/236-prod-hardening → main (Flask E2E/API/Lint/Pester/Smoke pass)"
     ],
-    "ci_status": "PR #231 CI 進行中 (Lint+Pester+Flask tests running)",
+    "ci_status": "PR #237 CI 進行中 (PowerShell・CodeRabbit pending)",
     "verification": {
-      "ruff_check": "All checks passed",
-      "ruff_format": "3 files already formatted",
-      "test_ad_sync": "15 passed",
-      "pr231_ci": "IN_PROGRESS"
+      "flask_api": "pass",
+      "flask_e2e": "pass",
+      "lint_ruff": "pass",
+      "pester_ps7": "pass",
+      "pester_ps51": "pass",
+      "smoke_ps7": "pass",
+      "smoke_ps51": "pass",
+      "agent_teams_ps7": "pass",
+      "agent_teams_ps51": "pass",
+      "test_windows_ps51": "pending",
+      "test_powershell7": "pending",
+      "coderabbit": "pending"
     },
     "resume_point": {
-      "next_action": "PR #231 CI確認 → merge。PR #207 (Issue #186 SQLite cache) も CI確認 → merge。",
+      "next_action": "PR #237 CI完了確認 → CodeRabbit指摘対応 → merge → systemctl --user restart pc-ops-orchestrator → Issue #236 close",
       "blocker": "なし",
-      "notes": "Phase C-3 実装完了: AD LDAP連携 (GET/PUT config, GET status, POST sync) + User ad_dn/ad_synced_at + ldap3 fail-safe。PR #231 CI待ち。"
+      "notes": "Phase C-4 実装完了: admin backup/log endpoints + HSTS(既存) + 15 tests。PR #237 CI待ち。本番ログイン admin/Admin123! で動作確認済。"
     }
   },
   "learning": {
@@ -270,7 +277,7 @@
     }
   },
   "compact": {
-    "last_pre_compact_at": "2026-05-17T12:59:54.015Z"
+    "last_pre_compact_at": "2026-05-17T13:21:49.634Z"
   },
   "dreaming": {
     "patterns": [],
@@ -513,6 +520,30 @@
         "server/static/js/pc_detail.js",
         "server/test_agents_sub_states.py",
         "server/test_collect.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-17T13:05:44.160Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 16 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/auth.py",
+        "server/e2e/test_pages_e2e.py",
+        "server/migrations/versions/d4e5f6a7b8c9_phase_b1_job_executions.py",
+        "server/migrations/versions/e5f6a7b8c9d0_phase_b2_approval_workflow.py",
+        "server/migrations/versions/f6a7b8c9d0e1_phase_b3_audit_log_chain.py",
+        "server/migrations/versions/g7h8i9j0k1l2_phase_c1_alert_rule_fk.py",
+        "server/models.py",
+        "server/routes/alerts.py",
+        "server/routes/audit.py",
+        "server/routes/job_templates.py",
+        "server/routes/reports.py",
+        "server/static/js/job_templates.js",
+        "server/test_alert_engine.py",
+        "server/test_audit_log_chain.py",
+        "server/test_job_templates.py",
+        "server/test_report_delivery.py"
       ],
       "truncated": false
     }
