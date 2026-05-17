@@ -1,4 +1,5 @@
 let healthChart = null;
+let trendChart = null;
 
 const OS_COLORS = ['#4f8cff', '#6ba5ff', '#a78bfa', '#18dcff', '#2ed573', '#ffa502', '#ff6b81', '#ff4757'];
 
@@ -37,7 +38,98 @@ function auditActionColor(action) {
     return '#8b91a8';
 }
 
+const RANGE_LABELS = { '24h': '過去 24時間', '7d': '過去 7日間', '30d': '過去 30日間' };
+
+async function refreshKpiRates(range) {
+    try {
+        const data = await apiFetch(`/dashboard/kpi?range=${encodeURIComponent(range)}`);
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        set('stat-uptime-rate', data.uptime_rate ?? '—');
+        set('stat-alert-rate', data.alert_rate ?? '—');
+        set('stat-job-success-rate', data.job_success_rate ?? '—');
+
+        const el1 = document.getElementById('kpi-uptime-delta');
+        if (el1) el1.textContent = `${data.pcs_seen ?? 0}/${data.total_pcs ?? 0}台 オンライン`;
+
+        const el2 = document.getElementById('kpi-alert-rate-delta');
+        if (el2) el2.textContent = `${data.alerts_in_range ?? 0}件 発生`;
+
+        const el3 = document.getElementById('kpi-job-rate-delta');
+        if (el3) el3.textContent = `${data.completed_jobs ?? 0}件完了 / ${(data.completed_jobs ?? 0) + (data.failed_jobs ?? 0)}件合計`;
+    } catch (e) {
+        console.error('KPI rate error:', e);
+    }
+}
+
+async function refreshTimeline(range) {
+    try {
+        const data = await apiFetch(`/dashboard/timeline?range=${encodeURIComponent(range)}`);
+        const rangeLabelEl = document.getElementById('trend-range-label');
+        if (rangeLabelEl) rangeLabelEl.textContent = RANGE_LABELS[range] || range;
+
+        const canvas = document.getElementById('trendChart');
+        if (!canvas || !window.Chart) return;
+        if (trendChart) trendChart.destroy();
+
+        trendChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: data.labels || [],
+                datasets: [
+                    {
+                        label: '完了タスク',
+                        data: data.task_completed || [],
+                        borderColor: '#2ed573',
+                        backgroundColor: '#2ed57320',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 2,
+                    },
+                    {
+                        label: '失敗タスク',
+                        data: data.task_failed || [],
+                        borderColor: '#ff4757',
+                        backgroundColor: '#ff475720',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 2,
+                    },
+                    {
+                        label: 'アラート',
+                        data: data.alert_counts || [],
+                        borderColor: '#ffa502',
+                        backgroundColor: '#ffa50220',
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 2,
+                        borderDash: [4, 3],
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                    x: { ticks: { maxTicksLimit: 12, font: { size: 10 } } },
+                },
+            },
+        });
+    } catch (e) {
+        console.error('Timeline error:', e);
+    }
+}
+
 async function refreshDashboard() {
+    const rangeEl = document.getElementById('dashboard-range');
+    const range = rangeEl ? rangeEl.value : '24h';
+    // KPI rates + timeline
+    await refreshKpiRates(range);
+    await refreshTimeline(range);
+
     // Stats
     try {
         const stats = await apiFetch('/dashboard/stats');
@@ -299,6 +391,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (refreshBtn) refreshBtn.addEventListener('click', refreshDashboard);
     const kpiTotal = document.getElementById('kpi-total');
     if (kpiTotal) kpiTotal.addEventListener('click', () => { location.href = '/pcs'; });
+    const rangeEl = document.getElementById('dashboard-range');
+    if (rangeEl) rangeEl.addEventListener('change', refreshDashboard);
     refreshDashboard();
     setInterval(refreshDashboard, 30000);
 });
