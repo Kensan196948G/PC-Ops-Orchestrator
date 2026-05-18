@@ -1287,10 +1287,15 @@ select.form-input {
 .modal {
     position: fixed;
     inset: 0;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+}
+
+.modal.open,
+.modal.active {
+    display: flex;
 }
 
 .modal-backdrop {
