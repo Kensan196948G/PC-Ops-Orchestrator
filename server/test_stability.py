@@ -5,7 +5,6 @@ import sys
 import os
 from datetime import datetime, timedelta, timezone
 
-import pytest
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -15,8 +14,6 @@ from auth import hash_password
 from models import (
     PC,
     EventLog,
-    KnownIssue,
-    StabilityScore,
     WindowsUpdate,
     User,
 )
@@ -99,6 +96,7 @@ def _make_update(pc_id, kb_id, installed=True, days_ago=5):
 
 
 # ── Phase D-1: Score and calculate endpoints ────────────────────────────────
+
 
 class TestScoresList:
     def test_list_scores_requires_auth(self):
@@ -229,6 +227,7 @@ class TestCalculateOne:
 
 # ── Phase D-1: Unstable PCs ──────────────────────────────────────────────────
 
+
 class TestUnstablePCs:
     def test_unstable_pcs_requires_auth(self):
         r = _req("GET", "/api/stability/unstable-pcs")
@@ -262,6 +261,7 @@ class TestUnstablePCs:
 
 # ── Phase D-1: Event Ranking ─────────────────────────────────────────────────
 
+
 class TestEventRanking:
     def test_event_ranking_requires_auth(self):
         r = _req("GET", "/api/stability/event-ranking")
@@ -293,6 +293,7 @@ class TestEventRanking:
 
 
 # ── Phase D-2: KB Impact ─────────────────────────────────────────────────────
+
 
 class TestKBImpact:
     def test_kb_impact_list_requires_auth(self):
@@ -341,6 +342,7 @@ class TestKBImpact:
 
 # ── Phase D-2: Similar Issues ────────────────────────────────────────────────
 
+
 class TestSimilarIssues:
     def test_similar_issues_requires_auth(self):
         r = _req("GET", "/api/stability/similar-issues")
@@ -372,6 +374,7 @@ class TestSimilarIssues:
 
 # ── Phase D-2: Disk Health ───────────────────────────────────────────────────
 
+
 class TestDiskHealth:
     def test_disk_health_requires_auth(self):
         r = _req("GET", "/api/stability/disk-health")
@@ -386,7 +389,7 @@ class TestDiskHealth:
     def test_disk_health_shows_disk_events(self):
         token = _login()
         pc_id = _make_pc("DISK-HEALTH-PC")
-        _make_event_log(pc_id, 7, days_ago=1)   # Disk Error
+        _make_event_log(pc_id, 7, days_ago=1)  # Disk Error
         _make_event_log(pc_id, 51, days_ago=2)  # Disk Warning
 
         r = _req("GET", "/api/stability/disk-health?days=30", token=token)
@@ -432,8 +435,8 @@ class TestDiskHealth:
     def test_disk_health_flat_returns_per_event_rows(self):
         token = _login()
         pc_id = _make_pc("DISK-FLAT-PC")
-        _make_event_log(pc_id, 7, days_ago=1)    # critical
-        _make_event_log(pc_id, 51, days_ago=2)   # warning
+        _make_event_log(pc_id, 7, days_ago=1)  # critical
+        _make_event_log(pc_id, 51, days_ago=2)  # warning
         _make_event_log(pc_id, 153, days_ago=3)  # info
 
         r = _req("GET", "/api/stability/disk-health?flat=1&days=30", token=token)
@@ -455,6 +458,7 @@ class TestDiskHealth:
 
 
 # ── Phase D-2: Known Issues ──────────────────────────────────────────────────
+
 
 class TestKnownIssues:
     def test_list_requires_auth(self):
@@ -495,7 +499,9 @@ class TestKnownIssues:
 
     def test_create_known_issue_missing_title(self):
         token = _login()
-        r = _req("POST", "/api/stability/known-issues", token=token, data={"kb_id": "KB123"})
+        r = _req(
+            "POST", "/api/stability/known-issues", token=token, data={"kb_id": "KB123"}
+        )
         assert r.status_code == 400
 
     def test_update_known_issue(self):
@@ -568,6 +574,7 @@ class TestKnownIssues:
 
 
 # ── Score helper tests ────────────────────────────────────────────────────────
+
 
 class TestScoreLogic:
     def test_score_floor_is_zero(self):
