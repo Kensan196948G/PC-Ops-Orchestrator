@@ -99,6 +99,7 @@ def create_app(config_name=None):
     from routes.job_templates import job_templates_bp
     from routes.ad_sync import ad_sync_bp
     from routes.admin_ops import admin_ops_bp
+    from routes.stability import bp as stability_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(collect_bp)
@@ -123,6 +124,7 @@ def create_app(config_name=None):
     app.register_blueprint(job_templates_bp)
     app.register_blueprint(ad_sync_bp)
     app.register_blueprint(admin_ops_bp)
+    app.register_blueprint(stability_bp)
 
     # Rate limiter -> /metrics integration:
     # increment the in-process counter every time Flask-Limiter rejects a
@@ -239,6 +241,22 @@ def create_app(config_name=None):
     @app.route("/login")
     def login_page():
         return render_template("login.html")
+
+    @app.route("/stability")
+    def stability_dashboard():
+        return render_template("stability.html")
+
+    @app.route("/stability/unstable-pcs")
+    def stability_unstable():
+        return render_template("stability_unstable.html")
+
+    @app.route("/stability/kb-impact")
+    def stability_kb_impact():
+        return render_template("stability_kb_impact.html")
+
+    @app.route("/stability/disk-health")
+    def stability_disk_health():
+        return render_template("stability_disk_health.html")
 
     @app.route("/health")
     def health():

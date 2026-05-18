@@ -16,6 +16,7 @@ from models import (
     AlertRule,
     Alert,
     NetworkInterface,
+    get_event_category,
 )
 from auth import agent_auth_required
 
@@ -233,14 +234,16 @@ def collect_detail():
                     generated_at = datetime.fromisoformat(log["generated_at"])
                 except (ValueError, TypeError):
                     pass
+            event_id = log.get("event_id")
             db.session.add(
                 EventLog(
                     pc_id=pc.id,
                     log_type=log.get("log_type", "system"),
-                    event_id=log.get("event_id"),
+                    event_id=event_id,
                     level=log.get("level"),
                     source=log.get("source"),
                     message=log.get("message"),
+                    category=get_event_category(event_id) if event_id else None,
                     generated_at=generated_at,
                 )
             )

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}KB影響分析{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">KB 影響分析</h2>
+    <div class="page-actions">
+        <input type="text" id="kb-search" class="form-input filter-search" placeholder="KB番号で検索...">
+        <select id="days-filter" class="form-input">
+            <option value="7">過去 7 日</option>
+            <option value="30" selected>過去 30 日</option>
+            <option value="90">過去 90 日</option>
+        </select>
+    </div>
+</div>
+
+<!-- KBランキング -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">更新プログラム別 エラー増加ランキング</h3>
+    </div>
+    <table class="table" id="kb-table">
+        <thead>
+            <tr>
+                <th>順位</th>
+                <th>KB番号</th>
+                <th>タイトル</th>
+                <th>影響PC数</th>
+                <th>インストール前エラー (avg/日)</th>
+                <th>インストール後エラー (avg/日)</th>
+                <th>変化率</th>
+                <th>リスク</th>
+            </tr>
+        </thead>
+        <tbody id="kb-body">
+            <tr><td colspan="8" class="text-center">読み込み中...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- KB詳細パネル -->
+<div class="card hidden" id="kb-detail-panel">
+    <div class="card-header">
+        <h3 class="card-title" id="kb-detail-title">KB 詳細</h3>
+        <button class="btn btn-secondary" id="btn-close-detail">&#215; 閉じる</button>
+    </div>
+    <table class="table" id="kb-detail-table">
+        <thead>
+            <tr>
+                <th>PC名</th>
+                <th>インストール日時</th>
+                <th>インストール前エラー数</th>
+                <th>インストール後エラー数</th>
+                <th>変化</th>
+            </tr>
+        </thead>
+        <tbody id="kb-detail-body">
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/stability_kb_impact.js"></script>
+{% endblock %}

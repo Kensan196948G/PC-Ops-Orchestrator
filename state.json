@@ -42,11 +42,11 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-17T13:23:12.861Z",
+    "current_session_start_at": "2026-05-18T10:00:02.833Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "cron",
-    "last_cron_session_id": "20260517-200430-PC-Ops-Orchestrator",
-    "last_stop_at": "2026-05-17T13:05:44.143Z"
+    "last_cron_session_id": "20260518-190002-PC-Ops-Orchestrator",
+    "last_stop_at": "2026-05-18T09:13:32.916Z"
   },
   "status": {
     "current_phase": "verify",
@@ -543,6 +543,60 @@
         "server/test_alert_engine.py",
         "server/test_audit_log_chain.py",
         "server/test_job_templates.py",
+        "server/test_report_delivery.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-17T13:25:40.428Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 10 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/ad_client.py",
+        "server/migrations/versions/g7h8i9j0k1l2_phase_c1_alert_rule_fk.py",
+        "server/migrations/versions/h8i9j0k1l2m3_phase_c3_user_ad_fields.py",
+        "server/models.py",
+        "server/routes/ad_sync.py",
+        "server/routes/alerts.py",
+        "server/routes/reports.py",
+        "server/test_ad_sync.py",
+        "server/test_alert_engine.py",
+        "server/test_report_delivery.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-17T13:27:27.598Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 10 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/ad_client.py",
+        "server/migrations/versions/g7h8i9j0k1l2_phase_c1_alert_rule_fk.py",
+        "server/migrations/versions/h8i9j0k1l2m3_phase_c3_user_ad_fields.py",
+        "server/models.py",
+        "server/routes/ad_sync.py",
+        "server/routes/alerts.py",
+        "server/routes/reports.py",
+        "server/test_ad_sync.py",
+        "server/test_alert_engine.py",
+        "server/test_report_delivery.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-18T09:13:32.988Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 10 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/ad_client.py",
+        "server/migrations/versions/g7h8i9j0k1l2_phase_c1_alert_rule_fk.py",
+        "server/migrations/versions/h8i9j0k1l2m3_phase_c3_user_ad_fields.py",
+        "server/models.py",
+        "server/routes/ad_sync.py",
+        "server/routes/alerts.py",
+        "server/routes/reports.py",
+        "server/test_ad_sync.py",
+        "server/test_alert_engine.py",
         "server/test_report_delivery.py"
       ],
       "truncated": false
