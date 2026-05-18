@@ -254,6 +254,7 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | 💾 バックアップ管理 | 即時バックアップ・整合性チェック・履歴一覧・リストア確認 |
 | ⚙️ システム設定 | 全般/認証/Agent 通信設定の保存 (GET/PUT /api/settings) |
 | 📚 API ドキュメント | **Swagger UI** (`/api/docs/`) でブラウザから API 仕様確認・試行 |
+| 🛡️ 安定性ダッシュボード | **PC 安定性スコア (0-100)** 一覧、不安定 PC 抽出、KB 影響分析、ディスクヘルス監視 (Phase D) |
 
 ---
 
@@ -294,6 +295,19 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | POST | `/api/groups/<id>/pcs` | JWT | グループへ PC 追加 |
 | DELETE | `/api/groups/<id>/pcs/<pc_id>` | JWT | グループから PC 削除 |
 | POST | `/api/groups/<id>/tasks` | JWT | グループ内全 PC へ一括タスク発行 |
+| GET | `/api/stability/scores` | JWT | PC 安定性スコア一覧 (Phase D-1) |
+| GET | `/api/stability/scores/<id>` | JWT | PC 別スコア + 履歴 + 減点理由 |
+| POST | `/api/stability/calculate` | JWT | 全 PC スコア再計算 |
+| POST | `/api/stability/calculate/<id>` | JWT | 単一 PC スコア再計算 |
+| GET | `/api/stability/unstable-pcs` | JWT | 閾値以下の不安定 PC 一覧 |
+| GET | `/api/stability/event-ranking` | JWT | Event ID 発生回数 TOP N |
+| GET | `/api/stability/kb-impact` | JWT | KB 適用前後のスコア比較 |
+| GET | `/api/stability/kb-impact/<kb_id>` | JWT | 指定 KB の影響詳細 |
+| GET | `/api/stability/similar-issues` | JWT | 類似事象 (同 event_id) 検索 |
+| GET | `/api/stability/disk-health` | JWT | ディスクイベント (`?flat=1` で per-event) |
+| GET | `/api/stability/disk-health/<id>` | JWT | PC 別ディスクイベント |
+| GET/POST/PUT | `/api/stability/known-issues` | JWT | 既知不具合マスタ CRUD (Phase D-4 で活用) |
+| GET | `/api/stability/known-issues/match/<id>` | JWT | PC に該当する既知不具合の照合 |
 | GET/POST | `/api/alert-rules` | JWT | アラートルール一覧・作成 |
 | GET/PUT/DELETE | `/api/alert-rules/<id>` | JWT | ルール詳細・更新・削除 |
 | POST | `/api/alert-rules/<id>/toggle` | JWT | ルール有効/無効切替 |
