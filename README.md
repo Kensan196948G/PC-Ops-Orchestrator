@@ -254,7 +254,8 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | 💾 バックアップ管理 | 即時バックアップ・整合性チェック・履歴一覧・リストア確認 |
 | ⚙️ システム設定 | 全般/認証/Agent 通信設定の保存 (GET/PUT /api/settings) |
 | 📚 API ドキュメント | **Swagger UI** (`/api/docs/`) でブラウザから API 仕様確認・試行 |
-| 🛡️ 安定性ダッシュボード | **PC 安定性スコア (0-100)** 一覧、不安定 PC 抽出、KB 影響分析、ディスクヘルス監視 (Phase D) |
+| 🛡️ 安定性ダッシュボード | **PC 安定性スコア (0-100)** 一覧、不安定 PC 抽出、KB 影響分析、ディスクヘルス監視 (Phase D-1〜D-3) |
+| 📨 問い合わせ連携 | 利用者申告の登録、対象 PC の EventLog/Update/Score 相関表示、類似問い合わせ検索、既知不具合マスタ紐付け (Phase D-4) |
 
 ---
 
@@ -308,6 +309,10 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | GET | `/api/stability/disk-health/<id>` | JWT | PC 別ディスクイベント |
 | GET/POST/PUT | `/api/stability/known-issues` | JWT | 既知不具合マスタ CRUD (Phase D-4 で活用) |
 | GET | `/api/stability/known-issues/match/<id>` | JWT | PC に該当する既知不具合の照合 |
+| GET/POST | `/api/inquiries` | JWT | 問い合わせ一覧 / 登録 (Phase D-4) |
+| GET/PUT/DELETE | `/api/inquiries/<id>` | JWT | 問い合わせ詳細 / 更新 / 削除 |
+| GET | `/api/inquiries/<id>/related-logs` | JWT | 問い合わせ ↔ PC EventLog / Update / Score 相関 |
+| GET | `/api/inquiries/similar?subject=...` | JWT | 類似問い合わせ検索 (subject LIKE or known_issue_id) |
 | GET/POST | `/api/alert-rules` | JWT | アラートルール一覧・作成 |
 | GET/PUT/DELETE | `/api/alert-rules/<id>` | JWT | ルール詳細・更新・削除 |
 | POST | `/api/alert-rules/<id>/toggle` | JWT | ルール有効/無効切替 |
