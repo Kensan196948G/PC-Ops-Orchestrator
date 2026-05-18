@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}安定性ダッシュボード{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">安定性ダッシュボード</h2>
+    <div class="page-actions">
+        <select id="days-filter" class="form-input">
+            <option value="7">過去 7 日</option>
+            <option value="14">過去 14 日</option>
+            <option value="30" selected>過去 30 日</option>
+            <option value="90">過去 90 日</option>
+        </select>
+        <button class="btn btn-primary role-operator-or-admin" id="btn-recalculate">&#8635; 全PC再計算</button>
+    </div>
+</div>
+
+<!-- KPI サマリーカード -->
+<div class="stats-grid" id="stability-stats">
+    <div class="stat-card">
+        <div class="stat-value" id="stat-total">-</div>
+        <div class="stat-label">総PC数</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value text-danger" id="stat-critical">-</div>
+        <div class="stat-label">危険 (スコア &lt; 40)</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value text-warning" id="stat-unstable">-</div>
+        <div class="stat-label">不安定 (40-60)</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value text-info" id="stat-warning">-</div>
+        <div class="stat-label">要注意 (60-80)</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value text-success" id="stat-healthy">-</div>
+        <div class="stat-label">正常 (≥ 80)</div>
+    </div>
+</div>
+
+<!-- スコア一覧テーブル -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">PC 安定性スコア一覧</h3>
+    </div>
+    <table class="table" id="scores-table">
+        <thead>
+            <tr>
+                <th>PC名</th>
+                <th>スコア</th>
+                <th>状態</th>
+                <th>主な減点要因</th>
+                <th>分析日数</th>
+                <th>計算日時</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="scores-body">
+            <tr><td colspan="7" class="text-center">読み込み中...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- イベントランキング -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">イベント発生ランキング（上位 10件）</h3>
+    </div>
+    <table class="table" id="ranking-table">
+        <thead>
+            <tr>
+                <th>順位</th>
+                <th>イベントID</th>
+                <th>カテゴリ</th>
+                <th>発生回数</th>
+                <th>影響PC数</th>
+            </tr>
+        </thead>
+        <tbody id="ranking-body">
+            <tr><td colspan="5" class="text-center">読み込み中...</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/stability.js"></script>
+{% endblock %}

@@ -75,6 +75,9 @@ class PC(db.Model):
     offline_pending_count = db.Column(db.Integer, default=0)
     # HMAC-SHA256 job signing key (Issue #188 part 4) — server-internal, never serialized
     agent_signing_key = db.Column(db.String(128), nullable=True)
+    # Stability Insight (Issue #238)
+    stability_score = db.Column(db.Float, default=100.0)
+    last_stability_calc_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
@@ -109,6 +112,18 @@ class PC(db.Model):
         lazy="dynamic",
         cascade="all, delete-orphan",
     )
+    stability_scores = db.relationship(
+        "StabilityScore",
+        backref="pc",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+    disk_health_events = db.relationship(
+        "DiskHealth",
+        backref="pc",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
 
     def to_dict(self):
         return {
@@ -133,6 +148,12 @@ class PC(db.Model):
             "agent_version": self.agent_version,
             "connection_type": self.connection_type or "Unknown",
             "offline_pending_count": self.offline_pending_count or 0,
+            "stability_score": self.stability_score
+            if self.stability_score is not None
+            else 100.0,
+            "last_stability_calc_at": self.last_stability_calc_at.isoformat()
+            if self.last_stability_calc_at
+            else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -203,11 +224,13 @@ class WindowsUpdate(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     pc_id = db.Column(db.Integer, db.ForeignKey("pcs.id"), nullable=False, index=True)
-    kb_id = db.Column(db.String(32))
+    kb_id = db.Column(db.String(32), index=True)
     title = db.Column(db.String(512))
     severity = db.Column(db.String(64))
     installed = db.Column(db.Boolean, default=False)
-    installed_at = db.Column(db.DateTime)
+    installed_at = db.Column(db.DateTime, index=True)
+    # Stability Insight (Issue #238): post-update reboot timestamp
+    reboot_at = db.Column(db.DateTime, nullable=True)
     collected_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
@@ -221,6 +244,7 @@ class WindowsUpdate(db.Model):
             "installed_at": self.installed_at.isoformat()
             if self.installed_at
             else None,
+            "reboot_at": self.reboot_at.isoformat() if self.reboot_at else None,
         }
 
 
@@ -270,11 +294,13 @@ class EventLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     pc_id = db.Column(db.Integer, db.ForeignKey("pcs.id"), nullable=False, index=True)
     log_type = db.Column(db.String(64), nullable=False)
-    event_id = db.Column(db.Integer)
+    event_id = db.Column(db.Integer, index=True)
     level = db.Column(db.String(32))
     source = db.Column(db.String(255))
     message = db.Column(db.Text)
-    generated_at = db.Column(db.DateTime)
+    # Stability Insight (Issue #238): crash/disk/service/app/network/power
+    category = db.Column(db.String(32), nullable=True, index=True)
+    generated_at = db.Column(db.DateTime, index=True)
     collected_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
@@ -286,6 +312,7 @@ class EventLog(db.Model):
             "level": self.level,
             "source": self.source,
             "message": self.message,
+            "category": self.category,
             "generated_at": self.generated_at.isoformat()
             if self.generated_at
             else None,
@@ -881,3 +908,146 @@ class JobExecution(db.Model):
         return (
             f"<JobExecution {self.id} template={self.template_id} status={self.status}>"
         )
+
+
+# Stability Insight models (Issue #238)
+STABILITY_EVENT_RULES = [
+    # (event_id, category, deduction, label)
+    (1001, "crash", 30, "BugCheck (BSOD)"),
+    (41, "power", 25, "Kernel-Power 異常終了"),
+    (6008, "power", 20, "異常シャットダウン"),
+    (7, "disk", 20, "Disk Error (Bad Block)"),
+    (51, "disk", 15, "Disk Warning"),
+    (55, "disk", 20, "NTFS 異常"),
+    (129, "disk", 15, "Disk Timeout"),
+    (153, "disk", 10, "Disk Retry"),
+    (1000, "app", 10, "Application Error"),
+    (1002, "app", 10, "Application Hang"),
+    (7000, "service", 5, "Service 起動失敗"),
+    (7001, "service", 5, "Service 依存関係失敗"),
+    (7009, "service", 5, "Service タイムアウト"),
+    (7023, "service", 5, "Service 停止"),
+    (7034, "service", 5, "Service 予期せぬ停止"),
+]
+
+STABILITY_CATEGORY_MAP = {rule[0]: rule[1] for rule in STABILITY_EVENT_RULES}
+
+
+def get_event_category(event_id):
+    """Return category string for a Windows Event ID (Issue #238)."""
+    return STABILITY_CATEGORY_MAP.get(event_id, "other")
+
+
+class StabilityScore(db.Model):
+    """Time-series stability score per PC (Issue #238)."""
+
+    __tablename__ = "stability_scores"
+
+    id = db.Column(db.Integer, primary_key=True)
+    pc_id = db.Column(db.Integer, db.ForeignKey("pcs.id"), nullable=False, index=True)
+    score = db.Column(db.Float, nullable=False, default=100.0)
+    # JSON list of {"reason": str, "event_id": int, "count": int, "points": int}
+    deductions = db.Column(db.Text, nullable=True)
+    analysis_days = db.Column(db.Integer, default=7)
+    calculated_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), index=True
+    )
+
+    def to_dict(self):
+        import json
+
+        return {
+            "id": self.id,
+            "pc_id": self.pc_id,
+            "score": self.score,
+            "deductions": json.loads(self.deductions) if self.deductions else [],
+            "analysis_days": self.analysis_days,
+            "calculated_at": self.calculated_at.isoformat()
+            if self.calculated_at
+            else None,
+        }
+
+    def __repr__(self):
+        return f"<StabilityScore pc={self.pc_id} score={self.score}>"
+
+
+class DiskHealth(db.Model):
+    """Disk health event record for disk-related Windows Events (Issue #238)."""
+
+    __tablename__ = "disk_health"
+
+    id = db.Column(db.Integer, primary_key=True)
+    pc_id = db.Column(db.Integer, db.ForeignKey("pcs.id"), nullable=False, index=True)
+    event_id = db.Column(db.Integer, nullable=False, index=True)
+    source = db.Column(db.String(255))
+    message = db.Column(db.Text)
+    disk_label = db.Column(db.String(64))
+    severity = db.Column(db.String(32), default="warning")
+    generated_at = db.Column(db.DateTime, index=True)
+    collected_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "pc_id": self.pc_id,
+            "event_id": self.event_id,
+            "source": self.source,
+            "message": self.message,
+            "disk_label": self.disk_label,
+            "severity": self.severity,
+            "generated_at": self.generated_at.isoformat()
+            if self.generated_at
+            else None,
+            "collected_at": self.collected_at.isoformat()
+            if self.collected_at
+            else None,
+        }
+
+    def __repr__(self):
+        return f"<DiskHealth pc={self.pc_id} event_id={self.event_id}>"
+
+
+class KnownIssue(db.Model):
+    """Known issue master for internal KB (Issue #241 Phase D-4)."""
+
+    __tablename__ = "known_issues"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(512), nullable=False)
+    kb_id = db.Column(db.String(32), nullable=True, index=True)
+    event_ids = db.Column(db.Text, nullable=True)
+    symptoms = db.Column(db.Text)
+    resolution = db.Column(db.Text)
+    affected_os = db.Column(db.String(255))
+    affected_models = db.Column(db.Text)
+    severity = db.Column(db.String(32), default="medium")
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    def to_dict(self):
+        import json
+
+        return {
+            "id": self.id,
+            "title": self.title,
+            "kb_id": self.kb_id,
+            "event_ids": json.loads(self.event_ids) if self.event_ids else [],
+            "symptoms": self.symptoms,
+            "resolution": self.resolution,
+            "affected_os": self.affected_os,
+            "affected_models": json.loads(self.affected_models)
+            if self.affected_models
+            else [],
+            "severity": self.severity,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    def __repr__(self):
+        return f"<KnownIssue {self.id}: {self.title[:40]}>"

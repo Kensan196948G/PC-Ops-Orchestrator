@@ -1926,6 +1926,10 @@ body.role-operator .role-admin-only {
 .cursor-pointer { cursor: pointer; }
 .w-auto { width: auto; }
 .text-danger-marker { color: var(--danger); }
+.text-danger { color: var(--danger); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-info { color: var(--info); }
 .align-center { align-self: center; }
 .text-muted-sm { font-size: 0.85rem; color: var(--text-secondary); font-weight: normal; }
 .text-loading { color: var(--text-muted); font-size: 0.82rem; }
