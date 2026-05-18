@@ -9,6 +9,14 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Added (Phase D — PC Stability Insight モジュール統合 / 2026-05-18)
+
+- **Phase D-1 (#238) スコア基盤** — `StabilityScore` モデル + `EventLog.category` (crash/disk/service/app/network/power/other) + `collect.py` で書き込み時に自動付与
+- **Phase D-2 (#239) 分析 API (16 endpoints)** — `/api/stability/{scores,calculate,unstable-pcs,event-ranking,kb-impact,similar-issues,disk-health[?flat=1],known-issues}`
+- **Phase D-3 (#240) ダッシュボード WebUI (4 ページ)** — `/stability` メイン + 不安定 PC / KB 影響 / ディスクヘルス、XSS-safe DOM + ページネーション + CSV + CSP Phase 3 準拠
+- **Phase D-4 (#241) 問い合わせ連携** — `Inquiry` モデル + `/api/inquiries` CRUD + `/api/inquiries/<id>/related-logs` (PC EventLog/Update/Score 相関) + `/api/inquiries/similar` (subject LIKE / known_issue_id 検索)
+- **新ロードマップ Issue #244-#253** — Phase 2/3/4 ギャップ (起動遅延 / 同一機種軸 / ネットワーク疎通 / 応答遅延 / 収集ポリシー / MS 公式情報照合 / Graph 連携 / AI 原因推定 / 自動インシデント / 予兆検知)
+
 ### Added (PR #147 — CI 実行中)
 - **API キー管理 CRUD** — `ApiKey` モデル追加
   - `GET/POST /api/api-keys`, `POST /api/api-keys/<id>/rotate`, `DELETE /api/api-keys/<id>`

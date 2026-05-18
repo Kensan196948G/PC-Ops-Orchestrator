@@ -1051,3 +1051,52 @@ class KnownIssue(db.Model):
 
     def __repr__(self):
         return f"<KnownIssue {self.id}: {self.title[:40]}>"
+
+
+class Inquiry(db.Model):
+    """User inquiry record (Issue #241 Phase D-4) — links a user-reported symptom to a PC."""
+
+    __tablename__ = "inquiries"
+
+    id = db.Column(db.Integer, primary_key=True)
+    pc_id = db.Column(db.Integer, db.ForeignKey("pcs.id"), nullable=True, index=True)
+    inquired_by = db.Column(db.String(255), nullable=False)
+    subject = db.Column(db.String(512), nullable=False)
+    symptom = db.Column(db.Text)
+    status = db.Column(db.String(32), default="open", index=True)
+    known_issue_id = db.Column(
+        db.Integer, db.ForeignKey("known_issues.id"), nullable=True, index=True
+    )
+    response = db.Column(db.Text, nullable=True)
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), index=True
+    )
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+    resolved_at = db.Column(db.DateTime, nullable=True)
+
+    pc = db.relationship("PC", backref="inquiries")
+    known_issue = db.relationship("KnownIssue", backref="inquiries")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "pc_id": self.pc_id,
+            "pc_name": self.pc.pc_name if self.pc else None,
+            "inquired_by": self.inquired_by,
+            "subject": self.subject,
+            "symptom": self.symptom,
+            "status": self.status,
+            "known_issue_id": self.known_issue_id,
+            "known_issue_title": self.known_issue.title if self.known_issue else None,
+            "response": self.response,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "resolved_at": self.resolved_at.isoformat() if self.resolved_at else None,
+        }
+
+    def __repr__(self):
+        return f"<Inquiry {self.id} pc={self.pc_id} status={self.status}>"
