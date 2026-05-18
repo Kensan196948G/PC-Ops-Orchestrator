@@ -337,6 +337,13 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | POST | `/api/backups/trigger` | JWT(admin) | 即時バックアップ実行 |
 | POST | `/api/backups/integrity-check` | JWT | DB 整合性チェック |
 | GET | `/api/agents/export.csv` | JWT | Agent 一覧 CSV エクスポート |
+| GET/PUT | `/api/ad/config` | JWT(admin) | AD連携設定取得・保存 |
+| GET | `/api/ad/status` | JWT(admin) | AD接続ステータス確認 |
+| POST | `/api/ad/sync` | JWT(admin) | ADユーザー同期（ldap3） |
+| POST | `/api/admin/backup/db` | JWT(admin) | SQLite DB バックアップ作成（WAL-safe, 10世代ローテーション） |
+| GET | `/api/admin/backup/list` | JWT(admin) | バックアップ一覧（ファイル名・サイズ・作成日時） |
+| GET | `/api/admin/logs/app` | JWT(admin) | gunicorn access ログ tail（max 1000 行） |
+| GET | `/api/admin/logs/error` | JWT(admin) | gunicorn error ログ tail（max 1000 行） |
 | GET | `/api/docs/` | - | **Swagger UI（OpenAPI 3.0 ドキュメント）** |
 | GET | `/api/openapi.yaml` | - | OpenAPI 3.0 仕様 (YAML) |
 
