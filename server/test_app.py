@@ -42,6 +42,7 @@ def client():
         "/notifications-config",  # L227
         "/licenses",  # L231
         "/login",  # L235
+        "/notification-logs",
     ],
 )
 def test_simple_template_routes_render(client, path):
