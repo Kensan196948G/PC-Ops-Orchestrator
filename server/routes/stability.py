@@ -1,8 +1,10 @@
-"""PC Stability Insight routes — Phase D-1/D-2 (Issue #238, #239), Phase E (Issue #244, #245)."""
+"""PC Stability Insight routes — Phase D-1/D-2 (Issue #238, #239), Phase E (Issue #244-#247, #252, #253)."""
 
 import json
+import os
 from datetime import datetime, timedelta, timezone
 
+import requests as http_requests
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func
 
@@ -11,9 +13,11 @@ from auth import login_required
 from extensions import db
 from models import (
     PC,
+    AppResponseLog,
     BootTimeLog,
     EventLog,
     KnownIssue,
+    NotificationChannel,
     StabilityScore,
     WindowsUpdate,
     STABILITY_EVENT_RULES,
@@ -894,4 +898,483 @@ def _similar_by_location(min_pcs: int) -> list:
         ],
         key=lambda x: x["unstable_pc_count"],
         reverse=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Issue #247 — App Response Monitoring
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/app-response", methods=["GET"])
+@login_required
+def app_response_summary():
+    """Slow-app summary across all PCs in the last N hours."""
+    hours = min(int(request.args.get("hours", 24)), 168)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+
+    rows = (
+        db.session.query(
+            AppResponseLog.app_name,
+            func.count(AppResponseLog.id).label("total"),
+            func.sum(db.cast(AppResponseLog.is_slow, db.Integer)).label("slow_count"),
+            func.avg(AppResponseLog.response_time_ms).label("avg_ms"),
+            func.max(AppResponseLog.response_time_ms).label("max_ms"),
+        )
+        .filter(AppResponseLog.recorded_at >= cutoff)
+        .group_by(AppResponseLog.app_name)
+        .order_by(func.sum(db.cast(AppResponseLog.is_slow, db.Integer)).desc())
+        .all()
+    )
+
+    return jsonify(
+        {
+            "hours": hours,
+            "apps": [
+                {
+                    "app_name": r.app_name,
+                    "total_records": r.total,
+                    "slow_count": int(r.slow_count or 0),
+                    "slow_rate": round((r.slow_count or 0) / r.total, 4)
+                    if r.total
+                    else 0,
+                    "avg_ms": round(r.avg_ms or 0, 1),
+                    "max_ms": r.max_ms or 0,
+                }
+                for r in rows
+            ],
+        }
+    )
+
+
+@bp.route("/app-response/<int:pc_id>", methods=["GET"])
+@login_required
+def app_response_by_pc(pc_id):
+    """Per-PC app response summary + recent history."""
+    pc = db.session.get(PC, pc_id)
+    if pc is None:
+        return jsonify({"error": "PC not found"}), 404
+
+    hours = min(int(request.args.get("hours", 24)), 168)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    limit = min(int(request.args.get("limit", 100)), 500)
+
+    summary = (
+        db.session.query(
+            AppResponseLog.app_name,
+            func.count(AppResponseLog.id).label("total"),
+            func.sum(db.cast(AppResponseLog.is_slow, db.Integer)).label("slow_count"),
+            func.avg(AppResponseLog.response_time_ms).label("avg_ms"),
+            func.max(AppResponseLog.response_time_ms).label("max_ms"),
+        )
+        .filter(
+            AppResponseLog.pc_id == pc_id,
+            AppResponseLog.recorded_at >= cutoff,
+        )
+        .group_by(AppResponseLog.app_name)
+        .order_by(func.avg(AppResponseLog.response_time_ms).desc())
+        .all()
+    )
+
+    history = (
+        AppResponseLog.query.filter(
+            AppResponseLog.pc_id == pc_id,
+            AppResponseLog.recorded_at >= cutoff,
+        )
+        .order_by(AppResponseLog.recorded_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    return jsonify(
+        {
+            "pc_id": pc_id,
+            "pc_name": pc.pc_name,
+            "hours": hours,
+            "summary": [
+                {
+                    "app_name": r.app_name,
+                    "total_records": r.total,
+                    "slow_count": int(r.slow_count or 0),
+                    "slow_rate": round((r.slow_count or 0) / r.total, 4)
+                    if r.total
+                    else 0,
+                    "avg_ms": round(r.avg_ms or 0, 1),
+                    "max_ms": r.max_ms or 0,
+                }
+                for r in summary
+            ],
+            "history": [r.to_dict() for r in history],
+        }
+    )
+
+
+@bp.route("/app-response/<int:pc_id>", methods=["POST"])
+@login_required
+def app_response_record(pc_id):
+    """Accept single or batch app-response records from agents."""
+    pc = db.session.get(PC, pc_id)
+    if pc is None:
+        return jsonify({"error": "PC not found"}), 404
+
+    body = request.get_json(silent=True) or {}
+    items = body if isinstance(body, list) else [body]
+    if not items:
+        return jsonify({"error": "empty payload"}), 400
+
+    created = []
+    errors = []
+    for idx, item in enumerate(items):
+        app_name = item.get("app_name", "").strip()
+        response_time_ms = item.get("response_time_ms")
+        if not app_name or response_time_ms is None:
+            errors.append(
+                {"index": idx, "error": "app_name and response_time_ms required"}
+            )
+            continue
+        try:
+            response_time_ms = int(response_time_ms)
+        except (TypeError, ValueError):
+            errors.append({"index": idx, "error": "response_time_ms must be integer"})
+            continue
+
+        threshold_ms = item.get("threshold_ms")
+        if threshold_ms is not None:
+            try:
+                threshold_ms = int(threshold_ms)
+            except (TypeError, ValueError):
+                threshold_ms = None
+
+        is_slow = bool(
+            item.get(
+                "is_slow", threshold_ms is not None and response_time_ms > threshold_ms
+            )
+        )
+
+        recorded_at_raw = item.get("recorded_at")
+        if recorded_at_raw:
+            try:
+                recorded_at = datetime.fromisoformat(
+                    recorded_at_raw.replace("Z", "+00:00")
+                )
+            except (ValueError, AttributeError):
+                recorded_at = datetime.now(timezone.utc)
+        else:
+            recorded_at = datetime.now(timezone.utc)
+
+        log = AppResponseLog(
+            pc_id=pc_id,
+            app_name=app_name,
+            response_time_ms=response_time_ms,
+            threshold_ms=threshold_ms,
+            is_slow=is_slow,
+            recorded_at=recorded_at,
+        )
+        db.session.add(log)
+        created.append(idx)
+
+    db.session.commit()
+    return jsonify({"created": len(created), "errors": errors}), 201
+
+
+# ---------------------------------------------------------------------------
+# Issue #253 — Early Warning Trends + Slack/Teams Notifications
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/trends", methods=["GET"])
+@login_required
+def stability_trends():
+    """Detect PCs with a declining score trend over recent N snapshots."""
+    snapshots = min(int(request.args.get("snapshots", 5)), 20)
+    min_drop = float(request.args.get("min_drop", 10.0))
+
+    pcs = PC.query.all()
+    at_risk = []
+
+    for pc in pcs:
+        recent = (
+            StabilityScore.query.filter_by(pc_id=pc.id)
+            .order_by(StabilityScore.calculated_at.desc())
+            .limit(snapshots)
+            .all()
+        )
+        if len(recent) < 2:
+            continue
+
+        scores = [r.score for r in reversed(recent)]  # oldest → newest
+        first_score = scores[0]
+        last_score = scores[-1]
+        drop = first_score - last_score
+
+        if drop >= min_drop:
+            at_risk.append(
+                {
+                    "pc_id": pc.id,
+                    "pc_name": pc.pc_name,
+                    "first_score": round(first_score, 1),
+                    "latest_score": round(last_score, 1),
+                    "drop": round(drop, 1),
+                    "snapshots_analyzed": len(recent),
+                    "latest_calculated_at": recent[0].calculated_at.isoformat()
+                    if recent[0].calculated_at
+                    else None,
+                }
+            )
+
+    at_risk.sort(key=lambda x: x["drop"], reverse=True)
+    return jsonify(
+        {
+            "snapshots": snapshots,
+            "min_drop": min_drop,
+            "at_risk_count": len(at_risk),
+            "at_risk": at_risk,
+        }
+    )
+
+
+@bp.route("/trends/notify", methods=["POST"])
+@login_required
+def trends_notify():
+    """Send alert to active NotificationChannels for at-risk PCs."""
+    body = request.get_json(silent=True) or {}
+    snapshots = min(int(body.get("snapshots", 5)), 20)
+    min_drop = float(body.get("min_drop", 10.0))
+    channel_ids = body.get("channel_ids")  # None = all active channels
+
+    pcs = PC.query.all()
+    at_risk = []
+
+    for pc in pcs:
+        recent = (
+            StabilityScore.query.filter_by(pc_id=pc.id)
+            .order_by(StabilityScore.calculated_at.desc())
+            .limit(snapshots)
+            .all()
+        )
+        if len(recent) < 2:
+            continue
+        scores = [r.score for r in reversed(recent)]
+        drop = scores[0] - scores[-1]
+        if drop >= min_drop:
+            at_risk.append(
+                {
+                    "pc_id": pc.id,
+                    "pc_name": pc.pc_name,
+                    "drop": round(drop, 1),
+                    "latest_score": round(scores[-1], 1),
+                }
+            )
+
+    if not at_risk:
+        return jsonify({"sent": 0, "message": "No at-risk PCs detected"}), 200
+
+    channels_q = NotificationChannel.query.filter_by(is_active=True)
+    if channel_ids:
+        channels_q = channels_q.filter(NotificationChannel.id.in_(channel_ids))
+    channels = channels_q.all()
+
+    message_text = (
+        f"[PC-Ops Stability Alert] {len(at_risk)} PC(s) show score decline:\n"
+        + "\n".join(
+            f"  - {r['pc_name']} (id={r['pc_id']}): score={r['latest_score']}, drop={r['drop']}"
+            for r in at_risk
+        )
+    )
+
+    results = []
+    for ch in channels:
+        try:
+            if ch.channel_type in ("slack", "teams", "webhook"):
+                payload = {"text": message_text}
+                resp = http_requests.post(ch.target, json=payload, timeout=10)
+                results.append(
+                    {
+                        "channel_id": ch.id,
+                        "channel_name": ch.name,
+                        "status": "ok" if resp.status_code < 400 else "error",
+                        "http_status": resp.status_code,
+                    }
+                )
+            else:
+                results.append(
+                    {
+                        "channel_id": ch.id,
+                        "channel_name": ch.name,
+                        "status": "skipped",
+                        "reason": f"unsupported channel_type: {ch.channel_type}",
+                    }
+                )
+        except Exception as exc:
+            results.append(
+                {
+                    "channel_id": ch.id,
+                    "channel_name": ch.name,
+                    "status": "error",
+                    "reason": str(exc),
+                }
+            )
+
+    sent_ok = sum(1 for r in results if r.get("status") == "ok")
+    return jsonify(
+        {
+            "at_risk_count": len(at_risk),
+            "channels_attempted": len(results),
+            "sent": sent_ok,
+            "results": results,
+        }
+    )
+
+
+# ---------------------------------------------------------------------------
+# Issue #252 — Auto Incident Filing for Score < 40
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/incidents", methods=["GET"])
+@login_required
+def stability_incidents():
+    """List PCs whose latest score is below THRESHOLD_CRITICAL (40)."""
+    threshold = float(request.args.get("threshold", THRESHOLD_CRITICAL))
+
+    pcs = PC.query.all()
+    critical = []
+
+    for pc in pcs:
+        latest = (
+            StabilityScore.query.filter_by(pc_id=pc.id)
+            .order_by(StabilityScore.calculated_at.desc())
+            .first()
+        )
+        if latest is None:
+            continue
+        if latest.score < threshold:
+            critical.append(
+                {
+                    "pc_id": pc.id,
+                    "pc_name": pc.pc_name,
+                    "score": round(latest.score, 1),
+                    "threshold": threshold,
+                    "calculated_at": latest.calculated_at.isoformat()
+                    if latest.calculated_at
+                    else None,
+                }
+            )
+
+    critical.sort(key=lambda x: x["score"])
+    return jsonify(
+        {
+            "threshold": threshold,
+            "critical_count": len(critical),
+            "pcs": critical,
+        }
+    )
+
+
+@bp.route("/incidents/auto-file", methods=["POST"])
+@login_required
+def incidents_auto_file():
+    """Create GitHub Issues for each PC with score < threshold (dry_run=true to preview)."""
+    body = request.get_json(silent=True) or {}
+    threshold = float(body.get("threshold", THRESHOLD_CRITICAL))
+    dry_run = bool(body.get("dry_run", False))
+    repo = body.get("repo") or os.environ.get("GITHUB_REPO", "")
+    token = body.get("token") or os.environ.get("GITHUB_TOKEN", "")
+
+    if not dry_run and not repo:
+        return jsonify({"error": "repo is required (e.g. owner/repo)"}), 400
+    if not dry_run and not token:
+        return jsonify(
+            {"error": "GITHUB_TOKEN env var or token body field is required"}
+        ), 400
+
+    pcs = PC.query.all()
+    candidates = []
+    for pc in pcs:
+        latest = (
+            StabilityScore.query.filter_by(pc_id=pc.id)
+            .order_by(StabilityScore.calculated_at.desc())
+            .first()
+        )
+        if latest and latest.score < threshold:
+            candidates.append(
+                {
+                    "pc_id": pc.id,
+                    "pc_name": pc.pc_name,
+                    "score": round(latest.score, 1),
+                    "calculated_at": latest.calculated_at.isoformat()
+                    if latest.calculated_at
+                    else None,
+                }
+            )
+
+    if not candidates:
+        return jsonify({"filed": 0, "message": "No critical PCs found"}), 200
+
+    if dry_run:
+        return jsonify(
+            {
+                "dry_run": True,
+                "would_file": len(candidates),
+                "candidates": candidates,
+            }
+        )
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    api_url = f"https://api.github.com/repos/{repo}/issues"
+
+    results = []
+    for pc in candidates:
+        title = f"[Stability] Critical score on {pc['pc_name']} (score={pc['score']})"
+        body_text = (
+            f"## Stability Incident\n\n"
+            f"- **PC**: {pc['pc_name']} (id={pc['pc_id']})\n"
+            f"- **Score**: {pc['score']} (threshold={threshold})\n"
+            f"- **Recorded**: {pc['calculated_at']}\n\n"
+            f"Automatically filed by PC-Ops-Orchestrator `/api/stability/incidents/auto-file`.\n"
+        )
+        try:
+            resp = http_requests.post(
+                api_url,
+                json={
+                    "title": title,
+                    "body": body_text,
+                    "labels": ["stability", "incident"],
+                },
+                headers=headers,
+                timeout=15,
+            )
+            results.append(
+                {
+                    "pc_id": pc["pc_id"],
+                    "pc_name": pc["pc_name"],
+                    "status": "filed" if resp.status_code == 201 else "error",
+                    "http_status": resp.status_code,
+                    "issue_url": resp.json().get("html_url")
+                    if resp.status_code == 201
+                    else None,
+                }
+            )
+        except Exception as exc:
+            results.append(
+                {
+                    "pc_id": pc["pc_id"],
+                    "pc_name": pc["pc_name"],
+                    "status": "error",
+                    "reason": str(exc),
+                }
+            )
+
+    filed_ok = sum(1 for r in results if r.get("status") == "filed")
+    return jsonify(
+        {
+            "dry_run": False,
+            "filed": filed_ok,
+            "total_candidates": len(candidates),
+            "results": results,
+        }
     )
