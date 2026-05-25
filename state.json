@@ -29,7 +29,7 @@
   "phase": {
     "current": "verify",
     "week": 4,
-    "phase_e3": "PR #268 CI pending — CollectionPolicy CRUD (Issue #248)"
+    "phase_e3": "PR #268 MERGED 2026-05-25 — CollectionPolicy CRUD (Issue #248) 本番投入完了"
   },
   "kpi": {
     "ci_success_rate": 1,
@@ -52,7 +52,7 @@
   "status": {
     "current_phase": "improve",
     "stable": true,
-    "pending_prs": [268],
+    "pending_prs": [],
     "merged_prs": [
       136,
       36,
@@ -105,7 +105,8 @@
       254,
       256,
       257,
-      263
+      263,
+      268
     ]
   },
   "priority": {
@@ -179,7 +180,8 @@
     "merged_prs_this_session": [
       256,
       257,
-      263
+      263,
+      268
     ],
     "pending_prs": [268],
     "closed_issues_this_session": [
@@ -187,14 +189,15 @@
       245,
       246,
       247,
+      248,
       252,
       253
     ],
     "new_issues_filed": [],
     "tests": "1182 passed / 0 failed (PR #268 includes 24 new CollectionPolicy tests)",
     "production_deployed": false,
-    "ci_status": "PR #268 CI pending — CollectionPolicy CRUD API (Issue #248)",
-    "next_action": "Issue #249 (Windows Release Health), #250 (Microsoft Graph), #251 (AI root cause) after PR #268 merge"
+    "ci_status": "PR #268 MERGED (squash) — CollectionPolicy CRUD API 本番投入完了 (2026-05-25 20:03 JST)",
+    "next_action": "Issue #249 (Windows Release Health 連携) — 実装開始"
   },
   "learning": {
     "failure_patterns": [
