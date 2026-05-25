@@ -1198,3 +1198,56 @@ class AppResponseLog(db.Model):
 
     def __repr__(self) -> str:
         return f"<AppResponseLog pc={self.pc_id} app={self.app_name} ms={self.response_time_ms}>"
+
+
+class CollectionPolicy(db.Model):
+    """Per-group (or global) metric collection frequency policy (Issue #248)."""
+
+    __tablename__ = "collection_policies"
+
+    METRIC_TYPES = ("boot_time", "app_response", "network_ping", "event_log")
+
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(
+        db.Integer,
+        db.ForeignKey("pc_groups.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )  # NULL = global default
+    metric_type = db.Column(db.String(64), nullable=False, index=True)
+    frequency_minutes = db.Column(db.Integer, nullable=False, default=60)
+    is_enabled = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    group = db.relationship(
+        "PCGroup", backref=db.backref("collection_policies", lazy="dynamic")
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("group_id", "metric_type", name="uq_policy_group_metric"),
+    )
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "group_id": self.group_id,
+            "group_name": self.group.name if self.group else None,
+            "metric_type": self.metric_type,
+            "frequency_minutes": self.frequency_minutes,
+            "is_enabled": self.is_enabled,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    def __repr__(self) -> str:
+        return f"<CollectionPolicy group={self.group_id} metric={self.metric_type} freq={self.frequency_minutes}m>"

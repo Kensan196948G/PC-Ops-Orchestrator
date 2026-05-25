@@ -101,6 +101,7 @@ def create_app(config_name=None):
     from routes.admin_ops import admin_ops_bp
     from routes.stability import bp as stability_bp
     from routes.inquiries import bp as inquiries_bp
+    from routes.collection_policies import bp as collection_policies_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(collect_bp)
@@ -127,6 +128,7 @@ def create_app(config_name=None):
     app.register_blueprint(admin_ops_bp)
     app.register_blueprint(stability_bp)
     app.register_blueprint(inquiries_bp)
+    app.register_blueprint(collection_policies_bp)
 
     # Rate limiter -> /metrics integration:
     # increment the in-process counter every time Flask-Limiter rejects a
