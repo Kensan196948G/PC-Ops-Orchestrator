@@ -1378,3 +1378,179 @@ def incidents_auto_file():
             "results": results,
         }
     )
+
+
+# Issue #251 — Root Cause Analysis (event_id clustering)
+_UNSTABLE_THRESHOLD = 70.0
+_STABLE_THRESHOLD = 80.0
+
+
+@bp.route("/root-cause", methods=["GET"])
+@login_required
+def root_cause():
+    """GET /api/stability/root-cause — rank event IDs by lift vs stable PCs."""
+    days = int(request.args.get("days", 14))
+    limit = int(request.args.get("limit", 20))
+    threshold = float(request.args.get("threshold", _UNSTABLE_THRESHOLD))
+    stable_floor = float(request.args.get("stable_threshold", _STABLE_THRESHOLD))
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    # Latest stability score per PC (subquery)
+    latest_sq = (
+        db.session.query(
+            StabilityScore.pc_id,
+            func.max(StabilityScore.calculated_at).label("max_at"),
+        )
+        .group_by(StabilityScore.pc_id)
+        .subquery()
+    )
+    all_scores = (
+        db.session.query(StabilityScore)
+        .join(
+            latest_sq,
+            (StabilityScore.pc_id == latest_sq.c.pc_id)
+            & (StabilityScore.calculated_at == latest_sq.c.max_at),
+        )
+        .all()
+    )
+
+    unstable_pc_ids = {s.pc_id for s in all_scores if s.score < threshold}
+    stable_pc_ids = {s.pc_id for s in all_scores if s.score >= stable_floor}
+    total_unstable = len(unstable_pc_ids)
+    total_stable = len(stable_pc_ids)
+
+    if total_unstable == 0:
+        return jsonify(
+            {
+                "threshold": threshold,
+                "days": days,
+                "unstable_pc_count": 0,
+                "stable_pc_count": total_stable,
+                "events": [],
+                "message": "No unstable PCs found",
+            }
+        )
+
+    unstable_rows = (
+        db.session.query(
+            EventLog.event_id,
+            EventLog.source,
+            EventLog.category,
+            func.count(func.distinct(EventLog.pc_id)).label("unstable_pc_count"),
+            func.count(EventLog.id).label("occurrence_count"),
+        )
+        .filter(
+            EventLog.pc_id.in_(unstable_pc_ids),
+            EventLog.generated_at >= cutoff,
+            EventLog.event_id.isnot(None),
+        )
+        .group_by(EventLog.event_id, EventLog.source, EventLog.category)
+        .all()
+    )
+
+    stable_event_pc_counts: dict = {}
+    if total_stable > 0:
+        stable_rows = (
+            db.session.query(
+                EventLog.event_id,
+                func.count(func.distinct(EventLog.pc_id)).label("stable_pc_count"),
+            )
+            .filter(
+                EventLog.pc_id.in_(stable_pc_ids),
+                EventLog.generated_at >= cutoff,
+                EventLog.event_id.isnot(None),
+            )
+            .group_by(EventLog.event_id)
+            .all()
+        )
+        stable_event_pc_counts = {r.event_id: r.stable_pc_count for r in stable_rows}
+
+    rule_map = {r[0]: r[3] for r in STABILITY_EVENT_RULES}
+
+    event_results = []
+    for row in unstable_rows:
+        unstable_rate = row.unstable_pc_count / total_unstable
+        stable_pc_cnt = stable_event_pc_counts.get(row.event_id, 0)
+        stable_rate = stable_pc_cnt / total_stable if total_stable > 0 else 0.0
+        lift = unstable_rate / stable_rate if stable_rate > 0 else unstable_rate * 10
+        event_results.append(
+            {
+                "event_id": row.event_id,
+                "source": row.source,
+                "category": row.category,
+                "label": rule_map.get(row.event_id, ""),
+                "unstable_pc_count": row.unstable_pc_count,
+                "stable_pc_count": stable_pc_cnt,
+                "occurrence_count": row.occurrence_count,
+                "unstable_rate": round(unstable_rate, 4),
+                "stable_rate": round(stable_rate, 4),
+                "lift": round(lift, 2),
+            }
+        )
+
+    event_results.sort(key=lambda x: (-x["lift"], -x["occurrence_count"]))
+    event_results = event_results[:limit]
+
+    return jsonify(
+        {
+            "threshold": threshold,
+            "days": days,
+            "unstable_pc_count": total_unstable,
+            "stable_pc_count": total_stable,
+            "events": event_results,
+        }
+    )
+
+
+@bp.route("/root-cause/<int:pc_id>", methods=["GET"])
+@login_required
+def root_cause_pc(pc_id: int):
+    """GET /api/stability/root-cause/<pc_id> — per-PC top contributing event IDs."""
+    days = int(request.args.get("days", 14))
+    limit = int(request.args.get("limit", 10))
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    pc = PC.query.get_or_404(pc_id)
+    latest_score = (
+        StabilityScore.query.filter_by(pc_id=pc_id)
+        .order_by(StabilityScore.calculated_at.desc())
+        .first()
+    )
+    rows = (
+        db.session.query(
+            EventLog.event_id,
+            EventLog.source,
+            EventLog.category,
+            EventLog.level,
+            func.count(EventLog.id).label("count"),
+        )
+        .filter(
+            EventLog.pc_id == pc_id,
+            EventLog.generated_at >= cutoff,
+            EventLog.event_id.isnot(None),
+        )
+        .group_by(EventLog.event_id, EventLog.source, EventLog.category, EventLog.level)
+        .order_by(func.count(EventLog.id).desc())
+        .limit(limit)
+        .all()
+    )
+    rule_map = {r[0]: r[3] for r in STABILITY_EVENT_RULES}
+    return jsonify(
+        {
+            "pc_id": pc_id,
+            "pc_name": pc.pc_name,
+            "stability_score": latest_score.score if latest_score else None,
+            "days": days,
+            "events": [
+                {
+                    "event_id": row.event_id,
+                    "source": row.source,
+                    "category": row.category,
+                    "level": row.level,
+                    "label": rule_map.get(row.event_id, ""),
+                    "count": row.count,
+                }
+                for row in rows
+            ],
+        }
+    )
