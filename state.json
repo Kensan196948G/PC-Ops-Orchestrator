@@ -28,7 +28,8 @@
   },
   "phase": {
     "current": "verify",
-    "week": 4
+    "week": 4,
+    "phase_e3": "PR #268 CI pending — CollectionPolicy CRUD (Issue #248)"
   },
   "kpi": {
     "ci_success_rate": 1,
@@ -42,7 +43,7 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-25T10:46:03.675Z",
+    "current_session_start_at": "2026-05-25T10:59:45.309Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "cron",
     "last_cron_session_id": "20260525-190001-PC-Ops-Orchestrator",
@@ -51,7 +52,7 @@
   "status": {
     "current_phase": "improve",
     "stable": true,
-    "pending_prs": [],
+    "pending_prs": [268],
     "merged_prs": [
       136,
       36,
@@ -174,13 +175,13 @@
     "date": "2026-05-25",
     "start_jst": "19:00",
     "end_target_jst": "24:00",
-    "phase_completed": "Phase E-1 + Phase E-2 — BootTimeLog + NetworkPingLog + AppResponseLog + Trends + Auto-Incident (PR #257 + PR #263 MERGED)",
+    "phase_completed": "Phase E-1 + Phase E-2 + E-3 start — BootTimeLog + NetworkPingLog + AppResponseLog + Trends + Auto-Incident + CollectionPolicy (PR #257 + #263 MERGED, PR #268 CI pending)",
     "merged_prs_this_session": [
       256,
       257,
       263
     ],
-    "pending_prs": [],
+    "pending_prs": [268],
     "closed_issues_this_session": [
       244,
       245,
@@ -190,10 +191,10 @@
       253
     ],
     "new_issues_filed": [],
-    "tests": "1158 passed / 135 skipped / 0 failed",
+    "tests": "1182 passed / 0 failed (PR #268 includes 24 new CollectionPolicy tests)",
     "production_deployed": false,
-    "ci_status": "PR #263 MERGED (commit 3ac0f5e) — production restart pending",
-    "next_action": "Phase E-next: Issue #248 (collection policy UI), #249 (Windows Release Health), #250 (Microsoft Graph), #251 (AI root cause)"
+    "ci_status": "PR #268 CI pending — CollectionPolicy CRUD API (Issue #248)",
+    "next_action": "Issue #249 (Windows Release Health), #250 (Microsoft Graph), #251 (AI root cause) after PR #268 merge"
   },
   "learning": {
     "failure_patterns": [
@@ -258,7 +259,7 @@
     }
   },
   "compact": {
-    "last_pre_compact_at": "2026-05-25T10:44:23.108Z"
+    "last_pre_compact_at": "2026-05-25T10:58:14.109Z"
   },
   "dreaming": {
     "patterns": [],

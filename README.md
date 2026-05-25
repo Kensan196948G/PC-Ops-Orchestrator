@@ -259,6 +259,7 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | 🔁 起動時間監視 | ブート所要時間の履歴収集・ベースライン比較・異常検知アラート（Phase E-1） |
 | 🌐 ネットワーク疎通監視 | ping/DNS/VPN/WiFi の接続チェック結果履歴・集計・バッチ投入（Phase E-2） |
 | 🔍 類似事象拡張検索 | OS バージョン別・サブネット別(/24)の集約パターン分析（Phase E-3） |
+| 📋 収集ポリシー管理 | PC グループ別の収集対象メトリクス・頻度設定 CRUD、有効ポリシー解決（グループ > グローバル > デフォルト）（Phase E-3） |
 
 ---
 
@@ -328,6 +329,12 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | GET/PUT/DELETE | `/api/inquiries/<id>` | JWT | 問い合わせ詳細 / 更新 / 削除 |
 | GET | `/api/inquiries/<id>/related-logs` | JWT | 問い合わせ ↔ PC EventLog / Update / Score 相関 |
 | GET | `/api/inquiries/similar?subject=...` | JWT | 類似問い合わせ検索 (subject LIKE or known_issue_id) |
+| GET | `/api/collection-policies` | JWT | 収集ポリシー一覧（?metric_type= / ?group_id= フィルタ）(Phase E-3) |
+| POST | `/api/collection-policies` | JWT | 収集ポリシー登録（409 on duplicate） (Phase E-3) |
+| GET | `/api/collection-policies/<id>` | JWT | 収集ポリシー詳細 (Phase E-3) |
+| PUT | `/api/collection-policies/<id>` | JWT | 収集ポリシー更新（部分更新対応） (Phase E-3) |
+| DELETE | `/api/collection-policies/<id>` | JWT | 収集ポリシー削除 (Phase E-3) |
+| GET | `/api/collection-policies/effective/<pc_id>` | JWT | PC の有効ポリシー解決（グループ > グローバル > デフォルト 60m）(Phase E-3) |
 | GET/POST | `/api/alert-rules` | JWT | アラートルール一覧・作成 |
 | GET/PUT/DELETE | `/api/alert-rules/<id>` | JWT | ルール詳細・更新・削除 |
 | POST | `/api/alert-rules/<id>/toggle` | JWT | ルール有効/無効切替 |
@@ -733,7 +740,9 @@ gantt
 | 📊 **PR #242** | **Phase D-1/D-2/D-3** — PC安定性スコア & ダッシュボード基盤 | ✅ MERGED | 16 endpoints + 4 templates + **1050 tests** |
 | 📨 **PR #254** | **Phase D-4** — Inquiry CRUD + related-logs + similar | ✅ MERGED | 19 tests / 問い合わせ連携 API 完成 |
 | 🐛 **PR #256** | **modal 表示バグ修正** — `.open` トグル統一 | ✅ MERGED | 4ページ modal 常時表示バグ解消 |
-| 🔁 **PR #257** | **Phase E** — BootTimeLog + NetworkPingLog + similar-issues 拡張 (#244 #245 #246) | 🔄 CI 中 | 39 tests / boot-analysis + network-status + OS/subnet 集約 |
+| 🔁 **PR #257** | **Phase E-1** — BootTimeLog + NetworkPingLog + similar-issues 拡張 (#244 #245 #246) | ✅ MERGED | 39 tests / boot-analysis + network-status + OS/subnet 集約 |
+| 📈 **PR #263** | **Phase E-2** — AppResponseLog + Trends + Auto-Incident (#247 #252 #253) | ✅ MERGED | app-response + trends/notify + incidents/auto-file |
+| 📋 **PR #268** | **Phase E-3** — CollectionPolicy CRUD API (Issue #248) | 🔄 CI 中 | 24 tests / 6 endpoints + effective policy resolver |
 
 ---
 
@@ -741,7 +750,7 @@ gantt
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| **API 拡張テスト（Python）** | **1123項目** | **✅ PASS** |
+| **API 拡張テスト（Python）** | **1182項目** | **✅ PASS** |
 | **WebUI E2E テスト（Playwright）** | **121項目** | **✅ PASS** |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
