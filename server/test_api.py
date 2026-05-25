@@ -234,9 +234,9 @@ def test_alerts_acknowledge_and_resolve(token):
     print(f"  [PASS] Alert acknowledge: id={alert_id}")
 
     resolve = request("POST", f"/api/alerts/{alert_id}/resolve", token=token)
-    assert (
-        resolve.status_code == 200
-    ), f"Resolve failed: {resolve.status_code} {resolve.data}"
+    assert resolve.status_code == 200, (
+        f"Resolve failed: {resolve.status_code} {resolve.data}"
+    )
     print(f"  [PASS] Alert resolve: id={alert_id}")
 
 
@@ -308,9 +308,9 @@ def test_user_role_type_validation(token):
                 **bad_role,
             },
         )
-        assert (
-            r.status_code == 400
-        ), f"role={bad_role['role']!r} expected 400 got {r.status_code} {r.data}"
+        assert r.status_code == 400, (
+            f"role={bad_role['role']!r} expected 400 got {r.status_code} {r.data}"
+        )
     print("  [PASS] User create with invalid role type returns 400 (not 500)")
 
 
@@ -336,9 +336,9 @@ def test_webui_pages(token):
 
 def test_openapi_yaml_not_under_static():
     r = client.get("/static/openapi.yaml")
-    assert (
-        r.status_code == 404
-    ), "openapi.yaml must NOT be served from /static/ (security: SWAGGER_ENABLED gate)"
+    assert r.status_code == 404, (
+        "openapi.yaml must NOT be served from /static/ (security: SWAGGER_ENABLED gate)"
+    )
     print("  [PASS] /static/openapi.yaml correctly returns 404 (not in static dir)")
 
 
@@ -348,9 +348,9 @@ def _login_as(username: str, password: str) -> str:
         "/api/auth/login",
         data={"username": username, "password": password},
     )
-    assert (
-        r.status_code == 200
-    ), f"login failed for {username}: {r.status_code} {r.data}"
+    assert r.status_code == 200, (
+        f"login failed for {username}: {r.status_code} {r.data}"
+    )
     return json.loads(r.data)["token"]
 
 
@@ -378,9 +378,9 @@ def test_rbac_role_matrix(token):
                 token=token,
                 data={"username": username, "password": password, "role": role},
             )
-            assert (
-                r.status_code == 201
-            ), f"create {role} failed: {r.status_code} {r.data}"
+            assert r.status_code == 201, (
+                f"create {role} failed: {r.status_code} {r.data}"
+            )
 
         op_token = _login_as(op_username, op_password)
         viewer_token = _login_as(viewer_username, viewer_password)
@@ -590,9 +590,9 @@ def test_template_role_classes_present(token):
     )
     with open(pc_detail_path, encoding="utf-8") as f:
         pc_detail_body = f.read()
-    assert (
-        "role-operator-or-admin" in pc_detail_body
-    ), "pc_detail.html should contain role-operator-or-admin (タスク実行ボタン)"
+    assert "role-operator-or-admin" in pc_detail_body, (
+        "pc_detail.html should contain role-operator-or-admin (タスク実行ボタン)"
+    )
     print("  [PASS] 各ページ (pc_detail 含む) に role-* クラスが含まれる")
 
 
@@ -714,9 +714,9 @@ def test_alert_rule_channel_type_validation(token):
             "channel_type": "xmpp",
         },
     )
-    assert (
-        bad.status_code == 400
-    ), f"unknown channel_type should be 400 got {bad.status_code}"
+    assert bad.status_code == 400, (
+        f"unknown channel_type should be 400 got {bad.status_code}"
+    )
 
     ok = request(
         "POST",
@@ -777,9 +777,9 @@ def test_metrics_endpoint_format(token):
     )
     for series in always_sampled:
         sample_re = rf"^{re.escape(series)}(\{{[^}}]*\}})?\s+\d"
-        assert re.search(
-            sample_re, body, re.MULTILINE
-        ), f"no sample line for {series} (only TYPE comment matched?)"
+        assert re.search(sample_re, body, re.MULTILINE), (
+            f"no sample line for {series} (only TYPE comment matched?)"
+        )
     # 最後に改行で終わる
     assert body.endswith("\n")
     print("  [PASS] /api/metrics の Prometheus 形式が正しい (サンプル行も検証)")
@@ -856,9 +856,9 @@ def test_ratelimit_error_handler_via_public_api():
     with app.test_request_context("/login"):
         status, payload = _normalize(app.handle_user_exception(fake_exc()))
     assert status == 429
-    assert (
-        "<html" in payload.lower() or "<!doctype" in payload.lower()
-    ), "HTML route should render the error.html template"
+    assert "<html" in payload.lower() or "<!doctype" in payload.lower(), (
+        "HTML route should render the error.html template"
+    )
 
     hits = metrics_mod.counter_value("ratelimit_hits_total")
     assert hits == 2, f"counter should be incremented for both calls, got {hits}"
@@ -881,9 +881,9 @@ def test_swagger_disabled_returns_404():
     with gated_app.test_client() as gated_client:
         for path in ("/api/docs/", "/api/openapi.yaml", "/static/openapi.yaml"):
             r = gated_client.get(path)
-            assert (
-                r.status_code == 404
-            ), f"{path} should be 404 when SWAGGER_ENABLED=false, got {r.status_code}"
+            assert r.status_code == 404, (
+                f"{path} should be 404 when SWAGGER_ENABLED=false, got {r.status_code}"
+            )
     print("  [PASS] SWAGGER_ENABLED=false hides docs and openapi spec")
 
 
@@ -956,9 +956,9 @@ def test_create_scheduled_task(token):
         "is_enabled": True,
     }
     r = request("POST", "/api/scheduled-tasks", token=token, data=body)
-    assert (
-        r.status_code == 201
-    ), f"Create scheduled task failed: {r.status_code} {r.data}"
+    assert r.status_code == 201, (
+        f"Create scheduled task failed: {r.status_code} {r.data}"
+    )
     data = json.loads(r.data)
     assert "scheduled_task" in data
     st = data["scheduled_task"]

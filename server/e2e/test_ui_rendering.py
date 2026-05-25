@@ -119,9 +119,9 @@ def test_toast_container_in_dom(page_with_login, live_server):
     p = page_with_login
     p.goto(f"{live_server}/", wait_until="domcontentloaded")
     p.wait_for_load_state("domcontentloaded", timeout=8000)
-    assert (
-        p.locator("#toast-container").count() == 1
-    ), "#toast-container must be present"
+    assert p.locator("#toast-container").count() == 1, (
+        "#toast-container must be present"
+    )
 
 
 def test_sidebar_title_text(page_with_login, live_server):
@@ -139,17 +139,17 @@ def test_main_content_area_exists(page_with_login, live_server):
     for path, _ in PAGES:
         p.goto(f"{live_server}{path}", wait_until="domcontentloaded")
         p.wait_for_load_state("domcontentloaded", timeout=8000)
-        assert (
-            p.locator(".main-content").count() > 0
-        ), f".main-content missing on {path}"
+        assert p.locator(".main-content").count() > 0, (
+            f".main-content missing on {path}"
+        )
 
 
 def test_login_page_no_sidebar(page, live_server):
     """Login page must NOT render the sidebar."""
     page.goto(f"{live_server}/login", wait_until="domcontentloaded")
-    assert (
-        page.locator(".sidebar").count() == 0
-    ), "Sidebar must not appear on login page"
+    assert page.locator(".sidebar").count() == 0, (
+        "Sidebar must not appear on login page"
+    )
 
 
 def test_static_css_loads(page, live_server):

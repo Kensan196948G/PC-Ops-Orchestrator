@@ -51,9 +51,9 @@ def test_theme_persists_across_reload(page_with_login, live_server):
     # so the CDN-hosted Chart.js cannot stall this navigation either.
     p.reload(wait_until="domcontentloaded")
     after_reload = p.evaluate("document.documentElement.getAttribute('data-theme')")
-    assert (
-        after_reload == expected
-    ), f"theme did not persist: chose {expected}, got {after_reload} after reload"
+    assert after_reload == expected, (
+        f"theme did not persist: chose {expected}, got {after_reload} after reload"
+    )
 
 
 def test_theme_aria_pressed_updates(page_with_login, live_server):

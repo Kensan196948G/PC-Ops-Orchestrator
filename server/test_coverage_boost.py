@@ -348,9 +348,9 @@ def test_csp_style_src_no_unsafe_inline():
     style_src_match = re.search(r"style-src\s+([^;]+)", csp)
     if style_src_match:
         style_src = style_src_match.group(1)
-        assert (
-            "'unsafe-inline'" not in style_src
-        ), f"CSP style-src must NOT contain 'unsafe-inline' (Phase 3 complete): {style_src!r}"
+        assert "'unsafe-inline'" not in style_src, (
+            f"CSP style-src must NOT contain 'unsafe-inline' (Phase 3 complete): {style_src!r}"
+        )
 
 
 def test_x_content_type_options_header():

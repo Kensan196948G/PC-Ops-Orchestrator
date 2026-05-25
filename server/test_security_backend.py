@@ -139,9 +139,9 @@ class TestJwtAuthentication:
         }
         expired_token = jwt.encode(payload, secret, algorithm="HS256")
         r = _json_request("GET", "/api/auth/me", token=expired_token)
-        assert (
-            r.status_code == 401
-        ), f"expected 401 for expired token, got {r.status_code}"
+        assert r.status_code == 401, (
+            f"expected 401 for expired token, got {r.status_code}"
+        )
         print("  [PASS] 151: expired token returns 401")
 
     def test_wrong_signature_returns_401(self):
@@ -155,9 +155,9 @@ class TestJwtAuthentication:
         }
         bad_token = jwt.encode(payload, "totally-wrong-secret", algorithm="HS256")
         r = _json_request("GET", "/api/auth/me", token=bad_token)
-        assert (
-            r.status_code == 401
-        ), f"expected 401 for wrong-signature token, got {r.status_code}"
+        assert r.status_code == 401, (
+            f"expected 401 for wrong-signature token, got {r.status_code}"
+        )
         print("  [PASS] 151: wrong-signature token returns 401")
 
 
@@ -185,9 +185,9 @@ class TestPrivilegeEscalation:
             viewer_token = json.loads(r_login.data)["token"]
 
             r = _json_request("GET", "/api/auth/users", token=viewer_token)
-            assert (
-                r.status_code == 403
-            ), f"viewer should be forbidden from user list, got {r.status_code}"
+            assert r.status_code == 403, (
+                f"viewer should be forbidden from user list, got {r.status_code}"
+            )
             print("  [PASS] 158: viewer cannot list users (403)")
         finally:
             _delete_user(admin_token, viewer_id)
@@ -219,9 +219,9 @@ class TestPrivilegeEscalation:
                     "role": "admin",
                 },
             )
-            assert (
-                r.status_code == 403
-            ), f"viewer should be forbidden from creating users, got {r.status_code}"
+            assert r.status_code == 403, (
+                f"viewer should be forbidden from creating users, got {r.status_code}"
+            )
             print("  [PASS] 158: viewer cannot create user (403)")
         finally:
             _delete_user(admin_token, viewer_id)
@@ -338,9 +338,9 @@ class TestIdor:
 
             # Attempt to read admin's user details via the admin-only user list
             r = _json_request("GET", "/api/auth/users", token=viewer_token)
-            assert (
-                r.status_code == 403
-            ), f"viewer should not access user list (IDOR), got {r.status_code}"
+            assert r.status_code == 403, (
+                f"viewer should not access user list (IDOR), got {r.status_code}"
+            )
             print("  [PASS] 159: viewer cannot access user list (IDOR guard, 403)")
         finally:
             _delete_user(admin_token, viewer_id)
@@ -435,12 +435,12 @@ class TestSensitiveDataLeakage:
         )
         assert r.status_code == 200
         raw = r.data.decode("utf-8")
-        assert (
-            "password_hash" not in raw
-        ), "login response must not contain password_hash"
-        assert (
-            "pbkdf2" not in raw.lower()
-        ), "login response must not contain raw pbkdf2 hash"
+        assert "password_hash" not in raw, (
+            "login response must not contain password_hash"
+        )
+        assert "pbkdf2" not in raw.lower(), (
+            "login response must not contain raw pbkdf2 hash"
+        )
         print("  [PASS] 166: login response does not expose password_hash")
 
     def test_user_list_does_not_expose_password_hash(self):
@@ -465,12 +465,12 @@ class TestSensitiveDataLeakage:
         """A 404 response must not include Python traceback details."""
         r = client.get("/api/nonexistent-endpoint-zzz")
         raw = r.data.decode("utf-8")
-        assert (
-            "Traceback" not in raw
-        ), "error response must not contain Python traceback"
-        assert (
-            "File " not in raw or r.status_code != 500
-        ), "500 response must not expose stack traces"
+        assert "Traceback" not in raw, (
+            "error response must not contain Python traceback"
+        )
+        assert "File " not in raw or r.status_code != 500, (
+            "500 response must not expose stack traces"
+        )
         print("  [PASS] 166: error response does not leak traceback")
 
 
@@ -561,9 +561,9 @@ class TestSecurityHeaders:
         token = _admin_token()
         r = self._check_headers("/api/dashboard/stats", token=token)
         ct = r.headers.get("Content-Type", "")
-        assert (
-            "application/json" in ct
-        ), f"expected application/json Content-Type, got {ct!r}"
+        assert "application/json" in ct, (
+            f"expected application/json Content-Type, got {ct!r}"
+        )
         print("  [PASS] 170: JSON API response has correct Content-Type")
 
     def test_x_content_type_options_present(self):
@@ -603,9 +603,9 @@ class TestSecurityHeaders:
         r = client.get("/health")
         val = r.headers.get("Referrer-Policy", "")
         assert val, "Referrer-Policy header missing"
-        assert (
-            "strict-origin" in val or "no-referrer" in val
-        ), f"weak Referrer-Policy: {val!r}"
+        assert "strict-origin" in val or "no-referrer" in val, (
+            f"weak Referrer-Policy: {val!r}"
+        )
         print(f"  [PASS] 170: Referrer-Policy: {val}")
 
     def test_x_xss_protection_present(self):
@@ -625,9 +625,9 @@ class TestSecurityHeaders:
         # must NOT be allowed by CSP. This guards against accidental reintroduction
         # of cdn.jsdelivr.net which previously caused .js.map fetches to be blocked
         # by connect-src 'self' and froze the /agents page.
-        assert (
-            "cdn.jsdelivr.net" not in val
-        ), f"CSP must not allow cdn.jsdelivr.net (Chart.js is self-hosted): {val!r}"
+        assert "cdn.jsdelivr.net" not in val, (
+            f"CSP must not allow cdn.jsdelivr.net (Chart.js is self-hosted): {val!r}"
+        )
         print("  [PASS] 170: Content-Security-Policy present and well-formed")
 
     def test_csp_script_src_uses_nonce_not_unsafe_inline(self):
@@ -646,12 +646,12 @@ class TestSecurityHeaders:
                 script_src = directive
                 break
         assert script_src, f"No script-src directive in CSP: {val!r}"
-        assert (
-            "nonce-" in script_src
-        ), f"CSP script-src must contain nonce-<token>: {script_src!r}"
-        assert (
-            "'unsafe-inline'" not in script_src
-        ), f"CSP script-src must NOT contain 'unsafe-inline' (Phase 2 complete): {script_src!r}"
+        assert "nonce-" in script_src, (
+            f"CSP script-src must contain nonce-<token>: {script_src!r}"
+        )
+        assert "'unsafe-inline'" not in script_src, (
+            f"CSP script-src must NOT contain 'unsafe-inline' (Phase 2 complete): {script_src!r}"
+        )
         print(
             "  [PASS] CSP script-src uses nonce, no 'unsafe-inline' (Phase 2 CSP hardening)"
         )
@@ -671,9 +671,9 @@ class TestSecurityHeaders:
                 style_src = directive
                 break
         assert style_src, f"No style-src directive in CSP: {val!r}"
-        assert (
-            "'unsafe-inline'" not in style_src
-        ), f"CSP style-src must NOT contain 'unsafe-inline' (Phase 3 complete): {style_src!r}"
+        assert "'unsafe-inline'" not in style_src, (
+            f"CSP style-src must NOT contain 'unsafe-inline' (Phase 3 complete): {style_src!r}"
+        )
         print("  [PASS] CSP style-src has no 'unsafe-inline' (Phase 3 CSP hardening)")
 
     def test_no_inline_style_in_templates(self):
@@ -706,9 +706,9 @@ class TestSecurityHeaders:
         val = r.headers.get("Permissions-Policy", "")
         assert val, "Permissions-Policy header missing"
         # Geolocation/camera/microphone should be disabled by default.
-        assert (
-            "geolocation=()" in val
-        ), f"Permissions-Policy must disable geolocation: {val!r}"
+        assert "geolocation=()" in val, (
+            f"Permissions-Policy must disable geolocation: {val!r}"
+        )
         print(f"  [PASS] 170: Permissions-Policy: {val}")
 
     def test_hsts_present_in_production_only(self):
@@ -720,9 +720,9 @@ class TestSecurityHeaders:
         r = client.get("/health")
         # The default test app uses 'testing' config, so HSTS must be absent.
         val = r.headers.get("Strict-Transport-Security", "")
-        assert (
-            not val
-        ), f"HSTS should NOT be set under non-production config, got {val!r}"
+        assert not val, (
+            f"HSTS should NOT be set under non-production config, got {val!r}"
+        )
         print("  [PASS] 170: HSTS correctly absent under non-production config")
 
 
@@ -782,9 +782,9 @@ class TestSqlInjection:
         token = _admin_token()
         for payload in self._SQL_PAYLOADS:
             r = _json_request("GET", f"/api/pcs?search={payload}", token=token)
-            assert (
-                r.status_code != 500
-            ), f"SQL injection in search param caused 500: {r.data}"
+            assert r.status_code != 500, (
+                f"SQL injection in search param caused 500: {r.data}"
+            )
             # 200 with empty results or 400 are both acceptable
             assert r.status_code in (
                 200,
@@ -808,9 +808,9 @@ class TestSqlInjection:
                     "role": "viewer",
                 },
             )
-            assert (
-                r.status_code != 500
-            ), f"SQL injection in username creation caused 500: {r.data}"
+            assert r.status_code != 500, (
+                f"SQL injection in username creation caused 500: {r.data}"
+            )
         print("  [PASS] 141: SQL injection in username creation does not cause 500")
 
     def test_api_key_name_sql_injection(self):
@@ -823,9 +823,9 @@ class TestSqlInjection:
                 token=token,
                 data={"name": payload},
             )
-            assert (
-                r.status_code != 500
-            ), f"SQL injection in api key name caused 500: {r.data}"
+            assert r.status_code != 500, (
+                f"SQL injection in api key name caused 500: {r.data}"
+            )
         print("  [PASS] 141: SQL injection in api key name does not cause 500")
 
     def test_settings_rejects_unknown_keys(self):
@@ -837,7 +837,7 @@ class TestSqlInjection:
             token=token,
             data={"__proto__": "polluted", "constructor": "evil"},
         )
-        assert (
-            r.status_code == 400
-        ), f"Unknown settings keys should return 400, got {r.status_code}: {r.data}"
+        assert r.status_code == 400, (
+            f"Unknown settings keys should return 400, got {r.status_code}: {r.data}"
+        )
         print("  [PASS] Settings endpoint rejects unknown/prototype pollution keys")
