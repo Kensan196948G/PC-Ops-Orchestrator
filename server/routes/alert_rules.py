@@ -6,7 +6,7 @@ from flask import Blueprint, jsonify, request
 
 from auth import admin_required, log_operation, login_required
 from extensions import db, limiter
-from models import AlertRule
+from models import Alert, AlertRule, PC, SystemSnapshot
 from notify import ALLOWED_CHANNEL_TYPES, dispatch_via_rule
 
 logger = logging.getLogger(__name__)
@@ -244,3 +244,56 @@ def test_notify(rule_id):
     )
 
     return jsonify({"message": "テスト通知を送信しました", "results": results})
+
+
+@alert_rules_bp.route("/alert-rules/<int:rule_id>/evaluate", methods=["POST"])
+@limiter.limit("30 per minute")
+@admin_required
+def evaluate_alert_rule(rule_id):
+    """POST /api/alert-rules/<id>/evaluate — immediately evaluate one rule against all PCs."""
+    rule = db.session.get(AlertRule, rule_id)
+    if not rule:
+        return jsonify({"error": f"アラートルール {rule_id} が見つかりません"}), 404
+
+    from scheduler import _OPERATOR_FNS, _OFFLINE_THRESHOLD_MINUTES, _get_metric_value
+
+    pcs = PC.query.all()
+    created = 0
+    for pc in pcs:
+        fn = _OPERATOR_FNS.get(rule.operator)
+        if fn is None:
+            continue
+        value = _get_metric_value(pc, rule.metric, SystemSnapshot)
+        if value is None:
+            continue
+        threshold = (
+            rule.threshold if rule.threshold is not None else _OFFLINE_THRESHOLD_MINUTES
+        )
+        if not fn(value, threshold):
+            continue
+        source_key = f"rule:{rule.id}:pc:{pc.id}"
+        if Alert.query.filter_by(source_key=source_key, resolved=False).first():
+            continue
+        db.session.add(
+            Alert(
+                pc_id=pc.id,
+                alert_rule_id=rule.id,
+                alert_type=f"rule_{rule.metric}",
+                severity=rule.severity or "warning",
+                message=(
+                    f"[手動評価] {pc.pc_name}: {rule.metric} "
+                    f"{rule.operator} {threshold} (現在値: {round(value, 2)})"
+                ),
+                source_key=source_key,
+            )
+        )
+        created += 1
+    if created:
+        db.session.commit()
+
+    log_operation(
+        "evaluate_alert_rule",
+        f"rule:{rule_id}",
+        f"alerts_created={created}",
+    )
+    return jsonify({"rule_id": rule_id, "alerts_created": created})

@@ -32,7 +32,8 @@
     "phase_e3": "PR #268 MERGED 2026-05-25 — CollectionPolicy CRUD (Issue #248) 本番投入完了",
     "phase_e4": "PR #269 MERGED 2026-05-25 — Windows Release Health RSS sync (Issue #249) 本番投入完了",
     "phase_e5": "PR #272 MERGED 2026-05-25 — Root Cause Analysis endpoint (Issue #251) 本番投入完了",
-    "phase_e6": "PR #273 OPEN 2026-05-25 — Microsoft Graph Windows Updates sync (Issue #250) CI待機中"
+    "phase_e6": "PR #273 MERGED 2026-05-25 — Microsoft Graph Windows Updates sync (Issue #250) 本番投入完了",
+    "phase_f1": "PR #276 MERGED 2026-05-25 — PC稼働率トラッキング UptimeLog (Issue #274) 本番投入完了"
   },
   "kpi": {
     "ci_success_rate": 1,
@@ -55,9 +56,7 @@
   "status": {
     "current_phase": "improve",
     "stable": true,
-    "pending_prs": [
-      273
-    ],
+    "pending_prs": [],
     "merged_prs": [
       36,
       38,
@@ -113,7 +112,9 @@
       263,
       268,
       269,
-      272
+      272,
+      273,
+      276
     ]
   },
   "priority": {
