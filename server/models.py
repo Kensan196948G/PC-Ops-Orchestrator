@@ -1256,3 +1256,39 @@ class CollectionPolicy(db.Model):
 
     def __repr__(self) -> str:
         return f"<CollectionPolicy group={self.group_id} metric={self.metric_type} freq={self.frequency_minutes}m>"
+
+
+class UptimeLog(db.Model):
+    """PC uptime / availability tracking (Issue #274)."""
+
+    __tablename__ = "uptime_logs"
+
+    STATUS_CHOICES = ("online", "offline", "unknown")
+
+    id = db.Column(db.Integer, primary_key=True)
+    pc_id = db.Column(
+        db.Integer,
+        db.ForeignKey("pcs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    status = db.Column(db.String(16), nullable=False, default="online")
+    recorded_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        index=True,
+    )
+
+    pc = db.relationship("PC", backref=db.backref("uptime_logs", lazy="dynamic"))
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "pc_id": self.pc_id,
+            "status": self.status,
+            "recorded_at": self.recorded_at.isoformat() if self.recorded_at else None,
+        }
+
+    def __repr__(self) -> str:
+        return f"<UptimeLog pc={self.pc_id} status={self.status} at={self.recorded_at}>"

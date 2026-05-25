@@ -16,6 +16,7 @@ from models import (
     AlertRule,
     Alert,
     NetworkInterface,
+    UptimeLog,
     get_event_category,
 )
 from auth import agent_auth_required
@@ -108,6 +109,7 @@ def collect():
     _trim_snapshots(pc.id, keep=720)
 
     _determine_pc_status(pc)
+    db.session.add(UptimeLog(pc_id=pc.id, status="online"))
     db.session.commit()
 
     tasks = _get_pending_tasks(pc.id)
