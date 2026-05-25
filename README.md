@@ -260,6 +260,7 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | 🌐 ネットワーク疎通監視 | ping/DNS/VPN/WiFi の接続チェック結果履歴・集計・バッチ投入（Phase E-2） |
 | 🔍 類似事象拡張検索 | OS バージョン別・サブネット別(/24)の集約パターン分析（Phase E-3） |
 | 📋 収集ポリシー管理 | PC グループ別の収集対象メトリクス・頻度設定 CRUD、有効ポリシー解決（グループ > グローバル > デフォルト）（Phase E-3） |
+| 🌐 Windows Release Health 連携 | Microsoft Windows Release Health RSS フィードを取込し KnownIssue へ upsert（Phase E-4） |
 
 ---
 
@@ -335,6 +336,8 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | PUT | `/api/collection-policies/<id>` | JWT | 収集ポリシー更新（部分更新対応） (Phase E-3) |
 | DELETE | `/api/collection-policies/<id>` | JWT | 収集ポリシー削除 (Phase E-3) |
 | GET | `/api/collection-policies/effective/<pc_id>` | JWT | PC の有効ポリシー解決（グループ > グローバル > デフォルト 60m）(Phase E-3) |
+| POST | `/api/integration/windows-release-health/sync` | JWT | Windows Release Health RSS → KnownIssue upsert (Phase E-4) |
+| GET | `/api/integration/windows-release-health/issues` | JWT | RSS 取込済み KnownIssue 一覧（?active=true/false/all）(Phase E-4) |
 | GET/POST | `/api/alert-rules` | JWT | アラートルール一覧・作成 |
 | GET/PUT/DELETE | `/api/alert-rules/<id>` | JWT | ルール詳細・更新・削除 |
 | POST | `/api/alert-rules/<id>/toggle` | JWT | ルール有効/無効切替 |
@@ -742,7 +745,8 @@ gantt
 | 🐛 **PR #256** | **modal 表示バグ修正** — `.open` トグル統一 | ✅ MERGED | 4ページ modal 常時表示バグ解消 |
 | 🔁 **PR #257** | **Phase E-1** — BootTimeLog + NetworkPingLog + similar-issues 拡張 (#244 #245 #246) | ✅ MERGED | 39 tests / boot-analysis + network-status + OS/subnet 集約 |
 | 📈 **PR #263** | **Phase E-2** — AppResponseLog + Trends + Auto-Incident (#247 #252 #253) | ✅ MERGED | app-response + trends/notify + incidents/auto-file |
-| 📋 **PR #268** | **Phase E-3** — CollectionPolicy CRUD API (Issue #248) | 🔄 CI 中 | 24 tests / 6 endpoints + effective policy resolver |
+| 📋 **PR #268** | **Phase E-3** — CollectionPolicy CRUD API (Issue #248) | ✅ MERGED | 24 tests / 6 endpoints + effective policy resolver |
+| 🌐 **PR #269** | **Phase E-4** — Windows Release Health RSS sync (Issue #249) | 🔄 CI 中 | 13 tests / 2 endpoints + RSS/Atom upsert |
 
 ---
 
@@ -750,7 +754,7 @@ gantt
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| **API 拡張テスト（Python）** | **1182項目** | **✅ PASS** |
+| **API 拡張テスト（Python）** | **1195項目** | **✅ PASS** |
 | **WebUI E2E テスト（Playwright）** | **121項目** | **✅ PASS** |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |
