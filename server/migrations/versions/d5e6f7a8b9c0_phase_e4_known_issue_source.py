@@ -23,7 +23,9 @@ def upgrade() -> None:
     if "source" not in cols:
         op.add_column(
             "known_issues",
-            sa.Column("source", sa.String(64), nullable=False, server_default="internal"),
+            sa.Column(
+                "source", sa.String(64), nullable=False, server_default="internal"
+            ),
         )
     if "external_id" not in cols:
         op.add_column(
