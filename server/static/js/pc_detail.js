@@ -1,6 +1,8 @@
 let historyChart = null;
+let uptimeChart = null;
 let _snapshotsCache = [];
 let _historyRendered = false;
+let _uptimeRendered = false;
 
 const STATUS_MAP = {
     healthy:   ['status-healthy',   '正常'],
@@ -147,6 +149,76 @@ function activateTab(name) {
         renderHistoryChart(_snapshotsCache);
         _historyRendered = true;
     }
+    if (name === 'uptime' && !_uptimeRendered) {
+        loadAndRenderUptime();
+        _uptimeRendered = true;
+    }
+}
+
+async function loadAndRenderUptime() {
+    if (typeof PC_ID === 'undefined' || !PC_ID) return;
+    try {
+        const data = await apiFetch(`/pcs/${PC_ID}/uptime?days=30`);
+        renderUptimeKPIs(data);
+        renderUptimeChart(data.history || []);
+    } catch (e) {
+        console.error('Uptime fetch error:', e);
+    }
+}
+
+function renderUptimeKPIs(data) {
+    const pctEl = document.getElementById('uptime-stat-pct');
+    const sampleEl = document.getElementById('uptime-stat-sample');
+    const downtimeEl = document.getElementById('uptime-stat-downtime');
+    if (pctEl) {
+        pctEl.firstChild && (pctEl.firstChild.nodeValue =
+            data.uptime_pct !== null && data.uptime_pct !== undefined
+                ? String(data.uptime_pct) : '—');
+    }
+    if (sampleEl) sampleEl.textContent = `サンプル数: ${data.sample_count ?? 0}`;
+    if (downtimeEl) {
+        downtimeEl.firstChild && (downtimeEl.firstChild.nodeValue =
+            data.downtime_minutes !== null && data.downtime_minutes !== undefined
+                ? String(data.downtime_minutes) : '—');
+    }
+}
+
+function renderUptimeChart(history) {
+    const canvas = document.getElementById('uptimeChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (uptimeChart) uptimeChart.destroy();
+    if (history.length === 0) return;
+
+    const ordered = [...history].reverse();
+    const labels = ordered.map(h => fmtDateTime(h.recorded_at));
+    const data = ordered.map(h => h.status === 'online' ? 1 : 0);
+
+    uptimeChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'オンライン状態 (1=online, 0=offline)',
+                data,
+                borderColor: '#2ed573',
+                backgroundColor: 'rgba(46,213,115,0.15)',
+                fill: true,
+                stepped: true,
+                pointRadius: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top', labels: { color: '#8b8fa3', font: { size: 11 } } }
+            },
+            scales: {
+                x: { ticks: { color: '#8b8fa3', maxTicksLimit: 10, font: { size: 10 } }, grid: { color: '#2d3248' } },
+                y: { beginAtZero: true, max: 1, ticks: { color: '#8b8fa3', stepSize: 1, font: { size: 10 } }, grid: { color: '#2d3248' } }
+            }
+        }
+    });
 }
 
 function renderPCInfo(pc) {

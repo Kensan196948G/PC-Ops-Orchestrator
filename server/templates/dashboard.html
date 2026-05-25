@@ -208,6 +208,30 @@
     </div>
 </div>
 
+<!-- Uptime ranking — UptimeLog ベースの稼働率ワースト 5 -->
+<div class="card card-framed mb-lg">
+    <div class="card-header">
+        <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            稼働率ランキング (ワースト 5・過去 30日)
+        </div>
+        <span class="card-subtitle" id="uptime-ranking-count">—</span>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>PC名</th>
+                <th>稼働率</th>
+                <th>ダウンタイム (分)</th>
+                <th>サンプル数</th>
+            </tr>
+        </thead>
+        <tbody id="uptime-ranking-body">
+            <tr><td colspan="4" class="text-center">読み込み中...</td></tr>
+        </tbody>
+    </table>
+</div>
+
 <!-- Active alerts -->
 <div class="card card-framed mb-lg">
     <div class="card-header">

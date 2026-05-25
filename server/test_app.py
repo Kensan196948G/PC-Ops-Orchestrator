@@ -51,6 +51,28 @@ def test_simple_template_routes_render(client, path):
     assert resp.status_code == 200
 
 
+def test_dashboard_contains_uptime_ranking_widget(client):
+    """Phase G-2 (Issue #281): dashboard.html に稼働率ランキングウィジェットが存在する."""
+    resp = client.get("/")
+    assert resp.status_code == 200
+    body = resp.data.decode("utf-8")
+    assert "稼働率ランキング" in body
+    assert 'id="uptime-ranking-body"' in body
+    assert 'id="uptime-ranking-count"' in body
+
+
+def test_pc_detail_contains_uptime_tab(client):
+    """Phase G-2 (Issue #281): pc_detail.html に「稼働率」タブが存在する."""
+    resp = client.get("/pcs/1")
+    assert resp.status_code == 200
+    body = resp.data.decode("utf-8")
+    assert 'data-tab="uptime"' in body
+    assert 'id="tab-uptime"' in body
+    assert 'id="uptimeChart"' in body
+    assert 'id="uptime-stat-pct"' in body
+    assert 'id="uptime-stat-downtime"' in body
+
+
 def test_health_endpoint_ok(client):
     """/health の成功パス (try ブロック)."""
     resp = client.get("/health")
