@@ -27,9 +27,10 @@
     }
   },
   "phase": {
-    "current": "verify",
+    "current": "build",
     "week": 4,
-    "phase_e3": "PR #268 MERGED 2026-05-25 — CollectionPolicy CRUD (Issue #248) 本番投入完了"
+    "phase_e3": "PR #268 MERGED 2026-05-25 — CollectionPolicy CRUD (Issue #248) 本番投入完了",
+    "phase_e4": "PR #269 MERGED 2026-05-25 — Windows Release Health RSS sync (Issue #249) 本番投入完了"
   },
   "kpi": {
     "ci_success_rate": 1,
@@ -43,7 +44,7 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-25T10:59:45.309Z",
+    "current_session_start_at": "2026-05-25T11:12:37.755Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "cron",
     "last_cron_session_id": "20260525-190001-PC-Ops-Orchestrator",
@@ -52,7 +53,7 @@
   "status": {
     "current_phase": "improve",
     "stable": true,
-    "pending_prs": [],
+    "pending_prs": [270],
     "merged_prs": [
       136,
       36,
@@ -106,7 +107,8 @@
       256,
       257,
       263,
-      268
+      268,
+      269
     ]
   },
   "priority": {
@@ -183,7 +185,9 @@
       263,
       268
     ],
-    "pending_prs": [268],
+    "pending_prs": [
+      268
+    ],
     "closed_issues_this_session": [
       244,
       245,
@@ -262,7 +266,7 @@
     }
   },
   "compact": {
-    "last_pre_compact_at": "2026-05-25T10:58:14.109Z"
+    "last_pre_compact_at": "2026-05-25T11:11:05.448Z"
   },
   "dreaming": {
     "patterns": [],
