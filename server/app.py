@@ -274,6 +274,10 @@ def create_app(config_name=None):
     def notification_logs_page():
         return render_template("notification_logs.html")
 
+    @app.route("/windows-release-health")
+    def windows_release_health_page():
+        return render_template("windows_release_health.html")
+
     @app.route("/health")
     def health():
         try:

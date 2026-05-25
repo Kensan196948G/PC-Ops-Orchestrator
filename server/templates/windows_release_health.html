@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Windows Release Health{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">Windows Release Health</h2>
+    <div class="page-actions">
+        <select id="wrh-active-filter" class="form-input">
+            <option value="true">アクティブのみ</option>
+            <option value="false">解決済みのみ</option>
+            <option value="all">すべて</option>
+        </select>
+        <button class="btn btn-secondary" id="btn-wrh-refresh">&#8635; 再読込</button>
+        <button class="btn btn-primary role-admin" id="btn-wrh-sync">RSS 同期</button>
+    </div>
+</div>
+
+<div class="kpi-grid mb-lg">
+    <div class="kpi info">
+        <div class="kpi-head"><span class="kpi-label">取得件数</span></div>
+        <div class="kpi-value" id="wrh-stat-total">—<small>件</small></div>
+        <div class="kpi-delta neutral" id="wrh-stat-source">source: windows_release_health</div>
+    </div>
+    <div class="kpi warning">
+        <div class="kpi-head"><span class="kpi-label">最終同期</span></div>
+        <div class="kpi-value"><span id="wrh-stat-last-sync">—</span></div>
+        <div class="kpi-delta neutral">RSS から取り込み</div>
+    </div>
+</div>
+
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>タイトル</th>
+                <th>KB ID</th>
+                <th>影響範囲 (OS)</th>
+                <th>重大度</th>
+                <th>登録日時</th>
+            </tr>
+        </thead>
+        <tbody id="wrh-issues-body">
+            <tr><td colspan="5" class="text-center">読み込み中...</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/windows_release_health.js"></script>
+{% endblock %}
