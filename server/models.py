@@ -1022,6 +1022,9 @@ class KnownIssue(db.Model):
     affected_models = db.Column(db.Text)
     severity = db.Column(db.String(32), default="medium")
     is_active = db.Column(db.Boolean, default=True)
+    # Phase E-4: external source tracking for RSS-imported issues
+    source = db.Column(db.String(64), nullable=False, default="internal", index=True)
+    external_id = db.Column(db.String(512), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
@@ -1045,6 +1048,8 @@ class KnownIssue(db.Model):
             else [],
             "severity": self.severity,
             "is_active": self.is_active,
+            "source": self.source,
+            "external_id": self.external_id,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
