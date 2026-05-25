@@ -1283,7 +1283,9 @@ class UptimeLog(db.Model):
         index=True,
     )
 
-    pc = db.relationship("PC", backref=db.backref("uptime_logs", lazy="dynamic"))
+    pc = db.relationship(
+        "PC", backref=db.backref("uptime_logs", lazy="dynamic", passive_deletes=True)
+    )
 
     def to_dict(self) -> dict:
         return {
