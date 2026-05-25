@@ -1,11 +1,14 @@
 import csv
 import io
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, make_response, request
 from sqlalchemy import case
 from auth import login_required
 from extensions import db
-from models import PC, SystemSnapshot, Task
+from models import PC, NetworkPingLog, SystemSnapshot, Task
+
+VALID_CHECK_TYPES = {"ping", "dns", "vpn", "wifi"}
+VALID_STATUSES = {"ok", "timeout", "error", "unreachable"}
 
 agents_bp = Blueprint("agents", __name__, url_prefix="/api")
 
@@ -222,3 +225,112 @@ def list_agents():
             "pages": pagination.pages,
         }
     )
+
+
+@agents_bp.route("/agents/<int:pc_id>/network-status", methods=["GET"])
+@login_required
+def get_network_status(pc_id):
+    """GET /api/agents/<pc_id>/network-status — latest connectivity checks (Issue #246)."""
+    pc = db.session.get(PC, pc_id)
+    if pc is None:
+        return jsonify({"error": "PC not found"}), 404
+
+    hours = request.args.get("hours", 24, type=int)
+    check_type = request.args.get("check_type", "")
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+
+    q = NetworkPingLog.query.filter(
+        NetworkPingLog.pc_id == pc_id,
+        NetworkPingLog.checked_at >= cutoff,
+    )
+    if check_type and check_type in VALID_CHECK_TYPES:
+        q = q.filter(NetworkPingLog.check_type == check_type)
+    logs = q.order_by(NetworkPingLog.checked_at.desc()).limit(200).all()
+
+    # Latest record per check_type
+    latest: dict[str, dict] = {}
+    for log in reversed(logs):
+        latest[log.check_type] = log.to_dict()
+
+    # Summary: count ok/error per type
+    summary: dict[str, dict] = {}
+    for log in logs:
+        s = summary.setdefault(log.check_type, {"ok": 0, "error": 0, "total": 0})
+        s["total"] += 1
+        if log.status == "ok":
+            s["ok"] += 1
+        else:
+            s["error"] += 1
+
+    return jsonify(
+        {
+            "pc_id": pc.id,
+            "pc_name": pc.pc_name,
+            "hours": hours,
+            "latest": latest,
+            "summary": summary,
+            "records": [log.to_dict() for log in logs],
+        }
+    )
+
+
+@agents_bp.route("/agents/<int:pc_id>/network-status", methods=["POST"])
+@login_required
+def record_network_status(pc_id):
+    """POST /api/agents/<pc_id>/network-status — submit connectivity check results."""
+    pc = db.session.get(PC, pc_id)
+    if pc is None:
+        return jsonify({"error": "PC not found"}), 404
+
+    data = request.get_json(force=True) or {}
+
+    # Support both single record and batch (list)
+    records = data if isinstance(data, list) else [data]
+    created = []
+    errors = []
+
+    for idx, item in enumerate(records):
+        check_type = item.get("check_type", "")
+        status = item.get("status", "")
+        if check_type not in VALID_CHECK_TYPES:
+            errors.append({"index": idx, "error": f"invalid check_type: {check_type}"})
+            continue
+        if status not in VALID_STATUSES:
+            errors.append({"index": idx, "error": f"invalid status: {status}"})
+            continue
+
+        latency = item.get("latency_ms")
+        if latency is not None:
+            try:
+                latency = int(latency)
+            except (TypeError, ValueError):
+                latency = None
+
+        ts_raw = item.get("checked_at")
+        if ts_raw:
+            try:
+                checked_at = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
+            except ValueError:
+                errors.append({"index": idx, "error": "invalid checked_at format"})
+                continue
+        else:
+            checked_at = datetime.now(timezone.utc)
+
+        log = NetworkPingLog(
+            pc_id=pc.id,
+            check_type=check_type,
+            target=item.get("target"),
+            status=status,
+            latency_ms=latency,
+            checked_at=checked_at,
+        )
+        db.session.add(log)
+        created.append(log)
+
+    if created:
+        db.session.commit()
+
+    result = {"created": len(created), "errors": errors}
+    if errors and not created:
+        return jsonify(result), 400
+    return jsonify(result), 201

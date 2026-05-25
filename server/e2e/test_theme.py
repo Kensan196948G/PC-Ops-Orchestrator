@@ -21,9 +21,10 @@ def test_theme_toggle_button_visible(page_with_login, live_server):
     btn = p.locator("#topbar-theme-toggle")
     assert btn.count() == 1, "theme toggle button missing from Topbar"
     assert btn.get_attribute("aria-label") is not None, "aria-label required for a11y"
-    assert btn.get_attribute("aria-pressed") in ("true", "false"), (
-        "aria-pressed must reflect current theme state"
-    )
+    assert btn.get_attribute("aria-pressed") in (
+        "true",
+        "false",
+    ), "aria-pressed must reflect current theme state"
 
 
 def test_theme_toggle_switches_theme(page_with_login, live_server):
@@ -33,9 +34,10 @@ def test_theme_toggle_switches_theme(page_with_login, live_server):
     p.click("#topbar-theme-toggle")
     after = p.evaluate("document.documentElement.getAttribute('data-theme')")
     assert after != initial, f"theme did not toggle: {initial} -> {after}"
-    assert {initial, after} == {"light", "dark"}, (
-        f"toggle must alternate light/dark, got {initial} -> {after}"
-    )
+    assert {initial, after} == {
+        "light",
+        "dark",
+    }, f"toggle must alternate light/dark, got {initial} -> {after}"
 
 
 def test_theme_persists_across_reload(page_with_login, live_server):

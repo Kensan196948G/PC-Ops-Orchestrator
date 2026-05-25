@@ -42,11 +42,11 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-18T10:00:02.833Z",
+    "current_session_start_at": "2026-05-25T10:07:35.072Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "cron",
-    "last_cron_session_id": "20260518-190002-PC-Ops-Orchestrator",
-    "last_stop_at": "2026-05-18T11:11:10.974852Z"
+    "last_cron_session_id": "20260525-190001-PC-Ops-Orchestrator",
+    "last_stop_at": "2026-05-18T21:10:18.138Z"
   },
   "status": {
     "current_phase": "improve",
@@ -263,7 +263,7 @@
     }
   },
   "compact": {
-    "last_pre_compact_at": "2026-05-17T13:21:49.634Z"
+    "last_pre_compact_at": "2026-05-25T10:06:18.622Z"
   },
   "dreaming": {
     "patterns": [],
@@ -728,6 +728,157 @@
         "server/static/js/stability_kb_impact.js",
         "server/static/js/stability_unstable.js",
         "server/test_admin_ops.py",
+        "server/test_inquiries.py",
+        "server/test_stability.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-18T11:12:12.208Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 14 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/migrations/versions/3c39dbcb6860_stability_insight_stabilityscore_.py",
+        "server/migrations/versions/71e527563e4f_inquiry_phase_d4.py",
+        "server/models.py",
+        "server/routes/admin_ops.py",
+        "server/routes/collect.py",
+        "server/routes/inquiries.py",
+        "server/routes/stability.py",
+        "server/static/js/stability.js",
+        "server/static/js/stability_disk_health.js",
+        "server/static/js/stability_kb_impact.js",
+        "server/static/js/stability_unstable.js",
+        "server/test_admin_ops.py",
+        "server/test_inquiries.py",
+        "server/test_stability.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-18T11:12:41.802Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 14 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/migrations/versions/3c39dbcb6860_stability_insight_stabilityscore_.py",
+        "server/migrations/versions/71e527563e4f_inquiry_phase_d4.py",
+        "server/models.py",
+        "server/routes/admin_ops.py",
+        "server/routes/collect.py",
+        "server/routes/inquiries.py",
+        "server/routes/stability.py",
+        "server/static/js/stability.js",
+        "server/static/js/stability_disk_health.js",
+        "server/static/js/stability_kb_impact.js",
+        "server/static/js/stability_unstable.js",
+        "server/test_admin_ops.py",
+        "server/test_inquiries.py",
+        "server/test_stability.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-18T20:55:53.199Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 14 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/migrations/versions/3c39dbcb6860_stability_insight_stabilityscore_.py",
+        "server/migrations/versions/71e527563e4f_inquiry_phase_d4.py",
+        "server/models.py",
+        "server/routes/admin_ops.py",
+        "server/routes/collect.py",
+        "server/routes/inquiries.py",
+        "server/routes/stability.py",
+        "server/static/js/stability.js",
+        "server/static/js/stability_disk_health.js",
+        "server/static/js/stability_kb_impact.js",
+        "server/static/js/stability_unstable.js",
+        "server/test_admin_ops.py",
+        "server/test_inquiries.py",
+        "server/test_stability.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-18T21:00:58.039Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 14 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/migrations/versions/3c39dbcb6860_stability_insight_stabilityscore_.py",
+        "server/migrations/versions/71e527563e4f_inquiry_phase_d4.py",
+        "server/models.py",
+        "server/routes/admin_ops.py",
+        "server/routes/collect.py",
+        "server/routes/inquiries.py",
+        "server/routes/stability.py",
+        "server/static/js/stability.js",
+        "server/static/js/stability_disk_health.js",
+        "server/static/js/stability_kb_impact.js",
+        "server/static/js/stability_unstable.js",
+        "server/test_admin_ops.py",
+        "server/test_inquiries.py",
+        "server/test_stability.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-18T21:04:31.515Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 13 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/migrations/versions/3c39dbcb6860_stability_insight_stabilityscore_.py",
+        "server/migrations/versions/71e527563e4f_inquiry_phase_d4.py",
+        "server/models.py",
+        "server/routes/collect.py",
+        "server/routes/inquiries.py",
+        "server/routes/stability.py",
+        "server/static/js/stability.js",
+        "server/static/js/stability_disk_health.js",
+        "server/static/js/stability_kb_impact.js",
+        "server/static/js/stability_unstable.js",
+        "server/static/js/users.js",
+        "server/test_inquiries.py",
+        "server/test_stability.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-18T21:06:52.743Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 13 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/migrations/versions/3c39dbcb6860_stability_insight_stabilityscore_.py",
+        "server/migrations/versions/71e527563e4f_inquiry_phase_d4.py",
+        "server/models.py",
+        "server/routes/collect.py",
+        "server/routes/inquiries.py",
+        "server/routes/stability.py",
+        "server/static/js/stability.js",
+        "server/static/js/stability_disk_health.js",
+        "server/static/js/stability_kb_impact.js",
+        "server/static/js/stability_unstable.js",
+        "server/static/js/users.js",
+        "server/test_inquiries.py",
+        "server/test_stability.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-18T21:10:18.147Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 13 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/migrations/versions/3c39dbcb6860_stability_insight_stabilityscore_.py",
+        "server/migrations/versions/71e527563e4f_inquiry_phase_d4.py",
+        "server/models.py",
+        "server/routes/collect.py",
+        "server/routes/inquiries.py",
+        "server/routes/stability.py",
+        "server/static/js/stability.js",
+        "server/static/js/stability_disk_health.js",
+        "server/static/js/stability_kb_impact.js",
+        "server/static/js/stability_unstable.js",
+        "server/static/js/users.js",
         "server/test_inquiries.py",
         "server/test_stability.py"
       ],

@@ -247,9 +247,10 @@ class TestPrivilegeEscalation:
             # Attempt to delete task id=1 (may or may not exist; either 403 or 404 is
             # acceptable, but never 200 or 204).
             r = _json_request("DELETE", "/api/tasks/1", token=viewer_token)
-            assert r.status_code in (403, 404), (
-                f"viewer DELETE /api/tasks/1 expected 403/404, got {r.status_code}"
-            )
+            assert r.status_code in (
+                403,
+                404,
+            ), f"viewer DELETE /api/tasks/1 expected 403/404, got {r.status_code}"
             print("  [PASS] 158: viewer cannot delete task (403/404)")
         finally:
             _delete_user(admin_token, viewer_id)
@@ -543,14 +544,16 @@ class TestSecurityHeaders:
             },
         )
         # Preflight should succeed (200 or 204)
-        assert r.status_code in (200, 204), (
-            f"preflight returned {r.status_code} for allowed origin"
-        )
+        assert r.status_code in (
+            200,
+            204,
+        ), f"preflight returned {r.status_code} for allowed origin"
         # ACAO header must echo the allowed origin or be '*'
         acao = r.headers.get("Access-Control-Allow-Origin", "")
-        assert acao in ("http://localhost", "*"), (
-            f"unexpected Access-Control-Allow-Origin: {acao!r}"
-        )
+        assert acao in (
+            "http://localhost",
+            "*",
+        ), f"unexpected Access-Control-Allow-Origin: {acao!r}"
         print(f"  [PASS] 124: CORS preflight allows http://localhost (ACAO={acao})")
 
     def test_content_type_header_on_json_api(self):
@@ -783,9 +786,10 @@ class TestSqlInjection:
                 f"SQL injection in search param caused 500: {r.data}"
             )
             # 200 with empty results or 400 are both acceptable
-            assert r.status_code in (200, 400), (
-                f"Unexpected status {r.status_code} for search payload {payload!r}"
-            )
+            assert r.status_code in (
+                200,
+                400,
+            ), f"Unexpected status {r.status_code} for search payload {payload!r}"
         print("  [PASS] 141: SQL injection in search param returns 200/400, not 500")
 
     def test_username_creation_sql_injection(self):

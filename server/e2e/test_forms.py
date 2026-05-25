@@ -182,6 +182,8 @@ def test_api_collect_without_auth_returns_401(page, live_server):
         headers={"Content-Type": "application/json"},
     )
     # Collect endpoint requires authentication
-    assert response.status in (401, 403, 422), (
-        f"Unauthenticated request must be rejected, got {response.status}"
-    )
+    assert response.status in (
+        401,
+        403,
+        422,
+    ), f"Unauthenticated request must be rejected, got {response.status}"

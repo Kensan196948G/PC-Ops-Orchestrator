@@ -256,6 +256,9 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | 📚 API ドキュメント | **Swagger UI** (`/api/docs/`) でブラウザから API 仕様確認・試行 |
 | 🛡️ 安定性ダッシュボード | **PC 安定性スコア (0-100)** 一覧、不安定 PC 抽出、KB 影響分析、ディスクヘルス監視 (Phase D-1〜D-3) |
 | 📨 問い合わせ連携 | 利用者申告の登録、対象 PC の EventLog/Update/Score 相関表示、類似問い合わせ検索、既知不具合マスタ紐付け (Phase D-4) |
+| 🔁 起動時間監視 | ブート所要時間の履歴収集・ベースライン比較・異常検知アラート（Phase E-1） |
+| 🌐 ネットワーク疎通監視 | ping/DNS/VPN/WiFi の接続チェック結果履歴・集計・バッチ投入（Phase E-2） |
+| 🔍 類似事象拡張検索 | OS バージョン別・サブネット別(/24)の集約パターン分析（Phase E-3） |
 
 ---
 
@@ -304,7 +307,12 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | GET | `/api/stability/event-ranking` | JWT | Event ID 発生回数 TOP N |
 | GET | `/api/stability/kb-impact` | JWT | KB 適用前後のスコア比較 |
 | GET | `/api/stability/kb-impact/<kb_id>` | JWT | 指定 KB の影響詳細 |
-| GET | `/api/stability/similar-issues` | JWT | 類似事象 (同 event_id) 検索 |
+| GET | `/api/stability/similar-issues` | JWT | 類似事象 (event_id / OS / サブネット別集計) 検索 (Phase E-3) |
+| GET | `/api/stability/boot-analysis` | JWT | 起動時間ベースライン比較・アラート検出 (Phase E-1) |
+| GET | `/api/stability/boot-analysis/<id>` | JWT | PC 別起動時間詳細 + 履歴 |
+| POST | `/api/stability/boot-analysis/<id>` | API Key | ブート所要時間ログ投入 |
+| GET | `/api/agents/<id>/network-status` | JWT | ネットワーク疎通チェック履歴・集計 (Phase E-2) |
+| POST | `/api/agents/<id>/network-status` | JWT | 疎通チェック結果登録（単件/バッチ） |
 | GET | `/api/stability/disk-health` | JWT | ディスクイベント (`?flat=1` で per-event) |
 | GET | `/api/stability/disk-health/<id>` | JWT | PC 別ディスクイベント |
 | GET/POST/PUT | `/api/stability/known-issues` | JWT | 既知不具合マスタ CRUD (Phase D-4 で活用) |
@@ -351,6 +359,40 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | GET | `/api/admin/logs/error` | JWT(admin) | gunicorn error ログ tail（max 1000 行） |
 | GET | `/api/docs/` | - | **Swagger UI（OpenAPI 3.0 ドキュメント）** |
 | GET | `/api/openapi.yaml` | - | OpenAPI 3.0 仕様 (YAML) |
+
+---
+
+## 📊 Phase E — 監視データフロー（起動時間 / ネットワーク疎通）
+
+```mermaid
+flowchart LR
+    subgraph AGENT["📡 Agent (PowerShell)"]
+        A1["PCOpsAgent.ps1\n起動時間計測"]
+        A2["PCOpsAgent.ps1\nping/DNS/VPN/WiFi チェック"]
+    end
+
+    subgraph SERVER["🖥️ Flask Server"]
+        S1["POST /api/stability/boot-analysis/<id>\nBootTimeLog 保存"]
+        S2["POST /api/agents/<id>/network-status\nNetworkPingLog 保存"]
+        S3["GET /api/stability/boot-analysis\nベースライン比較・アラート検出"]
+        S4["GET /api/agents/<id>/network-status\n履歴・集計・latest"]
+        S5["GET /api/stability/similar-issues\nOS / サブネット(/24) 集約"]
+    end
+
+    subgraph DB["🗄️ SQLite / PostgreSQL"]
+        D1[("boot_time_logs")]
+        D2[("network_ping_logs")]
+        D3[("event_logs / pcs")]
+    end
+
+    A1 -->|"boot_duration_seconds"| S1
+    A2 -->|"check_type / status / latency_ms"| S2
+    S1 --> D1
+    S2 --> D2
+    S3 -->|"baseline=avg(oldest 50%)\nalert if latest > 150%"| D1
+    S4 --> D2
+    S5 -->|"group by os_version\ngroup by ip_prefix/24"| D3
+```
 
 ---
 
@@ -653,7 +695,18 @@ gantt
 | 🔧 **PR #147** | **全スタブ機能の実機能化** — API キー/バックアップ/設定管理 | ✅ MERGED | 証明書/バックアップ/設定/API キー CRUD + 343 tests |
 | 🧪 **PR #153** | **routes カバレッジ 95% 達成** — test_misc_coverage.py 追加 | ✅ MERGED | 730 tests / routes 95% (2079 stmts / 112 miss) |
 | 🔬 **PR #161** | **collect.py カバレッジ 100% 達成** — Issue #160 / test_collect.py 拡充 | ✅ MERGED | 762 tests / collect.py 100% (218 stmts / 0 miss) |
-| 🧬 **PR #164** | **routes カバレッジギャップ解消** — Issue #163 / 5 ファイル 10 テスト | 🔄 CI 中 | 772 tests / 11 lines covered + 2 lines `# pragma: no cover` (PostgreSQL-only) |
+| 🧬 **PR #164** | **routes カバレッジギャップ解消** — Issue #163 / 5 ファイル 10 テスト | ✅ MERGED | 772 tests / 11 lines covered + 2 lines `# pragma: no cover` (PostgreSQL-only) |
+| 🔒 **PR #179** | **Phase A-1** — DB スキーマ拡張 (os_build / NetworkInterface / JobTemplate) | ✅ MERGED | 9 new tests / 850 tests total |
+| 🎨 **PR #182** | **Phase A-3** — pc_detail 7-tab 統合 API | ✅ MERGED | 7タブUI + /details 統合 API |
+| 🛡️ **PR #191** | **Phase B** — VPN UI sub_states 実装 (Issue #180) | ✅ MERGED | sub_states 直交フラグ + N+1回避 |
+| 🔒 **PR #201** | **Phase B-4** — pending_tasks HMAC-SHA256 署名 | ✅ MERGED | 63/63 tests |
+| 🤝 **PR #229** | **Phase C-2** — 月次レポートメール送信 (Issue #228) | ✅ MERGED | POST /api/reports/monthly/send |
+| 📂 **PR #231** | **Phase C-3** — AD基本連携 (Issue #230) | ✅ MERGED | 4エンドポイント + ldap3 + 15 tests |
+| 🔧 **PR #237** | **Phase C-4** — DB backup + log tail 4 endpoints | ✅ MERGED | WAL-safe backup + ログ tail |
+| 📊 **PR #242** | **Phase D-1/D-2/D-3** — PC安定性スコア & ダッシュボード基盤 | ✅ MERGED | 16 endpoints + 4 templates + **1050 tests** |
+| 📨 **PR #254** | **Phase D-4** — Inquiry CRUD + related-logs + similar | ✅ MERGED | 19 tests / 問い合わせ連携 API 完成 |
+| 🐛 **PR #256** | **modal 表示バグ修正** — `.open` トグル統一 | ✅ MERGED | 4ページ modal 常時表示バグ解消 |
+| 🔁 **PR #257** | **Phase E** — BootTimeLog + NetworkPingLog + similar-issues 拡張 (#244 #245 #246) | 🔄 CI 中 | 39 tests / boot-analysis + network-status + OS/subnet 集約 |
 
 ---
 
@@ -661,7 +714,7 @@ gantt
 
 | テストスイート | 件数 | 状態 |
 |---|:---:|:---:|
-| **API 拡張テスト（Python）** | **772項目** | **✅ PASS** |
+| **API 拡張テスト（Python）** | **1123項目** | **✅ PASS** |
 | **WebUI E2E テスト（Playwright）** | **121項目** | **✅ PASS** |
 | 機能テスト（Test_PCOptimizer.ps1） | 93件 | ✅ PASS |
 | Pester テスト（PCOptimizer.Pester） | 50件 | ✅ PASS |

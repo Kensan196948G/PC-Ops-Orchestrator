@@ -1100,3 +1100,68 @@ class Inquiry(db.Model):
 
     def __repr__(self):
         return f"<Inquiry {self.id} pc={self.pc_id} status={self.status}>"
+
+
+class BootTimeLog(db.Model):
+    """Historical boot duration records for boot-analysis (#245)."""
+
+    __tablename__ = "boot_time_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    pc_id = db.Column(db.Integer, db.ForeignKey("pcs.id"), nullable=False, index=True)
+    boot_duration_seconds = db.Column(db.Integer, nullable=False)
+    boot_timestamp = db.Column(db.DateTime, nullable=False)
+    collected_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), index=True
+    )
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "pc_id": self.pc_id,
+            "boot_duration_seconds": self.boot_duration_seconds,
+            "boot_timestamp": self.boot_timestamp.isoformat()
+            if self.boot_timestamp
+            else None,
+            "collected_at": self.collected_at.isoformat()
+            if self.collected_at
+            else None,
+        }
+
+    def __repr__(self) -> str:
+        return f"<BootTimeLog pc={self.pc_id} dur={self.boot_duration_seconds}s>"
+
+
+class NetworkPingLog(db.Model):
+    """Network connectivity check results collected by agents (#246)."""
+
+    __tablename__ = "network_ping_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    pc_id = db.Column(db.Integer, db.ForeignKey("pcs.id"), nullable=False, index=True)
+    # check_type: ping | dns | vpn | wifi
+    check_type = db.Column(db.String(32), nullable=False, index=True)
+    target = db.Column(db.String(255), nullable=True)
+    # status: ok | timeout | error | unreachable
+    status = db.Column(db.String(32), nullable=False)
+    latency_ms = db.Column(db.Integer, nullable=True)
+    checked_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        index=True,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "pc_id": self.pc_id,
+            "check_type": self.check_type,
+            "target": self.target,
+            "status": self.status,
+            "latency_ms": self.latency_ms,
+            "checked_at": self.checked_at.isoformat() if self.checked_at else None,
+        }
+
+    def __repr__(self) -> str:
+        return f"<NetworkPingLog pc={self.pc_id} type={self.check_type} status={self.status}>"

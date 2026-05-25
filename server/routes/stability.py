@@ -1,4 +1,4 @@
-"""PC Stability Insight routes — Phase D-1/D-2 (Issue #238, #239)."""
+"""PC Stability Insight routes — Phase D-1/D-2 (Issue #238, #239), Phase E (Issue #244, #245)."""
 
 import json
 from datetime import datetime, timedelta, timezone
@@ -11,6 +11,7 @@ from auth import login_required
 from extensions import db
 from models import (
     PC,
+    BootTimeLog,
     EventLog,
     KnownIssue,
     StabilityScore,
@@ -350,9 +351,12 @@ def kb_impact_detail(kb_id):
 @bp.route("/similar-issues", methods=["GET"])
 @login_required
 def similar_issues():
-    """GET /api/stability/similar-issues — group PCs with similar instability patterns."""
+    """GET /api/stability/similar-issues — group PCs with similar instability patterns.
+
+    group_by: kb | model | domain | os_version | location
+    """
     days = int(request.args.get("days", 7))
-    group_by = request.args.get("group_by", "kb")  # kb | model | domain
+    group_by = request.args.get("group_by", "kb")
     min_pcs = int(request.args.get("min_pcs", 2))
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
@@ -362,8 +366,138 @@ def similar_issues():
         return jsonify(_similar_by_model(cutoff, min_pcs))
     elif group_by == "domain":
         return jsonify(_similar_by_domain(cutoff, min_pcs))
+    elif group_by == "os_version":
+        return jsonify(_similar_by_os_version(min_pcs))
+    elif group_by == "location":
+        return jsonify(_similar_by_location(min_pcs))
     else:
-        return jsonify({"error": "group_by must be kb, model, or domain"}), 400
+        return jsonify(
+            {"error": "group_by must be kb, model, domain, os_version, or location"}
+        ), 400
+
+
+@bp.route("/boot-analysis", methods=["GET"])
+@login_required
+def boot_analysis_list():
+    """GET /api/stability/boot-analysis — list PCs with slow boot times (Issue #245)."""
+    days = int(request.args.get("days", 14))
+    threshold_pct = float(request.args.get("threshold_pct", 150))
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    pc_counts = (
+        db.session.query(
+            BootTimeLog.pc_id,
+            func.count(BootTimeLog.id).label("cnt"),
+        )
+        .filter(BootTimeLog.collected_at >= cutoff)
+        .group_by(BootTimeLog.pc_id)
+        .having(func.count(BootTimeLog.id) >= 2)
+        .all()
+    )
+
+    results = []
+    for row in pc_counts:
+        pc = db.session.get(PC, row.pc_id)
+        if not pc:
+            continue
+        logs = (
+            BootTimeLog.query.filter(
+                BootTimeLog.pc_id == row.pc_id,
+                BootTimeLog.collected_at >= cutoff,
+            )
+            .order_by(BootTimeLog.boot_timestamp.asc())
+            .all()
+        )
+        if len(logs) < 2:
+            continue
+        durations = [log.boot_duration_seconds for log in logs]
+        baseline_count = max(1, len(durations) // 2)
+        baseline = sum(durations[:baseline_count]) / baseline_count
+        latest = durations[-1]
+        increase_pct = round((latest / baseline - 1) * 100, 1) if baseline > 0 else 0
+        if baseline > 0 and latest > baseline * (threshold_pct / 100):
+            results.append(
+                {
+                    "pc_id": pc.id,
+                    "pc_name": pc.pc_name,
+                    "baseline_seconds": round(baseline, 1),
+                    "latest_seconds": latest,
+                    "increase_pct": increase_pct,
+                    "sample_count": len(durations),
+                    "alert": True,
+                }
+            )
+
+    return jsonify(results)
+
+
+@bp.route("/boot-analysis/<int:pc_id>", methods=["GET"])
+@login_required
+def boot_analysis_detail(pc_id):
+    """GET /api/stability/boot-analysis/<pc_id> — boot time history for one PC."""
+    pc = db.session.get(PC, pc_id)
+    if pc is None:
+        return jsonify({"error": "PC not found"}), 404
+    days = int(request.args.get("days", 30))
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    logs = (
+        BootTimeLog.query.filter(
+            BootTimeLog.pc_id == pc_id,
+            BootTimeLog.collected_at >= cutoff,
+        )
+        .order_by(BootTimeLog.boot_timestamp.asc())
+        .all()
+    )
+    durations = [log.boot_duration_seconds for log in logs]
+    avg = sum(durations) / len(durations) if durations else None
+
+    return jsonify(
+        {
+            "pc_id": pc.id,
+            "pc_name": pc.pc_name,
+            "days": days,
+            "sample_count": len(logs),
+            "avg_seconds": round(avg, 1) if avg is not None else None,
+            "min_seconds": min(durations) if durations else None,
+            "max_seconds": max(durations) if durations else None,
+            "records": [log.to_dict() for log in logs],
+        }
+    )
+
+
+@bp.route("/boot-analysis/<int:pc_id>", methods=["POST"])
+@login_required
+def record_boot_time(pc_id):
+    """POST /api/stability/boot-analysis/<pc_id> — record a new boot duration entry."""
+    pc = db.session.get(PC, pc_id)
+    if pc is None:
+        return jsonify({"error": "PC not found"}), 404
+    data = request.get_json(force=True) or {}
+
+    duration = data.get("boot_duration_seconds")
+    if not isinstance(duration, (int, float)) or duration <= 0:
+        return jsonify(
+            {"error": "boot_duration_seconds required (positive number)"}
+        ), 400
+
+    ts_raw = data.get("boot_timestamp")
+    if ts_raw:
+        try:
+            boot_ts = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
+        except ValueError:
+            return jsonify({"error": "invalid boot_timestamp format"}), 400
+    else:
+        boot_ts = datetime.now(timezone.utc)
+
+    log = BootTimeLog(
+        pc_id=pc.id,
+        boot_duration_seconds=int(duration),
+        boot_timestamp=boot_ts,
+    )
+    db.session.add(log)
+    db.session.commit()
+    return jsonify(log.to_dict()), 201
 
 
 @bp.route("/disk-health", methods=["GET"])
@@ -712,3 +846,52 @@ def _similar_by_domain(cutoff, min_pcs: int) -> list:
         {"group_by": "domain", "domain": r.domain, "unstable_pc_count": r.pc_count}
         for r in rows
     ]
+
+
+def _similar_by_os_version(min_pcs: int) -> list:
+    """Group unstable PCs by OS version string (Issue #244)."""
+    rows = (
+        db.session.query(
+            PC.os_version,
+            func.count(PC.id.distinct()).label("pc_count"),
+        )
+        .filter(PC.stability_score < THRESHOLD_UNSTABLE, PC.os_version.isnot(None))
+        .group_by(PC.os_version)
+        .having(func.count(PC.id.distinct()) >= min_pcs)
+        .order_by(func.count(PC.id.distinct()).desc())
+        .all()
+    )
+    return [
+        {
+            "group_by": "os_version",
+            "os_version": r.os_version,
+            "unstable_pc_count": r.pc_count,
+        }
+        for r in rows
+    ]
+
+
+def _similar_by_location(min_pcs: int) -> list:
+    """Group unstable PCs by IP subnet (/24 prefix) as a location proxy (Issue #244)."""
+    pcs = PC.query.filter(
+        PC.stability_score < THRESHOLD_UNSTABLE, PC.ip_address.isnot(None)
+    ).all()
+    subnet_counts: dict[str, int] = {}
+    for pc in pcs:
+        parts = pc.ip_address.split(".")
+        if len(parts) == 4:
+            subnet = ".".join(parts[:3]) + ".0/24"
+            subnet_counts[subnet] = subnet_counts.get(subnet, 0) + 1
+    return sorted(
+        [
+            {
+                "group_by": "location",
+                "subnet": subnet,
+                "unstable_pc_count": count,
+            }
+            for subnet, count in subnet_counts.items()
+            if count >= min_pcs
+        ],
+        key=lambda x: x["unstable_pc_count"],
+        reverse=True,
+    )
