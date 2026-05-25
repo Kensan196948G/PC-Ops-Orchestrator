@@ -1165,3 +1165,36 @@ class NetworkPingLog(db.Model):
 
     def __repr__(self) -> str:
         return f"<NetworkPingLog pc={self.pc_id} type={self.check_type} status={self.status}>"
+
+
+class AppResponseLog(db.Model):
+    """App response time records collected by agents (Issue #247)."""
+
+    __tablename__ = "app_response_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    pc_id = db.Column(db.Integer, db.ForeignKey("pcs.id"), nullable=False, index=True)
+    app_name = db.Column(db.String(128), nullable=False, index=True)
+    response_time_ms = db.Column(db.Integer, nullable=False)
+    threshold_ms = db.Column(db.Integer, nullable=True)
+    is_slow = db.Column(db.Boolean, nullable=False, default=False)
+    recorded_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        index=True,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "pc_id": self.pc_id,
+            "app_name": self.app_name,
+            "response_time_ms": self.response_time_ms,
+            "threshold_ms": self.threshold_ms,
+            "is_slow": self.is_slow,
+            "recorded_at": self.recorded_at.isoformat() if self.recorded_at else None,
+        }
+
+    def __repr__(self) -> str:
+        return f"<AppResponseLog pc={self.pc_id} app={self.app_name} ms={self.response_time_ms}>"
