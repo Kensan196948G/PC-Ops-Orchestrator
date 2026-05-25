@@ -30,7 +30,9 @@
     "current": "build",
     "week": 4,
     "phase_e3": "PR #268 MERGED 2026-05-25 — CollectionPolicy CRUD (Issue #248) 本番投入完了",
-    "phase_e4": "PR #269 MERGED 2026-05-25 — Windows Release Health RSS sync (Issue #249) 本番投入完了"
+    "phase_e4": "PR #269 MERGED 2026-05-25 — Windows Release Health RSS sync (Issue #249) 本番投入完了",
+    "phase_e5": "PR #272 MERGED 2026-05-25 — Root Cause Analysis endpoint (Issue #251) 本番投入完了",
+    "phase_e6": "PR #273 OPEN 2026-05-25 — Microsoft Graph Windows Updates sync (Issue #250) CI待機中"
   },
   "kpi": {
     "ci_success_rate": 1,
@@ -44,7 +46,7 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-25T11:12:37.755Z",
+    "current_session_start_at": "2026-05-25T11:32:44.120Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "cron",
     "last_cron_session_id": "20260525-190001-PC-Ops-Orchestrator",
@@ -53,11 +55,11 @@
   "status": {
     "current_phase": "improve",
     "stable": true,
-    "pending_prs": [270],
+    "pending_prs": [
+      273
+    ],
     "merged_prs": [
-      136,
       36,
-      231,
       38,
       40,
       43,
@@ -88,6 +90,7 @@
       125,
       129,
       130,
+      136,
       147,
       153,
       158,
@@ -101,6 +104,7 @@
       199,
       201,
       206,
+      231,
       237,
       242,
       254,
@@ -108,7 +112,8 @@
       257,
       263,
       268,
-      269
+      269,
+      272
     ]
   },
   "priority": {
@@ -266,7 +271,7 @@
     }
   },
   "compact": {
-    "last_pre_compact_at": "2026-05-25T11:11:05.448Z"
+    "last_pre_compact_at": "2026-05-25T11:31:18.053Z"
   },
   "dreaming": {
     "patterns": [],
