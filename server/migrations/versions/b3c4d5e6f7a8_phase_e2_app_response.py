@@ -34,8 +34,12 @@ def upgrade():
             sa.PrimaryKeyConstraint("id"),
         )
         op.create_index("ix_app_response_logs_pc_id", "app_response_logs", ["pc_id"])
-        op.create_index("ix_app_response_logs_app_name", "app_response_logs", ["app_name"])
-        op.create_index("ix_app_response_logs_recorded_at", "app_response_logs", ["recorded_at"])
+        op.create_index(
+            "ix_app_response_logs_app_name", "app_response_logs", ["app_name"]
+        )
+        op.create_index(
+            "ix_app_response_logs_recorded_at", "app_response_logs", ["recorded_at"]
+        )
 
 
 def downgrade():
