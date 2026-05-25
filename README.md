@@ -311,8 +311,15 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 | GET | `/api/stability/boot-analysis` | JWT | 起動時間ベースライン比較・アラート検出 (Phase E-1) |
 | GET | `/api/stability/boot-analysis/<id>` | JWT | PC 別起動時間詳細 + 履歴 |
 | POST | `/api/stability/boot-analysis/<id>` | API Key | ブート所要時間ログ投入 |
-| GET | `/api/agents/<id>/network-status` | JWT | ネットワーク疎通チェック履歴・集計 (Phase E-2) |
+| GET | `/api/agents/<id>/network-status` | JWT | ネットワーク疎通チェック履歴・集計 (Phase E-1) |
 | POST | `/api/agents/<id>/network-status` | JWT | 疎通チェック結果登録（単件/バッチ） |
+| GET | `/api/stability/app-response` | JWT | アプリ応答時間サマリー（遅延アプリ集計） (Phase E-2) |
+| GET | `/api/stability/app-response/<id>` | JWT | PC 別アプリ応答時間 + 履歴（ページネーション対応） (Phase E-2) |
+| POST | `/api/stability/app-response/<id>` | API Key | アプリ応答時間ログ投入（単件/バッチ、閾値自動判定） (Phase E-2) |
+| GET | `/api/stability/trends` | JWT | スコア下落トレンド検知（N スナップショット・min_drop 設定可） (Phase E-2) |
+| POST | `/api/stability/trends/notify` | JWT | Slack/Teams/Webhook アラート送信（channel_ids 絞り込み可） (Phase E-2) |
+| GET | `/api/stability/incidents` | JWT | 危機的 PC 一覧（Score < 閾値, デフォルト 40） (Phase E-2) |
+| POST | `/api/stability/incidents/auto-file` | JWT | スコア危機 PC を GitHub Issues へ自動起票（dry_run 対応） (Phase E-2) |
 | GET | `/api/stability/disk-health` | JWT | ディスクイベント (`?flat=1` で per-event) |
 | GET | `/api/stability/disk-health/<id>` | JWT | PC 別ディスクイベント |
 | GET/POST/PUT | `/api/stability/known-issues` | JWT | 既知不具合マスタ CRUD (Phase D-4 で活用) |
@@ -362,16 +369,17 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 
 ---
 
-## 📊 Phase E — 監視データフロー（起動時間 / ネットワーク疎通）
+## 📊 Phase E — 監視データフロー（起動時間 / ネットワーク疎通 / アプリ応答 / 自動インシデント）
 
 ```mermaid
 flowchart LR
     subgraph AGENT["📡 Agent (PowerShell)"]
         A1["PCOpsAgent.ps1\n起動時間計測"]
         A2["PCOpsAgent.ps1\nping/DNS/VPN/WiFi チェック"]
+        A3["PCOpsAgent.ps1\nアプリ応答時間計測"]
     end
 
-    subgraph SERVER["🖥️ Flask Server"]
+    subgraph SERVER["🖥️ Flask Server — Phase E-1"]
         S1["POST /api/stability/boot-analysis/<id>\nBootTimeLog 保存"]
         S2["POST /api/agents/<id>/network-status\nNetworkPingLog 保存"]
         S3["GET /api/stability/boot-analysis\nベースライン比較・アラート検出"]
@@ -379,19 +387,38 @@ flowchart LR
         S5["GET /api/stability/similar-issues\nOS / サブネット(/24) 集約"]
     end
 
+    subgraph SERVER2["🖥️ Flask Server — Phase E-2"]
+        S6["POST /api/stability/app-response/<id>\nAppResponseLog 保存・閾値自動判定"]
+        S7["GET /api/stability/app-response\n遅延アプリ集計サマリー"]
+        S8["GET /api/stability/trends\nスコア下落トレンド検知"]
+        S9["POST /api/stability/trends/notify\nSlack/Teams アラート送信"]
+        S10["GET /api/stability/incidents\n危機的 PC 一覧 (Score<40)"]
+        S11["POST /api/stability/incidents/auto-file\nGitHub Issues 自動起票"]
+    end
+
     subgraph DB["🗄️ SQLite / PostgreSQL"]
         D1[("boot_time_logs")]
         D2[("network_ping_logs")]
         D3[("event_logs / pcs")]
+        D4[("app_response_logs")]
+        D5[("stability_scores")]
+        D6[("notification_channels")]
     end
 
     A1 -->|"boot_duration_seconds"| S1
     A2 -->|"check_type / status / latency_ms"| S2
+    A3 -->|"app_name / response_time_ms"| S6
     S1 --> D1
     S2 --> D2
+    S6 --> D4
     S3 -->|"baseline=avg(oldest 50%)\nalert if latest > 150%"| D1
     S4 --> D2
     S5 -->|"group by os_version\ngroup by ip_prefix/24"| D3
+    S7 --> D4
+    S8 -->|"直近 N スナップショット比較"| D5
+    S9 -->|"NotificationChannel 取得"| D6
+    S10 --> D5
+    S11 -->|"dry_run 対応\nGitHub Issues API"| D5
 ```
 
 ---
