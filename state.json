@@ -33,7 +33,8 @@
     "phase_e4": "PR #269 MERGED 2026-05-25 — Windows Release Health RSS sync (Issue #249) 本番投入完了",
     "phase_e5": "PR #272 MERGED 2026-05-25 — Root Cause Analysis endpoint (Issue #251) 本番投入完了",
     "phase_e6": "PR #273 MERGED 2026-05-25 — Microsoft Graph Windows Updates sync (Issue #250) 本番投入完了",
-    "phase_f1": "PR #276 MERGED 2026-05-25 — PC稼働率トラッキング UptimeLog (Issue #274) 本番投入完了"
+    "phase_f1": "PR #276 MERGED 2026-05-25 — PC稼働率トラッキング UptimeLog (Issue #274) 本番投入完了",
+    "phase_f2": "PR #277 MERGED 2026-05-25 — アラートルール評価ループ evaluate_rules_once + /evaluate API (Issue #275) 本番投入完了"
   },
   "kpi": {
     "ci_success_rate": 1,
@@ -114,7 +115,8 @@
       269,
       272,
       273,
-      276
+      276,
+      277
     ]
   },
   "priority": {
