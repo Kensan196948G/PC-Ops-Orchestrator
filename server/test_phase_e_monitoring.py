@@ -54,7 +54,10 @@ def setup_module():
 
 
 def _auth():
-    return {"Authorization": f"Bearer {_admin_token}", "Content-Type": "application/json"}
+    return {
+        "Authorization": f"Bearer {_admin_token}",
+        "Content-Type": "application/json",
+    }
 
 
 def _post(path, data):
@@ -111,6 +114,7 @@ def _add_ping_log(pc_id, check_type, status, latency_ms=None, hours_ago=1):
 
 # ─── Boot-analysis: unauthenticated ──────────────────────────────────────────
 
+
 def test_boot_analysis_list_requires_auth():
     r = client.open("/api/stability/boot-analysis", method="GET")
     assert r.status_code == 401
@@ -122,13 +126,17 @@ def test_boot_analysis_detail_requires_auth():
 
 
 def test_record_boot_time_requires_auth():
-    r = client.open("/api/stability/boot-analysis/1", method="POST",
-                    headers={"Content-Type": "application/json"},
-                    data=json.dumps({"boot_duration_seconds": 30}))
+    r = client.open(
+        "/api/stability/boot-analysis/1",
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        data=json.dumps({"boot_duration_seconds": 30}),
+    )
     assert r.status_code == 401
 
 
 # ─── Boot-analysis: list ─────────────────────────────────────────────────────
+
 
 def test_boot_analysis_list_empty():
     """No PCs with >=2 logs → empty list."""
@@ -175,6 +183,7 @@ def test_boot_analysis_list_no_alert_when_normal():
 
 # ─── Boot-analysis: detail ────────────────────────────────────────────────────
 
+
 def test_boot_analysis_detail_not_found():
     r = _get("/api/stability/boot-analysis/999999")
     assert r.status_code == 404
@@ -208,6 +217,7 @@ def test_boot_analysis_detail_with_records():
 
 # ─── Boot-analysis: POST record ───────────────────────────────────────────────
 
+
 def test_record_boot_time_not_found():
     r = _post("/api/stability/boot-analysis/999999", {"boot_duration_seconds": 30})
     assert r.status_code == 404
@@ -240,10 +250,13 @@ def test_record_boot_time_success():
 def test_record_boot_time_with_timestamp():
     pc_id = _make_pc("boot-post-ts")
     ts = "2026-05-01T09:00:00Z"
-    r = _post(f"/api/stability/boot-analysis/{pc_id}", {
-        "boot_duration_seconds": 55,
-        "boot_timestamp": ts,
-    })
+    r = _post(
+        f"/api/stability/boot-analysis/{pc_id}",
+        {
+            "boot_duration_seconds": 55,
+            "boot_timestamp": ts,
+        },
+    )
     assert r.status_code == 201
     data = json.loads(r.data)
     assert data["boot_duration_seconds"] == 55
@@ -252,14 +265,18 @@ def test_record_boot_time_with_timestamp():
 
 def test_record_boot_time_invalid_timestamp():
     pc_id = _make_pc("boot-post-bad-ts")
-    r = _post(f"/api/stability/boot-analysis/{pc_id}", {
-        "boot_duration_seconds": 30,
-        "boot_timestamp": "not-a-date",
-    })
+    r = _post(
+        f"/api/stability/boot-analysis/{pc_id}",
+        {
+            "boot_duration_seconds": 30,
+            "boot_timestamp": "not-a-date",
+        },
+    )
     assert r.status_code == 400
 
 
 # ─── Network-status: unauthenticated ─────────────────────────────────────────
+
 
 def test_network_status_get_requires_auth():
     r = client.open("/api/agents/1/network-status", method="GET")
@@ -267,13 +284,17 @@ def test_network_status_get_requires_auth():
 
 
 def test_network_status_post_requires_auth():
-    r = client.open("/api/agents/1/network-status", method="POST",
-                    headers={"Content-Type": "application/json"},
-                    data=json.dumps({"check_type": "ping", "status": "ok"}))
+    r = client.open(
+        "/api/agents/1/network-status",
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        data=json.dumps({"check_type": "ping", "status": "ok"}),
+    )
     assert r.status_code == 401
 
 
 # ─── Network-status: GET ─────────────────────────────────────────────────────
+
 
 def test_network_status_get_not_found():
     r = _get("/api/agents/999999/network-status")
@@ -337,17 +358,23 @@ def test_network_status_get_invalid_type_ignored():
 
 # ─── Network-status: POST ────────────────────────────────────────────────────
 
+
 def test_network_status_post_not_found():
-    r = _post("/api/agents/999999/network-status", {"check_type": "ping", "status": "ok"})
+    r = _post(
+        "/api/agents/999999/network-status", {"check_type": "ping", "status": "ok"}
+    )
     assert r.status_code == 404
 
 
 def test_network_status_post_invalid_check_type():
     pc_id = _make_pc("net-post-bad-type")
-    r = _post(f"/api/agents/{pc_id}/network-status", {
-        "check_type": "invalid",
-        "status": "ok",
-    })
+    r = _post(
+        f"/api/agents/{pc_id}/network-status",
+        {
+            "check_type": "invalid",
+            "status": "ok",
+        },
+    )
     assert r.status_code == 400
     data = json.loads(r.data)
     assert data["errors"]
@@ -355,21 +382,27 @@ def test_network_status_post_invalid_check_type():
 
 def test_network_status_post_invalid_status():
     pc_id = _make_pc("net-post-bad-status")
-    r = _post(f"/api/agents/{pc_id}/network-status", {
-        "check_type": "ping",
-        "status": "unknown",
-    })
+    r = _post(
+        f"/api/agents/{pc_id}/network-status",
+        {
+            "check_type": "ping",
+            "status": "unknown",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_network_status_post_single_record():
     pc_id = _make_pc("net-post-single")
-    r = _post(f"/api/agents/{pc_id}/network-status", {
-        "check_type": "ping",
-        "status": "ok",
-        "target": "8.8.8.8",
-        "latency_ms": 15,
-    })
+    r = _post(
+        f"/api/agents/{pc_id}/network-status",
+        {
+            "check_type": "ping",
+            "status": "ok",
+            "target": "8.8.8.8",
+            "latency_ms": 15,
+        },
+    )
     assert r.status_code == 201
     data = json.loads(r.data)
     assert data["created"] == 1
@@ -420,11 +453,14 @@ def test_network_status_post_all_invalid():
 
 def test_network_status_post_with_timestamp():
     pc_id = _make_pc("net-post-ts")
-    r = _post(f"/api/agents/{pc_id}/network-status", {
-        "check_type": "ping",
-        "status": "ok",
-        "checked_at": "2026-05-01T10:00:00Z",
-    })
+    r = _post(
+        f"/api/agents/{pc_id}/network-status",
+        {
+            "check_type": "ping",
+            "status": "ok",
+            "checked_at": "2026-05-01T10:00:00Z",
+        },
+    )
     assert r.status_code == 201
     data = json.loads(r.data)
     assert data["created"] == 1
@@ -432,26 +468,33 @@ def test_network_status_post_with_timestamp():
 
 def test_network_status_post_invalid_timestamp():
     pc_id = _make_pc("net-post-bad-ts")
-    r = _post(f"/api/agents/{pc_id}/network-status", {
-        "check_type": "ping",
-        "status": "ok",
-        "checked_at": "not-a-date",
-    })
+    r = _post(
+        f"/api/agents/{pc_id}/network-status",
+        {
+            "check_type": "ping",
+            "status": "ok",
+            "checked_at": "not-a-date",
+        },
+    )
     assert r.status_code == 400
 
 
 def test_network_status_post_latency_string_coerced():
     """latency_ms provided as string should be coerced to int."""
     pc_id = _make_pc("net-post-lat-str")
-    r = _post(f"/api/agents/{pc_id}/network-status", {
-        "check_type": "ping",
-        "status": "ok",
-        "latency_ms": "25",
-    })
+    r = _post(
+        f"/api/agents/{pc_id}/network-status",
+        {
+            "check_type": "ping",
+            "status": "ok",
+            "latency_ms": "25",
+        },
+    )
     assert r.status_code == 201
 
 
 # ─── Similar issues: os_version ───────────────────────────────────────────────
+
 
 def test_similar_issues_os_version_requires_auth():
     r = client.open("/api/stability/similar-issues?group_by=os_version", method="GET")
@@ -488,6 +531,7 @@ def test_similar_issues_os_version_groups():
 
 
 # ─── Similar issues: location ────────────────────────────────────────────────
+
 
 def test_similar_issues_location_requires_auth():
     r = client.open("/api/stability/similar-issues?group_by=location", method="GET")

@@ -51,9 +51,7 @@ def upgrade():
             sa.PrimaryKeyConstraint("id"),
         )
         with op.batch_alter_table("network_ping_logs", schema=None) as batch_op:
-            batch_op.create_index(
-                "ix_network_ping_logs_pc_id", ["pc_id"], unique=False
-            )
+            batch_op.create_index("ix_network_ping_logs_pc_id", ["pc_id"], unique=False)
             batch_op.create_index(
                 "ix_network_ping_logs_check_type", ["check_type"], unique=False
             )

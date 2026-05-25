@@ -92,9 +92,9 @@ def test_api_login_null_body_returns_4xx_or_5xx(page, live_server):
         data=json.dumps({"username": None, "password": None}),
         headers={"Content-Type": "application/json"},
     )
-    assert response.status >= 400, (
-        f"Expected 4xx or 5xx for null values, got {response.status}"
-    )
+    assert (
+        response.status >= 400
+    ), f"Expected 4xx or 5xx for null values, got {response.status}"
 
 
 def test_api_login_error_response_has_error_field(page, live_server):
@@ -128,9 +128,9 @@ def test_login_invalid_credentials_shows_error_message(page, live_server):
 def test_login_error_element_empty_on_page_load(page, live_server):
     """#login-error-box must not have .show class when the page first loads."""
     page.goto(f"{live_server}/login", wait_until="domcontentloaded")
-    assert page.locator("#login-error-box.show").count() == 0, (
-        "#login-error-box must not be visible on initial load"
-    )
+    assert (
+        page.locator("#login-error-box.show").count() == 0
+    ), "#login-error-box must not be visible on initial load"
 
 
 def test_login_button_disabled_during_submission(page, live_server):
@@ -182,6 +182,8 @@ def test_api_collect_without_auth_returns_401(page, live_server):
         headers={"Content-Type": "application/json"},
     )
     # Collect endpoint requires authentication
-    assert response.status in (401, 403, 422), (
-        f"Unauthenticated request must be rejected, got {response.status}"
-    )
+    assert response.status in (
+        401,
+        403,
+        422,
+    ), f"Unauthenticated request must be rejected, got {response.status}"

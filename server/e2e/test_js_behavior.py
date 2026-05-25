@@ -114,9 +114,9 @@ def test_login_state_maintained_after_reload(page, live_server):
     # Reload and expect to stay on dashboard
     page.reload()
     page.wait_for_load_state("domcontentloaded", timeout=8000)
-    assert "/login" not in page.url, (
-        "Should remain on dashboard after reload when token present"
-    )
+    assert (
+        "/login" not in page.url
+    ), "Should remain on dashboard after reload when token present"
 
 
 def test_unauthenticated_redirect_to_login(page, live_server):

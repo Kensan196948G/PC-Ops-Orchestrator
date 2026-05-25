@@ -95,9 +95,9 @@ def test_pc_detail_tab_clicks_switch_panels(page_with_login, live_server, detail
     for tab in TABS:
         p.locator(f'.tab-btn[data-tab="{tab}"]').click()
         btn = p.locator(f'.tab-btn[data-tab="{tab}"]')
-        assert btn.get_attribute("aria-selected") == "true", (
-            f"aria-selected not flipped for {tab}"
-        )
+        assert (
+            btn.get_attribute("aria-selected") == "true"
+        ), f"aria-selected not flipped for {tab}"
         panel = p.locator(f"#tab-{tab}")
         panel_cls = panel.get_attribute("class") or ""
         assert "hidden" not in panel_cls, f"panel not visible for {tab}"
@@ -107,9 +107,9 @@ def test_pc_detail_tab_clicks_switch_panels(page_with_login, live_server, detail
             if other == tab:
                 continue
             other_cls = p.locator(f"#tab-{other}").get_attribute("class") or ""
-            assert "hidden" in other_cls, (
-                f"panel #{other} still visible when {tab} active"
-            )
+            assert (
+                "hidden" in other_cls
+            ), f"panel #{other} still visible when {tab} active"
 
 
 def test_pc_detail_hash_deep_link_activates_tab(

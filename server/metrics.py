@@ -113,9 +113,9 @@ def _collect_tasks_pending_total() -> list[tuple[dict[str, str] | None, float]]:
     return [(None, int(count))]
 
 
-def _collect_scheduled_tasks_enabled_total() -> list[
-    tuple[dict[str, str] | None, float]
-]:
+def _collect_scheduled_tasks_enabled_total() -> (
+    list[tuple[dict[str, str] | None, float]]
+):
     count = (
         db.session.query(func.count(ScheduledTask.id))
         .filter(ScheduledTask.is_enabled == True)  # noqa: E712

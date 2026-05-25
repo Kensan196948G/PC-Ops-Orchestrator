@@ -50,9 +50,9 @@ def test_tablet_layout_has_sidebar_element(page_with_login, live_server):
     p.goto(f"{live_server}/", wait_until="domcontentloaded")
     p.wait_for_load_state("networkidle", timeout=10000)
     # DOM presence is required; CSS visibility may vary by design
-    assert p.locator(".sidebar").count() > 0, (
-        "Sidebar element must exist at tablet width"
-    )
+    assert (
+        p.locator(".sidebar").count() > 0
+    ), "Sidebar element must exist at tablet width"
 
 
 def test_mobile_layout_has_sidebar_element(page_with_login, live_server):
@@ -61,9 +61,9 @@ def test_mobile_layout_has_sidebar_element(page_with_login, live_server):
     p.set_viewport_size({"width": 375, "height": 667})
     p.goto(f"{live_server}/", wait_until="domcontentloaded")
     p.wait_for_load_state("networkidle", timeout=10000)
-    assert p.locator(".sidebar").count() > 0, (
-        "Sidebar element must exist at mobile width"
-    )
+    assert (
+        p.locator(".sidebar").count() > 0
+    ), "Sidebar element must exist at mobile width"
 
 
 def test_desktop_main_content_visible(page_with_login, live_server):
@@ -72,9 +72,9 @@ def test_desktop_main_content_visible(page_with_login, live_server):
     p.set_viewport_size({"width": 1920, "height": 1080})
     p.goto(f"{live_server}/", wait_until="domcontentloaded")
     p.wait_for_load_state("networkidle", timeout=10000)
-    assert p.locator(".main-content").is_visible(), (
-        ".main-content must be visible on desktop"
-    )
+    assert p.locator(
+        ".main-content"
+    ).is_visible(), ".main-content must be visible on desktop"
 
 
 def test_mobile_page_title_accessible(page_with_login, live_server):
