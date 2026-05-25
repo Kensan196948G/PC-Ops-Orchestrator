@@ -247,14 +247,28 @@ def test_dispatch_exception_rolls_back():
 
 
 def test_init_scheduler_registers_job_and_starts():
-    """L88-98: init_scheduler が add_job + start を呼ぶ."""
+    """L88-98: init_scheduler が add_job + start を呼ぶ.
+
+    現在は 2 ジョブを登録する:
+    - dispatch_scheduled_tasks (interval=1min)
+    - evaluate_alert_rules (interval=5min)
+    """
     mock_sched = MagicMock()
     with patch.object(scheduler_mod, "_scheduler", mock_sched):
         scheduler_mod.init_scheduler(app)
-    mock_sched.add_job.assert_called_once()
-    args, kwargs = mock_sched.add_job.call_args
-    assert args[0] is scheduler_mod._dispatch_due_tasks
-    assert kwargs["id"] == "dispatch_scheduled_tasks"
-    assert kwargs["replace_existing"] is True
-    assert kwargs["args"] == [app]
+    assert mock_sched.add_job.call_count == 2
+    calls = mock_sched.add_job.call_args_list
+
+    dispatch_args, dispatch_kwargs = calls[0]
+    assert dispatch_args[0] is scheduler_mod._dispatch_due_tasks
+    assert dispatch_kwargs["id"] == "dispatch_scheduled_tasks"
+    assert dispatch_kwargs["replace_existing"] is True
+    assert dispatch_kwargs["args"] == [app]
+
+    eval_args, eval_kwargs = calls[1]
+    assert eval_args[0] is scheduler_mod._evaluate_alert_rules
+    assert eval_kwargs["id"] == "evaluate_alert_rules"
+    assert eval_kwargs["replace_existing"] is True
+    assert eval_kwargs["args"] == [app]
+
     mock_sched.start.assert_called_once()

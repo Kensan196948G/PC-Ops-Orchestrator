@@ -270,6 +270,10 @@ def create_app(config_name=None):
     def stability_disk_health():
         return render_template("stability_disk_health.html")
 
+    @app.route("/notification-logs")
+    def notification_logs_page():
+        return render_template("notification_logs.html")
+
     @app.route("/health")
     def health():
         try:
