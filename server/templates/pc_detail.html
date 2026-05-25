@@ -13,6 +13,7 @@
     <button type="button" class="tab-btn" data-tab="network" role="tab" aria-selected="false" aria-controls="tab-network">ネットワーク<span class="tab-count" id="cnt-network">0</span></button>
     <button type="button" class="tab-btn" data-tab="updates" role="tab" aria-selected="false" aria-controls="tab-updates">更新<span class="tab-count" id="cnt-updates">0</span></button>
     <button type="button" class="tab-btn" data-tab="history" role="tab" aria-selected="false" aria-controls="tab-history">履歴</button>
+    <button type="button" class="tab-btn" data-tab="uptime" role="tab" aria-selected="false" aria-controls="tab-uptime">稼働率</button>
     <button type="button" class="tab-btn" data-tab="tasks" role="tab" aria-selected="false" aria-controls="tab-tasks">タスク</button>
 </div>
 
@@ -119,6 +120,27 @@
         <h3 class="card-title">リソース履歴 (7日間)</h3>
         <div class="chart-container">
             <canvas id="historyChart"></canvas>
+        </div>
+    </div>
+</section>
+
+<section class="tab-panel hidden" id="tab-uptime" role="tabpanel" aria-labelledby="tab-uptime">
+    <div class="kpi-grid mb-lg">
+        <div class="kpi info">
+            <div class="kpi-head"><span class="kpi-label">稼働率 (30日)</span></div>
+            <div class="kpi-value" id="uptime-stat-pct">—<small>%</small></div>
+            <div class="kpi-delta neutral" id="uptime-stat-sample">サンプル数: —</div>
+        </div>
+        <div class="kpi warning">
+            <div class="kpi-head"><span class="kpi-label">ダウンタイム合計</span></div>
+            <div class="kpi-value" id="uptime-stat-downtime">—<small>分</small></div>
+            <div class="kpi-delta neutral">直近 30 日間</div>
+        </div>
+    </div>
+    <div class="card">
+        <h3 class="card-title">オンライン状態履歴 (直近 100 件)</h3>
+        <div class="chart-container">
+            <canvas id="uptimeChart"></canvas>
         </div>
     </div>
 </section>

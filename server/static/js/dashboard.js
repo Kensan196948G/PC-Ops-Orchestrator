@@ -386,13 +386,66 @@ async function refreshDashboard() {
     }
 }
 
+async function refreshUptimeRanking() {
+    const tbody = document.getElementById('uptime-ranking-body');
+    if (!tbody) return;
+    try {
+        const data = await apiFetch('/uptime/summary?days=30&limit=5');
+        const pcs = (data.pcs || []).filter(p => p.uptime_pct !== null);
+        const countEl = document.getElementById('uptime-ranking-count');
+        if (countEl) countEl.textContent = `${pcs.length} 台 表示中`;
+
+        if (pcs.length === 0) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 4;
+            td.className = 'text-center';
+            td.textContent = '稼働率データはまだありません';
+            tr.appendChild(td);
+            tbody.replaceChildren(tr);
+            return;
+        }
+
+        const rows = pcs.map(p => {
+            const tr = document.createElement('tr');
+
+            const tdName = document.createElement('td');
+            const a = document.createElement('a');
+            a.href = `/pcs/${p.pc_id}#uptime`;
+            a.textContent = p.pc_name || `PC#${p.pc_id}`;
+            a.style.cssText = 'color:var(--primary);text-decoration:none;';
+            tdName.appendChild(a);
+
+            const tdPct = document.createElement('td');
+            tdPct.textContent = `${p.uptime_pct}%`;
+
+            const tdDown = document.createElement('td');
+            tdDown.textContent = p.downtime_minutes !== null ? String(p.downtime_minutes) : '-';
+
+            const tdSample = document.createElement('td');
+            tdSample.textContent = String(p.sample_count ?? 0);
+
+            [tdName, tdPct, tdDown, tdSample].forEach(td => tr.appendChild(td));
+            return tr;
+        });
+        tbody.replaceChildren(...rows);
+    } catch (e) {
+        console.error('Uptime ranking error:', e);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const refreshBtn = document.getElementById('btn-refresh-dashboard');
-    if (refreshBtn) refreshBtn.addEventListener('click', refreshDashboard);
+    if (refreshBtn) refreshBtn.addEventListener('click', () => {
+        refreshDashboard();
+        refreshUptimeRanking();
+    });
     const kpiTotal = document.getElementById('kpi-total');
     if (kpiTotal) kpiTotal.addEventListener('click', () => { location.href = '/pcs'; });
     const rangeEl = document.getElementById('dashboard-range');
     if (rangeEl) rangeEl.addEventListener('change', refreshDashboard);
     refreshDashboard();
+    refreshUptimeRanking();
     setInterval(refreshDashboard, 30000);
+    setInterval(refreshUptimeRanking, 60000);
 });
