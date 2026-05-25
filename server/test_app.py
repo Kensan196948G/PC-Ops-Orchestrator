@@ -43,6 +43,7 @@ def client():
         "/licenses",  # L231
         "/login",  # L235
         "/notification-logs",
+        "/windows-release-health",
     ],
 )
 def test_simple_template_routes_render(client, path):
