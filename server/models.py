@@ -1,5 +1,6 @@
 import secrets
 from datetime import datetime, timezone
+
 from extensions import db
 
 pc_group_membership = db.Table(
@@ -73,7 +74,7 @@ class PC(db.Model):
     # VPN/offline sync fields (Issue #154)
     connection_type = db.Column(db.String(32), default="Unknown")
     offline_pending_count = db.Column(db.Integer, default=0)
-    # HMAC-SHA256 job signing key (Issue #188 part 4) — server-internal, never serialized
+    # HMAC-SHA256 job signing key (Issue #188 part 4) — server-internal, never serialized  # noqa: E501
     agent_signing_key = db.Column(db.String(128), nullable=True)
     # Stability Insight (Issue #238)
     stability_score = db.Column(db.Float, default=100.0)
@@ -836,8 +837,10 @@ class JobExecution(db.Model):
     """Records a single execution of a JobTemplate on a target PC.
 
     Status flow (Phase B-1): pending → running → completed / failed / cancelled
-    Status flow (Phase B-2): [requires_approval=true] → pending_approval → pending → running → …
-    Agent polls /api/tasks/pending-jobs and updates status via /api/job-executions/<id>/result.
+    Status flow (Phase B-2): [requires_approval=true] → pending_approval
+    → pending → running → …
+    Agent polls /api/tasks/pending-jobs; result posted to
+    /api/job-executions/<id>/result.
     """
 
     __tablename__ = "job_executions"
@@ -1059,7 +1062,7 @@ class KnownIssue(db.Model):
 
 
 class Inquiry(db.Model):
-    """User inquiry record (Issue #241 Phase D-4) — links a user-reported symptom to a PC."""
+    """User inquiry record (Issue #241 Phase D-4) — links a user-reported symptom to a PC."""  # noqa: E501
 
     __tablename__ = "inquiries"
 
@@ -1169,7 +1172,7 @@ class NetworkPingLog(db.Model):
         }
 
     def __repr__(self) -> str:
-        return f"<NetworkPingLog pc={self.pc_id} type={self.check_type} status={self.status}>"
+        return f"<NetworkPingLog pc={self.pc_id} type={self.check_type} status={self.status}>"  # noqa: E501
 
 
 class AppResponseLog(db.Model):
@@ -1202,7 +1205,7 @@ class AppResponseLog(db.Model):
         }
 
     def __repr__(self) -> str:
-        return f"<AppResponseLog pc={self.pc_id} app={self.app_name} ms={self.response_time_ms}>"
+        return f"<AppResponseLog pc={self.pc_id} app={self.app_name} ms={self.response_time_ms}>"  # noqa: E501
 
 
 class CollectionPolicy(db.Model):
@@ -1255,7 +1258,7 @@ class CollectionPolicy(db.Model):
         }
 
     def __repr__(self) -> str:
-        return f"<CollectionPolicy group={self.group_id} metric={self.metric_type} freq={self.frequency_minutes}m>"
+        return f"<CollectionPolicy group={self.group_id} metric={self.metric_type} freq={self.frequency_minutes}m>"  # noqa: E501
 
 
 class UptimeLog(db.Model):
@@ -1292,3 +1295,59 @@ class UptimeLog(db.Model):
 
     def __repr__(self) -> str:
         return f"<UptimeLog pc={self.pc_id} status={self.status} at={self.recorded_at}>"
+
+
+class NotificationLog(db.Model):
+    """Per-channel notification delivery record linked to an Alert (Issue #278)."""
+
+    __tablename__ = "notification_logs"
+
+    CHANNEL_CHOICES = ("slack", "teams", "email", "generic_webhook")
+    STATUS_CHOICES = ("sent", "failed", "skipped")
+
+    id = db.Column(db.Integer, primary_key=True)
+    alert_id = db.Column(
+        db.Integer,
+        db.ForeignKey("alerts.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    rule_id = db.Column(
+        db.Integer,
+        db.ForeignKey("alert_rules.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    channel = db.Column(db.String(32), nullable=False)
+    status = db.Column(db.String(16), nullable=False, index=True)
+    message = db.Column(db.Text, nullable=True)
+    sent_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        index=True,
+    )
+
+    alert = db.relationship(
+        "Alert", backref=db.backref("notification_logs", lazy="dynamic")
+    )
+    rule = db.relationship(
+        "AlertRule", backref=db.backref("notification_logs", lazy="dynamic")
+    )
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "alert_id": self.alert_id,
+            "rule_id": self.rule_id,
+            "channel": self.channel,
+            "status": self.status,
+            "message": self.message,
+            "sent_at": self.sent_at.isoformat() if self.sent_at else None,
+        }
+
+    def __repr__(self) -> str:
+        return (
+            f"<NotificationLog alert={self.alert_id}"
+            f" channel={self.channel} status={self.status}>"
+        )
