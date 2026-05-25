@@ -97,7 +97,9 @@ def _add_notification_channel(name, ch_type, target):
         existing = NotificationChannel.query.filter_by(name=name).first()
         if existing:
             return existing.id
-        ch = NotificationChannel(name=name, channel_type=ch_type, target=target, is_active=True)
+        ch = NotificationChannel(
+            name=name, channel_type=ch_type, target=target, is_active=True
+        )
         db.session.add(ch)
         db.session.commit()
         return ch.id
@@ -193,7 +195,9 @@ class TestAppResponseRecord:
         token = _login()
         pc_id = _make_pc("APP-RESP-POST-SINGLE")
         payload = {"app_name": "notepad.exe", "response_time_ms": 150}
-        r = _req("POST", f"/api/stability/app-response/{pc_id}", token=token, data=payload)
+        r = _req(
+            "POST", f"/api/stability/app-response/{pc_id}", token=token, data=payload
+        )
         assert r.status_code == 201
         data = json.loads(r.data)
         assert data["created"] == 1
@@ -206,7 +210,9 @@ class TestAppResponseRecord:
             {"app_name": "app1.exe", "response_time_ms": 200},
             {"app_name": "app2.exe", "response_time_ms": 3000, "threshold_ms": 2000},
         ]
-        r = _req("POST", f"/api/stability/app-response/{pc_id}", token=token, data=payload)
+        r = _req(
+            "POST", f"/api/stability/app-response/{pc_id}", token=token, data=payload
+        )
         assert r.status_code == 201
         data = json.loads(r.data)
         assert data["created"] == 2
@@ -214,14 +220,22 @@ class TestAppResponseRecord:
     def test_post_record_auto_is_slow_from_threshold(self):
         token = _login()
         pc_id = _make_pc("APP-RESP-THRESHOLD")
-        payload = {"app_name": "myapp.exe", "response_time_ms": 5000, "threshold_ms": 2000}
-        r = _req("POST", f"/api/stability/app-response/{pc_id}", token=token, data=payload)
+        payload = {
+            "app_name": "myapp.exe",
+            "response_time_ms": 5000,
+            "threshold_ms": 2000,
+        }
+        r = _req(
+            "POST", f"/api/stability/app-response/{pc_id}", token=token, data=payload
+        )
         assert r.status_code == 201
 
         with app.app_context():
-            log = AppResponseLog.query.filter_by(
-                pc_id=pc_id, app_name="myapp.exe"
-            ).order_by(AppResponseLog.id.desc()).first()
+            log = (
+                AppResponseLog.query.filter_by(pc_id=pc_id, app_name="myapp.exe")
+                .order_by(AppResponseLog.id.desc())
+                .first()
+            )
             assert log is not None
             assert log.is_slow is True
 
@@ -229,7 +243,9 @@ class TestAppResponseRecord:
         token = _login()
         pc_id = _make_pc("APP-RESP-MISSING-NAME")
         payload = {"response_time_ms": 100}
-        r = _req("POST", f"/api/stability/app-response/{pc_id}", token=token, data=payload)
+        r = _req(
+            "POST", f"/api/stability/app-response/{pc_id}", token=token, data=payload
+        )
         assert r.status_code == 201
         data = json.loads(r.data)
         assert data["created"] == 0
@@ -332,13 +348,13 @@ class TestTrendsNotify:
         _add_stability_score(pc_id, 90.0, hours_ago=4)
         _add_stability_score(pc_id, 50.0, hours_ago=0)
 
-        ch_id = _add_notification_channel(
+        _add_notification_channel(
             "test-slack-notify", "slack", "https://hooks.slack.com/test"
         )
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
-        with patch("routes.stability.http_requests.post", return_value=mock_resp) as mock_post:
+        with patch("routes.stability.http_requests.post", return_value=mock_resp):
             r = _req(
                 "POST",
                 "/api/stability/trends/notify",
@@ -477,7 +493,9 @@ class TestIncidentsAutoFile:
 
         mock_resp = MagicMock()
         mock_resp.status_code = 201
-        mock_resp.json.return_value = {"html_url": "https://github.com/owner/repo/issues/1"}
+        mock_resp.json.return_value = {
+            "html_url": "https://github.com/owner/repo/issues/1"
+        }
         with patch("routes.stability.http_requests.post", return_value=mock_resp):
             r = _req(
                 "POST",
