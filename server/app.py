@@ -105,6 +105,7 @@ def create_app(config_name=None):
     from routes.windows_release_health import bp as windows_release_health_bp
     from routes.msgraph import bp as msgraph_bp
     from routes.uptime import bp as uptime_bp
+    from routes.notification_logs import notification_logs_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(collect_bp)
@@ -135,6 +136,7 @@ def create_app(config_name=None):
     app.register_blueprint(windows_release_health_bp)
     app.register_blueprint(msgraph_bp)
     app.register_blueprint(uptime_bp)
+    app.register_blueprint(notification_logs_bp)
 
     # Rate limiter -> /metrics integration:
     # increment the in-process counter every time Flask-Limiter rejects a

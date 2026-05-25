@@ -428,6 +428,39 @@ def send_report_email(
     )
 
 
+def _save_notification_logs(alert, rule, results: dict[str, bool]) -> None:
+    """Persist NotificationLog rows for each channel result.
+
+    Silently skips outside a Flask application context.
+    """
+    try:
+        from flask import current_app  # noqa: PLC0415
+
+        current_app._get_current_object()  # raises RuntimeError outside context
+    except RuntimeError:
+        return
+
+    try:
+        from extensions import db  # noqa: PLC0415
+        from models import NotificationLog  # noqa: PLC0415
+
+        alert_id = getattr(alert, "id", None) or None
+        rule_id = getattr(rule, "id", None) or None
+        for channel, ok in results.items():
+            db.session.add(
+                NotificationLog(
+                    alert_id=alert_id if alert_id and alert_id > 0 else None,
+                    rule_id=rule_id,
+                    channel=channel,
+                    status="sent" if ok else "failed",
+                    message=getattr(alert, "message", None),
+                )
+            )
+        db.session.commit()
+    except Exception:
+        logger.exception("Failed to save NotificationLog entries")
+
+
 def dispatch_via_rule(alert, rule) -> dict[str, bool]:
     """Send notifications for ``alert`` using the channel(s) in ``rule``.
 
@@ -461,6 +494,7 @@ def dispatch_via_rule(alert, rule) -> dict[str, bool]:
             results[CHANNEL_EMAIL] = send_email(
                 alert, override_to_addrs=rule_email_targets
             )
+        _save_notification_logs(alert, rule, results)
         return results
 
     # Legacy path: send to whichever notify_* columns are populated.
@@ -478,4 +512,5 @@ def dispatch_via_rule(alert, rule) -> dict[str, bool]:
         )
     if rule_email_targets:
         results[CHANNEL_EMAIL] = send_email(alert, override_to_addrs=rule_email_targets)
+    _save_notification_logs(alert, rule, results)
     return results
