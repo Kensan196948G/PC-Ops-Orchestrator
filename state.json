@@ -27,8 +27,8 @@
     }
   },
   "phase": {
-    "current": "improve",
-    "week": 3
+    "current": "verify",
+    "week": 4
   },
   "kpi": {
     "ci_success_rate": 1,
@@ -42,7 +42,7 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-25T10:32:13.510Z",
+    "current_session_start_at": "2026-05-25T10:46:03.675Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "cron",
     "last_cron_session_id": "20260525-190001-PC-Ops-Orchestrator",
@@ -103,7 +103,8 @@
       242,
       254,
       256,
-      257
+      257,
+      263
     ]
   },
   "priority": {
@@ -173,22 +174,26 @@
     "date": "2026-05-25",
     "start_jst": "19:00",
     "end_target_jst": "24:00",
-    "phase_completed": "Phase E — BootTimeLog + NetworkPingLog + similar-issues拡張 (PR #257 MERGED)",
+    "phase_completed": "Phase E-1 + Phase E-2 — BootTimeLog + NetworkPingLog + AppResponseLog + Trends + Auto-Incident (PR #257 + PR #263 MERGED)",
     "merged_prs_this_session": [
       256,
-      257
+      257,
+      263
     ],
     "pending_prs": [],
     "closed_issues_this_session": [
       244,
       245,
-      246
+      246,
+      247,
+      252,
+      253
     ],
     "new_issues_filed": [],
-    "tests": "1123 passed / 135 skipped / 0 failed",
-    "production_deployed": true,
-    "ci_status": "PR #257 MERGED (commit 42229eaa) — production restarted 19:26 JST",
-    "next_action": "Phase E-next: Issue #247 (app response monitoring), #248 (collection policy UI), #249 (Windows Release Health), #250 (Microsoft Graph), #251 (AI root cause), #252 (auto incident), #253 (early warning)"
+    "tests": "1158 passed / 135 skipped / 0 failed",
+    "production_deployed": false,
+    "ci_status": "PR #263 MERGED (commit 3ac0f5e) — production restart pending",
+    "next_action": "Phase E-next: Issue #248 (collection policy UI), #249 (Windows Release Health), #250 (Microsoft Graph), #251 (AI root cause)"
   },
   "learning": {
     "failure_patterns": [
@@ -253,7 +258,7 @@
     }
   },
   "compact": {
-    "last_pre_compact_at": "2026-05-25T10:30:46.825Z"
+    "last_pre_compact_at": "2026-05-25T10:44:23.108Z"
   },
   "dreaming": {
     "patterns": [],
