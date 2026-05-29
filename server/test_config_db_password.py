@@ -39,9 +39,7 @@ def test_allows_strong_password_in_url():
 def test_detects_url_encoded_weak_password():
     """A percent-encoded weak password is still detected (changeme)."""
     with pytest.raises(ValueError):
-        config._require_strong_db_password(
-            "postgresql://user:changeme@db:5432/pcops"
-        )
+        config._require_strong_db_password("postgresql://user:changeme@db:5432/pcops")
 
 
 def test_ignores_sqlite_backend():
