@@ -79,6 +79,20 @@ class PC(db.Model):
     # Stability Insight (Issue #238)
     stability_score = db.Column(db.Float, default=100.0)
     last_stability_calc_at = db.Column(db.DateTime, nullable=True)
+    # CMDB ledger fields (Phase I-1, Issue #287)
+    asset_number = db.Column(db.String(64), index=True)
+    owner_name = db.Column(db.String(255))
+    employee_id = db.Column(db.String(64), index=True)
+    deploy_year = db.Column(db.Integer)
+    ad_cn = db.Column(db.String(255))
+    ad_sam = db.Column(db.String(128), index=True)
+    ad_dn = db.Column(db.Text)
+    ip_lan = db.Column(db.String(45))
+    ip_wifi = db.Column(db.String(45))
+    mac_wired = db.Column(db.String(17))
+    mac_wireless = db.Column(db.String(17))
+    asset_source = db.Column(db.String(16), default="agent", server_default="agent")
+    ledger_synced_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
@@ -157,6 +171,21 @@ class PC(db.Model):
             else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "asset_number": self.asset_number,
+            "owner_name": self.owner_name,
+            "employee_id": self.employee_id,
+            "deploy_year": self.deploy_year,
+            "ad_cn": self.ad_cn,
+            "ad_sam": self.ad_sam,
+            "ad_dn": self.ad_dn,
+            "ip_lan": self.ip_lan,
+            "ip_wifi": self.ip_wifi,
+            "mac_wired": self.mac_wired,
+            "mac_wireless": self.mac_wireless,
+            "asset_source": self.asset_source,
+            "ledger_synced_at": self.ledger_synced_at.isoformat()
+            if self.ledger_synced_at
+            else None,
         }
 
     def __repr__(self):

@@ -18,3 +18,6 @@ agent/logs/
 .claude/*
 !.claude/state.json
 !.claude/CLAUDE.md
+
+# CMDB 情報機器管理台帳 (社員名/社員番号などPIIを含む。Excel/CSV/バックアップを誤コミットしない)
+CMDB/
