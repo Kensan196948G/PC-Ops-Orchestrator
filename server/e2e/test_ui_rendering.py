@@ -9,13 +9,10 @@ PAGES = [
     ("/pcs", "PC-Ops Orchestrator - PC"),
     ("/tasks", "PC-Ops Orchestrator - タスク"),
     ("/alerts", "PC-Ops Orchestrator - アラート"),
-    ("/scheduled-tasks", "PC-Ops Orchestrator - スケジュール"),
     ("/groups", "PC-Ops Orchestrator - PCグループ"),
     ("/alert-rules", "PC-Ops Orchestrator - アラートルール"),
     ("/reports", "PC-Ops Orchestrator - レポート・分析"),
-    ("/agents", "PC-Ops Orchestrator - Agent管理"),
     ("/settings", "PC-Ops Orchestrator - システム設定"),
-    ("/certs", "PC-Ops Orchestrator - 証明書管理"),
     ("/backups", "PC-Ops Orchestrator - バックアップ管理"),
     ("/notifications-config", "PC-Ops Orchestrator - 通知設定"),
     ("/licenses", "PC-Ops Orchestrator - ライセンス管理"),
@@ -216,13 +213,16 @@ def test_topbar_search_kbd_shortcut_displayed(page_with_login, live_server):
 
 
 def test_sidebar_badges_exist(page_with_login, live_server):
-    """Sidebar must contain the muted count badges for PC / Tasks / Agents."""
+    """Sidebar must contain the muted count badges for PC / Tasks.
+
+    Agent管理 nav was removed (Phase I-UI), so its badge no longer exists.
+    """
     p = page_with_login
     p.goto(f"{live_server}/", wait_until="domcontentloaded")
     p.wait_for_load_state("domcontentloaded", timeout=8000)
     assert p.locator("#pcs-badge").count() == 1
     assert p.locator("#tasks-badge").count() == 1
-    assert p.locator("#agents-badge").count() == 1
+    assert p.locator("#agents-badge").count() == 0
 
 
 def test_main_wrapper_present(page_with_login, live_server):
