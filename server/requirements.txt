@@ -12,3 +12,4 @@ flask-swagger-ui==5.32.4
 reportlab==4.2.5
 requests>=2.32.0
 ldap3>=2.9.1
+openpyxl>=3.1
