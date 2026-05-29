@@ -1312,7 +1312,22 @@ def test_list_backups(token):
 
 
 def test_trigger_backup(token):
-    r = request("POST", "/api/backups/trigger", token=token)
+    # The testing config uses an in-memory DB (no backing file), so a *real*
+    # backup raises FileNotFoundError. Patch the service to simulate a
+    # successful real backup and exercise the endpoint's success path.
+    # patch.object on the imported module works for both pytest and the manual
+    # runner (backups.py calls ``backup_service.perform_backup()``).
+    import backup_service
+    from unittest.mock import patch
+
+    fake_result = {
+        "filename": "pc_ops_20260101T000000Z.db",
+        "path": "/tmp/pc_ops_backups/pc_ops_20260101T000000Z.db",
+        "size_bytes": 4096,
+        "created_at": "2026-01-01T00:00:00+00:00",
+    }
+    with patch.object(backup_service, "perform_backup", return_value=fake_result):
+        r = request("POST", "/api/backups/trigger", token=token)
     assert r.status_code == 201, f"Trigger backup failed: {r.status_code} {r.data}"
     data = json.loads(r.data)
     assert data["backup"]["status"] == "success"

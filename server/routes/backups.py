@@ -1,15 +1,13 @@
-import random
 from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify
 
+import backup_service
 from auth import admin_required, log_operation, login_required
 from extensions import db
 from models import BackupJob
 
 backups_bp = Blueprint("backups", __name__, url_prefix="/api")
-
-_STORAGE_PATH = "s3://pc-ops-backups/"
 
 
 @backups_bp.route("/backups", methods=["GET"])
@@ -26,23 +24,47 @@ def list_backups():
 @backups_bp.route("/backups/trigger", methods=["POST"])
 @admin_required
 def trigger_backup():
-    """Simulate an immediate backup job."""
-    duration = random.randint(120, 360)
-    size = random.randint(500_000_000, 3_000_000_000)
-    now = datetime.now(timezone.utc)
+    """Run a real DB backup and record the outcome in BackupJob."""
+    started = datetime.now(timezone.utc)
     job = BackupJob(
         backup_type="full",
         target="DB + config",
-        status="success",
-        size_bytes=size,
-        duration_seconds=duration,
-        storage_path=_STORAGE_PATH,
-        started_at=now,
-        finished_at=now,
+        status="running",
+        started_at=started,
     )
     db.session.add(job)
     db.session.commit()
-    log_operation("trigger_backup", f"backup:{job.id}", "manual full backup triggered")
+
+    try:
+        result = backup_service.perform_backup()
+    except Exception as exc:
+        finished = datetime.now(timezone.utc)
+        job.status = "failed"
+        job.notes = str(exc)
+        job.duration_seconds = int((finished - started).total_seconds())
+        job.finished_at = finished
+        db.session.commit()
+        log_operation(
+            "trigger_backup",
+            f"backup:{job.id}",
+            f"manual full backup failed: {exc}",
+        )
+        return jsonify(
+            {"error": "バックアップに失敗しました", "backup": job.to_dict()}
+        ), 500
+
+    finished = datetime.now(timezone.utc)
+    job.status = "success"
+    job.size_bytes = result["size_bytes"]
+    job.duration_seconds = int((finished - started).total_seconds())
+    job.storage_path = result["path"]
+    job.finished_at = finished
+    db.session.commit()
+    log_operation(
+        "trigger_backup",
+        f"backup:{job.id}",
+        f"manual full backup created: {result['filename']}",
+    )
     return jsonify(
         {"message": "バックアップを実行しました", "backup": job.to_dict()}
     ), 201
@@ -51,10 +73,9 @@ def trigger_backup():
 @backups_bp.route("/backups/integrity-check", methods=["POST"])
 @login_required
 def integrity_check():
-    """Run SQLite PRAGMA integrity_check."""
+    """Run a dialect-aware database integrity check."""
     try:
-        result = db.session.execute(db.text("PRAGMA integrity_check")).fetchall()
-        ok = result[0][0] == "ok" if result else False
-        return jsonify({"ok": ok, "result": [r[0] for r in result]})
+        result = backup_service.verify_integrity()
+        return jsonify(result)
     except Exception as exc:
         return jsonify({"ok": False, "result": [str(exc)]}), 500
