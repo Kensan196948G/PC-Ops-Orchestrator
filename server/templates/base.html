@@ -1,569 +1,1082 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PC-Ops Orchestrator - {% block title %}Dashboard{% endblock %}</title>
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <link rel="stylesheet" href="/static/css/style.css">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      PC-Ops Orchestrator - {% block title %}Dashboard{% endblock %}
+    </title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+    <link rel="stylesheet" href="/static/css/style.css" />
     <!-- Apply persisted theme before paint to avoid a flash of light theme (FOUC). -->
     <script nonce="{{ csp_nonce }}">
-        (function () {
-            try {
-                var saved = localStorage.getItem('theme');
-                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                var theme = saved || (prefersDark ? 'dark' : 'light');
-                document.documentElement.setAttribute('data-theme', theme);
-            } catch (e) { /* ignore storage errors */ }
-        })();
+      (function () {
+        try {
+          var saved = localStorage.getItem("theme");
+          var prefersDark =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var theme = saved || (prefersDark ? "dark" : "light");
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (e) {
+          /* ignore storage errors */
+        }
+      })();
     </script>
-    <script src="{{ url_for('static', filename='js/lib/chart.umd.min.js') }}" nonce="{{ csp_nonce }}"></script>
+    <script
+      src="{{ url_for('static', filename='js/lib/chart.umd.min.js') }}"
+      nonce="{{ csp_nonce }}"
+    ></script>
     {% block head %}{% endblock %}
-</head>
-<body>
+  </head>
+  <body>
     <div class="layout">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="brand-logo">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/><circle cx="12" cy="10" r="2" fill="currentColor" stroke="none"/></svg>
-                </div>
-                <div class="brand-text">
-                    <span class="brand-name">PC-Ops</span>
-                    <span class="brand-sub">Orchestrator</span>
-                </div>
-            </div>
-            <nav class="sidebar-nav">
-                <div class="nav-section" data-section="operations">
-                    <button class="nav-section-toggle" type="button" aria-expanded="true" aria-controls="nav-section-operations-items">
-                        <span class="nav-section-label">OPERATIONS</span>
-                        <svg class="nav-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    <div class="nav-section-items" id="nav-section-operations-items">
-                <a href="/" class="nav-item" data-page="dashboard">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
-                    <span class="nav-label">Dashboard</span>
-                </a>
-                <a href="/pcs" class="nav-item" data-page="pcs">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
-                    <span class="nav-label">PC一覧</span>
-                    <span id="pcs-badge" class="nav-badge muted hidden">0</span>
-                </a>
-                <a href="/tasks" class="nav-item" data-page="tasks">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
-                    <span class="nav-label">タスク管理</span>
-                    <span id="tasks-badge" class="nav-badge muted hidden">0</span>
-                </a>
-                <a href="/alerts" class="nav-item" data-page="alerts">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
-                    <span class="nav-label">アラート</span>
-                    <span id="alerts-badge" class="nav-badge hidden">0</span>
-                </a>
-                <a href="/reports" class="nav-item" data-page="reports">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></span>
-                    <span class="nav-label">レポート・分析</span>
-                </a>
-                    </div>
-                </div>
-
-                <div class="nav-section" data-section="stability">
-                    <button class="nav-section-toggle" type="button" aria-expanded="true" aria-controls="nav-section-stability-items">
-                        <span class="nav-section-label">STABILITY</span>
-                        <svg class="nav-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    <div class="nav-section-items" id="nav-section-stability-items">
-                <a href="/stability" class="nav-item" data-page="stability">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
-                    <span class="nav-label">安定性ダッシュボード</span>
-                </a>
-                <a href="/stability/unstable-pcs" class="nav-item" data-page="stability-unstable">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-                    <span class="nav-label">不安定PC一覧</span>
-                </a>
-                <a href="/stability/kb-impact" class="nav-item" data-page="stability-kb-impact">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
-                    <span class="nav-label">KB影響分析</span>
-                </a>
-                <a href="/stability/disk-health" class="nav-item" data-page="stability-disk-health">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span>
-                    <span class="nav-label">ディスク健全性</span>
-                </a>
-                    </div>
-                </div>
-
-                <div class="nav-section" data-section="automation">
-                    <button class="nav-section-toggle" type="button" aria-expanded="true" aria-controls="nav-section-automation-items">
-                        <span class="nav-section-label">AUTOMATION</span>
-                        <svg class="nav-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    <div class="nav-section-items" id="nav-section-automation-items">
-                <a href="/scheduled-tasks" class="nav-item" data-page="scheduled-tasks">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-                    <span class="nav-label">スケジュール</span>
-                </a>
-                <a href="/groups" class="nav-item" data-page="groups">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-                    <span class="nav-label">PCグループ</span>
-                </a>
-                <a href="/alert-rules" class="nav-item" data-page="alert-rules">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07"/><path d="M20.45 20.45A10 10 0 0 0 20.45 3.55"/></svg></span>
-                    <span class="nav-label">アラートルール</span>
-                </a>
-                <a href="/notification-logs" class="nav-item" data-page="notification-logs">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
-                    <span class="nav-label">通知履歴</span>
-                </a>
-                <a href="/windows-release-health" class="nav-item" data-page="windows-release-health">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>
-                    <span class="nav-label">Windows Release Health</span>
-                </a>
-                <a href="/agents" class="nav-item" data-page="agents">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
-                    <span class="nav-label">Agent管理</span>
-                    <span id="agents-badge" class="nav-badge muted hidden">0</span>
-                </a>
-                <a href="/job-templates" class="nav-item" data-page="job-templates">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
-                    <span class="nav-label">ジョブテンプレート</span>
-                </a>
-                    </div>
-                </div>
-
-                <div class="nav-section" data-section="admin">
-                    <button class="nav-section-toggle" type="button" aria-expanded="true" aria-controls="nav-section-admin-items">
-                        <span class="nav-section-label">ADMIN</span>
-                        <svg class="nav-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    <div class="nav-section-items" id="nav-section-admin-items">
-                <a href="/users" class="nav-item hidden" data-page="users" id="nav-users">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-                    <span class="nav-label">ユーザー管理</span>
-                </a>
-                <a href="/audit" class="nav-item hidden" data-page="audit" id="nav-audit">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
-                    <span class="nav-label">監査ログ</span>
-                </a>
-                <a href="/settings" class="nav-item hidden" data-page="settings" id="nav-settings">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-                    <span class="nav-label">システム設定</span>
-                </a>
-                <a href="/certs" class="nav-item hidden" data-page="certs" id="nav-certs">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
-                    <span class="nav-label">証明書管理</span>
-                </a>
-                <a href="/backups" class="nav-item hidden" data-page="backups" id="nav-backups">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span>
-                    <span class="nav-label">バックアップ管理</span>
-                </a>
-                <a href="/notifications-config" class="nav-item hidden" data-page="notifications-config" id="nav-notif-cfg">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg></span>
-                    <span class="nav-label">通知設定</span>
-                </a>
-                <a href="/licenses" class="nav-item hidden" data-page="licenses" id="nav-licenses">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="12" cy="15" r="2"/><path d="M12 12v1"/><path d="M12 17v1"/></svg></span>
-                    <span class="nav-label">ライセンス管理</span>
-                </a>
-                    </div>
-                </div>
-            </nav>
-            <div class="sidebar-footer">
-                <div class="avatar" id="user-avatar">--</div>
-                <div class="user-meta">
-                    <div class="user-name">
-                        <span id="user-info">---</span>
-                        <span class="role-pill admin hidden" id="role-pill"></span>
-                    </div>
-                    <div class="user-role" id="user-role-text"></div>
-                </div>
-                <button class="icon-btn" id="logout-btn" title="ログアウト">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                </button>
-            </div>
-        </aside>
-        <div class="main">
-            <header class="topbar" role="banner">
-                <div class="search">
-                    <span class="search-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                    </span>
-                    <input id="topbar-search" type="search" placeholder="PC名・IP・タスクID・ユーザーで検索..." aria-label="検索" autocomplete="off">
-                    <span class="kbd" aria-hidden="true">⌘K / Ctrl+K</span>
-                </div>
-                <div class="topbar-actions">
-                    <span class="env-pill" id="env-pill" title="API ステータス">
-                        <span class="dot" aria-hidden="true"></span>
-                        <span id="env-pill-label">API healthy</span>
-                    </span>
-                    <button class="btn btn-secondary btn-sm" id="topbar-sync-btn" type="button" title="同期">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
-                        <span>同期</span>
-                    </button>
-                    <a class="btn btn-primary btn-sm" id="topbar-create-task" href="/tasks" title="タスク発行">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        <span>タスク発行</span>
-                    </a>
-                    <span class="topbar-divider" aria-hidden="true"></span>
-                    <button class="theme-toggle" id="topbar-theme-toggle" type="button" title="テーマ切替" aria-label="ライト/ダーク切替" aria-pressed="false">
-                        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-                        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                    </button>
-                    <a class="icon-btn" href="/alerts" id="topbar-bell" title="通知" aria-label="通知">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                        <span id="topbar-bell-badge" class="topbar-bell-badge hidden">0</span>
-                    </a>
-                    <a class="icon-btn" href="/settings" id="topbar-cog" title="設定" aria-label="設定">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                    </a>
-                </div>
-            </header>
-            <main class="main-content">
-                {% block content %}{% endblock %}
-            </main>
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="brand-logo">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="4" width="18" height="12" rx="2" />
+              <path d="M8 20h8M12 16v4" />
+              <circle cx="12" cy="10" r="2" fill="currentColor" stroke="none" />
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-name">PC-Ops</span>
+            <span class="brand-sub">Orchestrator</span>
+          </div>
         </div>
+        <nav class="sidebar-nav">
+          <div class="nav-section" data-section="operations">
+            <button
+              class="nav-section-toggle"
+              type="button"
+              aria-expanded="true"
+              aria-controls="nav-section-operations-items"
+            >
+              <span class="nav-section-label">OPERATIONS</span>
+              <svg
+                class="nav-section-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            <div class="nav-section-items" id="nav-section-operations-items">
+              <a href="/" class="nav-item" data-page="dashboard">
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" /></svg
+                ></span>
+                <span class="nav-label">Dashboard</span>
+              </a>
+              <a href="/pcs" class="nav-item" data-page="pcs">
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="3" y="4" width="18" height="12" rx="2" />
+                    <path d="M8 20h8M12 16v4" /></svg
+                ></span>
+                <span class="nav-label">PC一覧</span>
+                <span id="pcs-badge" class="nav-badge muted hidden">0</span>
+              </a>
+              <a href="/tasks" class="nav-item" data-page="tasks">
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M9 11l3 3L22 4" />
+                    <path
+                      d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
+                    /></svg
+                ></span>
+                <span class="nav-label">タスク管理</span>
+                <span id="tasks-badge" class="nav-badge muted hidden">0</span>
+              </a>
+              <a href="/alerts" class="nav-item" data-page="alerts">
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg
+                ></span>
+                <span class="nav-label">アラート</span>
+                <span id="alerts-badge" class="nav-badge hidden">0</span>
+              </a>
+              <a href="/reports" class="nav-item" data-page="reports">
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M3 3v18h18" />
+                    <path d="M7 14l4-4 4 4 5-5" /></svg
+                ></span>
+                <span class="nav-label">レポート・分析</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="nav-section" data-section="stability">
+            <button
+              class="nav-section-toggle"
+              type="button"
+              aria-expanded="true"
+              aria-controls="nav-section-stability-items"
+            >
+              <span class="nav-section-label">STABILITY</span>
+              <svg
+                class="nav-section-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            <div class="nav-section-items" id="nav-section-stability-items">
+              <a href="/stability" class="nav-item" data-page="stability">
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg
+                ></span>
+                <span class="nav-label">安定性ダッシュボード</span>
+              </a>
+              <a
+                href="/stability/unstable-pcs"
+                class="nav-item"
+                data-page="stability-unstable"
+              >
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                    />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" /></svg
+                ></span>
+                <span class="nav-label">不安定PC一覧</span>
+              </a>
+              <a
+                href="/stability/kb-impact"
+                class="nav-item"
+                data-page="stability-kb-impact"
+              >
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" /></svg
+                ></span>
+                <span class="nav-label">KB影響分析</span>
+              </a>
+              <a
+                href="/stability/disk-health"
+                class="nav-item"
+                data-page="stability-disk-health"
+              >
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <ellipse cx="12" cy="5" rx="9" ry="3" />
+                    <path d="M3 5v14a9 3 0 0 0 18 0V5" />
+                    <path d="M3 12a9 3 0 0 0 18 0" /></svg
+                ></span>
+                <span class="nav-label">ディスク健全性</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="nav-section" data-section="automation">
+            <button
+              class="nav-section-toggle"
+              type="button"
+              aria-expanded="true"
+              aria-controls="nav-section-automation-items"
+            >
+              <span class="nav-section-label">AUTOMATION</span>
+              <svg
+                class="nav-section-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            <div class="nav-section-items" id="nav-section-automation-items">
+              <a href="/groups" class="nav-item" data-page="groups">
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path
+                      d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"
+                    /></svg
+                ></span>
+                <span class="nav-label">PCグループ</span>
+              </a>
+              <a href="/alert-rules" class="nav-item" data-page="alert-rules">
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.07 4.93A10 10 0 1 0 4.93 19.07" />
+                    <path d="M20.45 20.45A10 10 0 0 0 20.45 3.55" /></svg
+                ></span>
+                <span class="nav-label">アラートルール</span>
+              </a>
+              <a
+                href="/notification-logs"
+                class="nav-item"
+                data-page="notification-logs"
+              >
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg
+                ></span>
+                <span class="nav-label">通知履歴</span>
+              </a>
+              <a
+                href="/windows-release-health"
+                class="nav-item"
+                data-page="windows-release-health"
+              >
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <line x1="3" y1="9" x2="21" y2="9" />
+                    <line x1="9" y1="21" x2="9" y2="9" /></svg
+                ></span>
+                <span class="nav-label">Windows Release Health</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="nav-section" data-section="admin">
+            <button
+              class="nav-section-toggle"
+              type="button"
+              aria-expanded="true"
+              aria-controls="nav-section-admin-items"
+            >
+              <span class="nav-section-label">ADMIN</span>
+              <svg
+                class="nav-section-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            <div class="nav-section-items" id="nav-section-admin-items">
+              <a
+                href="/users"
+                class="nav-item hidden"
+                data-page="users"
+                id="nav-users"
+              >
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" /></svg
+                ></span>
+                <span class="nav-label">ユーザー管理</span>
+              </a>
+              <a
+                href="/audit"
+                class="nav-item hidden"
+                data-page="audit"
+                id="nav-audit"
+              >
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                    />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" /></svg
+                ></span>
+                <span class="nav-label">監査ログ</span>
+              </a>
+              <a
+                href="/settings"
+                class="nav-item hidden"
+                data-page="settings"
+                id="nav-settings"
+              >
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                      d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                    /></svg
+                ></span>
+                <span class="nav-label">システム設定</span>
+              </a>
+              <a
+                href="/backups"
+                class="nav-item hidden"
+                data-page="backups"
+                id="nav-backups"
+              >
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <ellipse cx="12" cy="5" rx="9" ry="3" />
+                    <path d="M3 5v14a9 3 0 0 0 18 0V5" />
+                    <path d="M3 12a9 3 0 0 0 18 0" /></svg
+                ></span>
+                <span class="nav-label">バックアップ管理</span>
+              </a>
+              <a
+                href="/notifications-config"
+                class="nav-item hidden"
+                data-page="notifications-config"
+                id="nav-notif-cfg"
+              >
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+                    />
+                    <polyline points="22 6 12 13 2 6" /></svg
+                ></span>
+                <span class="nav-label">通知設定</span>
+              </a>
+              <a
+                href="/licenses"
+                class="nav-item hidden"
+                data-page="licenses"
+                id="nav-licenses"
+              >
+                <span class="nav-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                    />
+                    <polyline points="14 2 14 8 20 8" />
+                    <circle cx="12" cy="15" r="2" />
+                    <path d="M12 12v1" />
+                    <path d="M12 17v1" /></svg
+                ></span>
+                <span class="nav-label">ライセンス管理</span>
+              </a>
+            </div>
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="avatar" id="user-avatar">--</div>
+          <div class="user-meta">
+            <div class="user-name">
+              <span id="user-info">---</span>
+              <span class="role-pill admin hidden" id="role-pill"></span>
+            </div>
+            <div class="user-role" id="user-role-text"></div>
+          </div>
+          <button class="icon-btn" id="logout-btn" title="ログアウト">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
+        </div>
+      </aside>
+      <div class="main">
+        <header class="topbar" role="banner">
+          <div class="search">
+            <span class="search-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+            </span>
+            <input
+              id="topbar-search"
+              type="search"
+              placeholder="PC名・IP・タスクID・ユーザーで検索..."
+              aria-label="検索"
+              autocomplete="off"
+            />
+            <span class="kbd" aria-hidden="true">⌘K / Ctrl+K</span>
+          </div>
+          <div class="topbar-actions">
+            <span class="env-pill" id="env-pill" title="API ステータス">
+              <span class="dot" aria-hidden="true"></span>
+              <span id="env-pill-label">API healthy</span>
+            </span>
+            <button
+              class="btn btn-secondary btn-sm"
+              id="topbar-sync-btn"
+              type="button"
+              title="同期"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="14"
+                height="14"
+                aria-hidden="true"
+              >
+                <path d="M23 4v6h-6" />
+                <path d="M1 20v-6h6" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10" />
+                <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14" />
+              </svg>
+              <span>同期</span>
+            </button>
+            <a
+              class="btn btn-primary btn-sm"
+              id="topbar-create-task"
+              href="/tasks"
+              title="タスク発行"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="14"
+                height="14"
+                aria-hidden="true"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <span>タスク発行</span>
+            </a>
+            <span class="topbar-divider" aria-hidden="true"></span>
+            <button
+              class="theme-toggle"
+              id="topbar-theme-toggle"
+              type="button"
+              title="テーマ切替"
+              aria-label="ライト/ダーク切替"
+              aria-pressed="false"
+            >
+              <svg
+                class="icon-sun"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="4" />
+                <path
+                  d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                />
+              </svg>
+              <svg
+                class="icon-moon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            </button>
+            <a
+              class="icon-btn"
+              href="/alerts"
+              id="topbar-bell"
+              title="通知"
+              aria-label="通知"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              <span id="topbar-bell-badge" class="topbar-bell-badge hidden"
+                >0</span
+              >
+            </a>
+            <a
+              class="icon-btn"
+              href="/settings"
+              id="topbar-cog"
+              title="設定"
+              aria-label="設定"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                />
+              </svg>
+            </a>
+          </div>
+        </header>
+        <main class="main-content">{% block content %}{% endblock %}</main>
+      </div>
     </div>
 
     <div id="toast-container"></div>
 
     <script nonce="{{ csp_nonce }}">
-        const API_BASE = '/api';
-        let TOKEN = localStorage.getItem('token');
+      const API_BASE = "/api";
+      let TOKEN = localStorage.getItem("token");
 
-        function apiUrl(path) {
-            return API_BASE + path;
+      function apiUrl(path) {
+        return API_BASE + path;
+      }
+
+      // Escape user-supplied / API-returned values before injecting them into
+      // an HTML template literal. Use this whenever building HTML with
+      // innerHTML; do NOT use it on values that should remain text in
+      // textContent/setAttribute (those auto-escape).
+      function escapeHTML(value) {
+        if (value == null) return "";
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+      window.escapeHTML = escapeHTML;
+
+      async function apiFetch(path, options = {}) {
+        const headers = options.headers || {};
+        if (TOKEN) {
+          headers["Authorization"] = "Bearer " + TOKEN;
         }
-
-        // Escape user-supplied / API-returned values before injecting them into
-        // an HTML template literal. Use this whenever building HTML with
-        // innerHTML; do NOT use it on values that should remain text in
-        // textContent/setAttribute (those auto-escape).
-        function escapeHTML(value) {
-            if (value == null) return '';
-            return String(value)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+        if (options.body && !(options.body instanceof FormData)) {
+          headers["Content-Type"] = "application/json";
         }
-        window.escapeHTML = escapeHTML;
-
-        async function apiFetch(path, options = {}) {
-            const headers = options.headers || {};
-            if (TOKEN) {
-                headers['Authorization'] = 'Bearer ' + TOKEN;
-            }
-            if (options.body && !(options.body instanceof FormData)) {
-                headers['Content-Type'] = 'application/json';
-            }
-            const res = await fetch(apiUrl(path), {
-                ...options,
-                headers,
-            });
-            if (res.status === 401) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = '/login';
-                throw new Error('Unauthorized');
-            }
-            return res.json();
-        }
-
-        // Fetch helpers used by both 30/45/60s polling (silent) and the manual
-        // sync button (must surface failures via toast). Pass throwOnError:true
-        // from manual triggers so callers can show "同期に失敗しました".
-        async function updateAlertsBadge({ throwOnError = false } = {}) {
-            try {
-                const data = await apiFetch('/alerts?per_page=1');
-                const count = data.unresolved_count || 0;
-                const badge = document.getElementById('alerts-badge');
-                if (badge) {
-                    badge.textContent = count;
-                    count > 0 ? badge.classList.remove('hidden') : badge.classList.add('hidden');
-                }
-                const topbarBadge = document.getElementById('topbar-bell-badge');
-                if (topbarBadge) {
-                    topbarBadge.textContent = count > 99 ? '99+' : count;
-                    count > 0 ? topbarBadge.classList.remove('hidden') : topbarBadge.classList.add('hidden');
-                }
-            } catch (e) {
-                if (throwOnError) throw e;
-            }
-        }
-
-        async function updateEnvPill({ throwOnError = false } = {}) {
-            const pill = document.getElementById('env-pill');
-            const label = document.getElementById('env-pill-label');
-            if (!pill || !label) return;
-            try {
-                const res = await fetch('/health', { cache: 'no-store' });
-                if (res.ok) {
-                    pill.classList.remove('env-pill-error');
-                    pill.classList.add('env-pill-ok');
-                    label.textContent = 'API healthy';
-                } else {
-                    pill.classList.remove('env-pill-ok');
-                    pill.classList.add('env-pill-error');
-                    label.textContent = 'API degraded';
-                    if (throwOnError) throw new Error(`HTTP ${res.status}`);
-                }
-            } catch (e) {
-                pill.classList.remove('env-pill-ok');
-                pill.classList.add('env-pill-error');
-                label.textContent = 'API down';
-                if (throwOnError) throw e;
-            }
-        }
-
-        async function updateSidebarCounts({ throwOnError = false } = {}) {
-            const setBadge = (id, count) => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                if (count > 0) {
-                    el.textContent = count > 99 ? '99+' : count;
-                    el.classList.remove('hidden');
-                } else {
-                    el.classList.add('hidden');
-                }
-            };
-            const fetchCount = async (path, key) => {
-                // When throwOnError is requested we let the error bubble up;
-                // otherwise we silently treat fetch failure as count=0.
-                if (throwOnError) {
-                    const data = await apiFetch(path);
-                    if (typeof data[key] === 'number') return data[key];
-                    if (Array.isArray(data.items)) return data.items.length;
-                    if (Array.isArray(data)) return data.length;
-                    return 0;
-                }
-                try {
-                    const data = await apiFetch(path);
-                    if (typeof data[key] === 'number') return data[key];
-                    if (Array.isArray(data.items)) return data.items.length;
-                    if (Array.isArray(data)) return data.length;
-                    return 0;
-                } catch (e) { return 0; }
-            };
-            const [pcs, tasks, agents] = await Promise.all([
-                fetchCount('/pcs?per_page=1', 'total'),
-                fetchCount('/tasks?status=running&per_page=1', 'total'),
-                fetchCount('/agents?per_page=1', 'total'),
-            ]);
-            setBadge('pcs-badge', pcs);
-            setBadge('tasks-badge', tasks);
-            setBadge('agents-badge', agents);
-        }
-
-        async function apiFetchRaw(path, options = {}) {
-            const headers = options.headers || {};
-            if (TOKEN) {
-                headers['Authorization'] = 'Bearer ' + TOKEN;
-            }
-            if (options.body && !(options.body instanceof FormData)) {
-                headers['Content-Type'] = 'application/json';
-            }
-            return fetch(apiUrl(path), { ...options, headers });
-        }
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast toast-' + type;
-            toast.textContent = message;
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        function showError(message) {
-            showToast(message, 'error');
-        }
-
-        function showSuccess(message) {
-            showToast(message, 'success');
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!TOKEN && window.location.pathname !== '/login') {
-                window.location.href = '/login';
-                return;
-            }
-
-            const logoutBtn = document.getElementById('logout-btn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = '/login';
-                });
-            }
-
-            try {
-                const user = JSON.parse(localStorage.getItem('user') || '{}');
-                const info = document.getElementById('user-info');
-                if (info) {
-                    info.textContent = user.username || '---';
-                }
-                // Update avatar initials
-                const avatarEl = document.getElementById('user-avatar');
-                if (avatarEl && user.username) {
-                    avatarEl.textContent = user.username.slice(0, 2).toUpperCase();
-                }
-                // Update role pill
-                const rolePill = document.getElementById('role-pill');
-                const roleText = document.getElementById('user-role-text');
-                const roleLabels = { admin: '管理者', operator: 'オペレーター', viewer: '閲覧者' };
-                if (rolePill && user.role) {
-                    rolePill.textContent = user.role;
-                    rolePill.className = 'role-pill ' + user.role;
-                    rolePill.classList.remove('hidden');
-                }
-                if (roleText && user.role) {
-                    roleText.textContent = roleLabels[user.role] || user.role;
-                }
-                window.CURRENT_USER_ROLE = user.role || null;
-                const navUsers = document.getElementById('nav-users');
-                if (navUsers && user.role === 'admin') navUsers.classList.remove('hidden');
-                const navAudit = document.getElementById('nav-audit');
-                if (navAudit && (user.role === 'admin' || user.role === 'operator')) {
-                    navAudit.classList.remove('hidden');
-                }
-                // ADMIN-only sections (settings/certs/backups/notif-cfg/licenses)
-                if (user.role === 'admin') {
-                    ['nav-settings', 'nav-certs', 'nav-backups', 'nav-notif-cfg', 'nav-licenses'].forEach((id) => {
-                        const el = document.getElementById(id);
-                        if (el) el.classList.remove('hidden');
-                    });
-                }
-                // Hide write-only actions for viewers (best-effort UX; API enforces auth)
-                if (user.role === 'viewer') {
-                    document.body.classList.add('role-viewer');
-                }
-                if (user.role === 'operator') {
-                    document.body.classList.add('role-operator');
-                }
-                if (user.role === 'admin') {
-                    document.body.classList.add('role-admin');
-                }
-            } catch (e) {}
-
-            if (TOKEN) {
-                updateAlertsBadge();
-                setInterval(updateAlertsBadge, 30000);
-                updateSidebarCounts();
-                setInterval(updateSidebarCounts, 45000);
-            }
-
-            // Topbar: env-pill (API health), search ⌘K shortcut, sync button
-            updateEnvPill();
-            setInterval(updateEnvPill, 60000);
-
-            const topbarSearch = document.getElementById('topbar-search');
-            if (topbarSearch) {
-                document.addEventListener('keydown', (e) => {
-                    const isMac = navigator.platform.toLowerCase().includes('mac');
-                    const meta = isMac ? e.metaKey : e.ctrlKey;
-                    if (meta && (e.key === 'k' || e.key === 'K')) {
-                        e.preventDefault();
-                        topbarSearch.focus();
-                        topbarSearch.select();
-                    }
-                });
-            }
-
-            // Theme toggle (light/dark). Initial value was applied in <head>
-            // before paint. Here we just sync the aria-pressed state and wire
-            // the click handler.
-            const themeToggle = document.getElementById('topbar-theme-toggle');
-            if (themeToggle) {
-                const syncPressed = () => {
-                    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                    themeToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
-                };
-                syncPressed();
-                themeToggle.addEventListener('click', () => {
-                    const current = document.documentElement.getAttribute('data-theme') || 'light';
-                    const next = current === 'dark' ? 'light' : 'dark';
-                    document.documentElement.setAttribute('data-theme', next);
-                    try { localStorage.setItem('theme', next); } catch (e) {}
-                    syncPressed();
-                });
-            }
-
-            const syncBtn = document.getElementById('topbar-sync-btn');
-            if (syncBtn) {
-                syncBtn.addEventListener('click', async () => {
-                    syncBtn.classList.add('is-syncing');
-                    try {
-                        // Manual sync must propagate fetch failures so the
-                        // catch arm shows the error toast — the polling-side
-                        // callers below stay silent (default throwOnError:false).
-                        const jobs = [updateEnvPill({ throwOnError: true })];
-                        if (TOKEN) {
-                            jobs.push(
-                                updateAlertsBadge({ throwOnError: true }),
-                                updateSidebarCounts({ throwOnError: true }),
-                            );
-                        }
-                        await Promise.all(jobs);
-                        showToast('同期しました', 'success');
-                    } catch (err) {
-                        showToast('同期に失敗しました', 'error');
-                    } finally {
-                        syncBtn.classList.remove('is-syncing');
-                    }
-                });
-            }
-
-            const currentPath = window.location.pathname;
-            document.querySelectorAll('.nav-item').forEach(item => {
-                const page = item.dataset.page;
-                if (page && ((currentPath === '/' && page === 'dashboard') ||
-                    currentPath.startsWith('/' + page) ||
-                    (currentPath.includes('/pcs') && page === 'pcs'))) {
-                    item.classList.add('active');
-                }
-            });
-
-            // Sidebar accordion: section toggle + state persistence
-            const NAV_STATE_KEY = 'navSectionsCollapsed';
-            let savedNavState = {};
-            try {
-                savedNavState = JSON.parse(localStorage.getItem(NAV_STATE_KEY) || '{}');
-            } catch (e) {
-                savedNavState = {};
-            }
-            const activeSection = document.querySelector('.nav-section .nav-item.active')?.closest('.nav-section');
-            document.querySelectorAll('.nav-section').forEach(section => {
-                const sectionId = section.dataset.section;
-                if (!sectionId) return;
-                const btn = section.querySelector('.nav-section-toggle');
-                const shouldCollapse = savedNavState[sectionId] === true && section !== activeSection;
-                if (shouldCollapse) {
-                    section.classList.add('collapsed');
-                    if (btn) btn.setAttribute('aria-expanded', 'false');
-                } else {
-                    section.classList.remove('collapsed');
-                    if (btn) btn.setAttribute('aria-expanded', 'true');
-                }
-                if (btn) {
-                    btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const collapsed = section.classList.toggle('collapsed');
-                        btn.setAttribute('aria-expanded', String(!collapsed));
-                        try {
-                            const state = JSON.parse(localStorage.getItem(NAV_STATE_KEY) || '{}');
-                            state[sectionId] = collapsed;
-                            localStorage.setItem(NAV_STATE_KEY, JSON.stringify(state));
-                        } catch (err) {}
-                    });
-                }
-            });
+        const res = await fetch(apiUrl(path), {
+          ...options,
+          headers,
         });
+        if (res.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+          throw new Error("Unauthorized");
+        }
+        return res.json();
+      }
+
+      // Fetch helpers used by both 30/45/60s polling (silent) and the manual
+      // sync button (must surface failures via toast). Pass throwOnError:true
+      // from manual triggers so callers can show "同期に失敗しました".
+      async function updateAlertsBadge({ throwOnError = false } = {}) {
+        try {
+          const data = await apiFetch("/alerts?per_page=1");
+          const count = data.unresolved_count || 0;
+          const badge = document.getElementById("alerts-badge");
+          if (badge) {
+            badge.textContent = count;
+            count > 0
+              ? badge.classList.remove("hidden")
+              : badge.classList.add("hidden");
+          }
+          const topbarBadge = document.getElementById("topbar-bell-badge");
+          if (topbarBadge) {
+            topbarBadge.textContent = count > 99 ? "99+" : count;
+            count > 0
+              ? topbarBadge.classList.remove("hidden")
+              : topbarBadge.classList.add("hidden");
+          }
+        } catch (e) {
+          if (throwOnError) throw e;
+        }
+      }
+
+      async function updateEnvPill({ throwOnError = false } = {}) {
+        const pill = document.getElementById("env-pill");
+        const label = document.getElementById("env-pill-label");
+        if (!pill || !label) return;
+        try {
+          const res = await fetch("/health", { cache: "no-store" });
+          if (res.ok) {
+            pill.classList.remove("env-pill-error");
+            pill.classList.add("env-pill-ok");
+            label.textContent = "API healthy";
+          } else {
+            pill.classList.remove("env-pill-ok");
+            pill.classList.add("env-pill-error");
+            label.textContent = "API degraded";
+            if (throwOnError) throw new Error(`HTTP ${res.status}`);
+          }
+        } catch (e) {
+          pill.classList.remove("env-pill-ok");
+          pill.classList.add("env-pill-error");
+          label.textContent = "API down";
+          if (throwOnError) throw e;
+        }
+      }
+
+      async function updateSidebarCounts({ throwOnError = false } = {}) {
+        const setBadge = (id, count) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (count > 0) {
+            el.textContent = count > 99 ? "99+" : count;
+            el.classList.remove("hidden");
+          } else {
+            el.classList.add("hidden");
+          }
+        };
+        const fetchCount = async (path, key) => {
+          // When throwOnError is requested we let the error bubble up;
+          // otherwise we silently treat fetch failure as count=0.
+          if (throwOnError) {
+            const data = await apiFetch(path);
+            if (typeof data[key] === "number") return data[key];
+            if (Array.isArray(data.items)) return data.items.length;
+            if (Array.isArray(data)) return data.length;
+            return 0;
+          }
+          try {
+            const data = await apiFetch(path);
+            if (typeof data[key] === "number") return data[key];
+            if (Array.isArray(data.items)) return data.items.length;
+            if (Array.isArray(data)) return data.length;
+            return 0;
+          } catch (e) {
+            return 0;
+          }
+        };
+        const [pcs, tasks] = await Promise.all([
+          fetchCount("/pcs?per_page=1", "total"),
+          fetchCount("/tasks?status=running&per_page=1", "total"),
+        ]);
+        setBadge("pcs-badge", pcs);
+        setBadge("tasks-badge", tasks);
+      }
+
+      async function apiFetchRaw(path, options = {}) {
+        const headers = options.headers || {};
+        if (TOKEN) {
+          headers["Authorization"] = "Bearer " + TOKEN;
+        }
+        if (options.body && !(options.body instanceof FormData)) {
+          headers["Content-Type"] = "application/json";
+        }
+        return fetch(apiUrl(path), { ...options, headers });
+      }
+
+      function showToast(message, type = "info") {
+        const container = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+        toast.className = "toast toast-" + type;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add("show"), 10);
+        setTimeout(() => {
+          toast.classList.remove("show");
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      }
+
+      function showError(message) {
+        showToast(message, "error");
+      }
+
+      function showSuccess(message) {
+        showToast(message, "success");
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        if (!TOKEN && window.location.pathname !== "/login") {
+          window.location.href = "/login";
+          return;
+        }
+
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+          logoutBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.href = "/login";
+          });
+        }
+
+        try {
+          const user = JSON.parse(localStorage.getItem("user") || "{}");
+          const info = document.getElementById("user-info");
+          if (info) {
+            info.textContent = user.username || "---";
+          }
+          // Update avatar initials
+          const avatarEl = document.getElementById("user-avatar");
+          if (avatarEl && user.username) {
+            avatarEl.textContent = user.username.slice(0, 2).toUpperCase();
+          }
+          // Update role pill
+          const rolePill = document.getElementById("role-pill");
+          const roleText = document.getElementById("user-role-text");
+          const roleLabels = {
+            admin: "管理者",
+            operator: "オペレーター",
+            viewer: "閲覧者",
+          };
+          if (rolePill && user.role) {
+            rolePill.textContent = user.role;
+            rolePill.className = "role-pill " + user.role;
+            rolePill.classList.remove("hidden");
+          }
+          if (roleText && user.role) {
+            roleText.textContent = roleLabels[user.role] || user.role;
+          }
+          window.CURRENT_USER_ROLE = user.role || null;
+          const navUsers = document.getElementById("nav-users");
+          if (navUsers && user.role === "admin")
+            navUsers.classList.remove("hidden");
+          const navAudit = document.getElementById("nav-audit");
+          if (navAudit && (user.role === "admin" || user.role === "operator")) {
+            navAudit.classList.remove("hidden");
+          }
+          // ADMIN-only sections (settings/certs/backups/notif-cfg/licenses)
+          if (user.role === "admin") {
+            [
+              "nav-settings",
+              "nav-backups",
+              "nav-notif-cfg",
+              "nav-licenses",
+            ].forEach((id) => {
+              const el = document.getElementById(id);
+              if (el) el.classList.remove("hidden");
+            });
+          }
+          // Hide write-only actions for viewers (best-effort UX; API enforces auth)
+          if (user.role === "viewer") {
+            document.body.classList.add("role-viewer");
+          }
+          if (user.role === "operator") {
+            document.body.classList.add("role-operator");
+          }
+          if (user.role === "admin") {
+            document.body.classList.add("role-admin");
+          }
+        } catch (e) {}
+
+        if (TOKEN) {
+          updateAlertsBadge();
+          setInterval(updateAlertsBadge, 30000);
+          updateSidebarCounts();
+          setInterval(updateSidebarCounts, 45000);
+        }
+
+        // Topbar: env-pill (API health), search ⌘K shortcut, sync button
+        updateEnvPill();
+        setInterval(updateEnvPill, 60000);
+
+        const topbarSearch = document.getElementById("topbar-search");
+        if (topbarSearch) {
+          document.addEventListener("keydown", (e) => {
+            const isMac = navigator.platform.toLowerCase().includes("mac");
+            const meta = isMac ? e.metaKey : e.ctrlKey;
+            if (meta && (e.key === "k" || e.key === "K")) {
+              e.preventDefault();
+              topbarSearch.focus();
+              topbarSearch.select();
+            }
+          });
+        }
+
+        // Theme toggle (light/dark). Initial value was applied in <head>
+        // before paint. Here we just sync the aria-pressed state and wire
+        // the click handler.
+        const themeToggle = document.getElementById("topbar-theme-toggle");
+        if (themeToggle) {
+          const syncPressed = () => {
+            const isDark =
+              document.documentElement.getAttribute("data-theme") === "dark";
+            themeToggle.setAttribute("aria-pressed", isDark ? "true" : "false");
+          };
+          syncPressed();
+          themeToggle.addEventListener("click", () => {
+            const current =
+              document.documentElement.getAttribute("data-theme") || "light";
+            const next = current === "dark" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", next);
+            try {
+              localStorage.setItem("theme", next);
+            } catch (e) {}
+            syncPressed();
+          });
+        }
+
+        const syncBtn = document.getElementById("topbar-sync-btn");
+        if (syncBtn) {
+          syncBtn.addEventListener("click", async () => {
+            syncBtn.classList.add("is-syncing");
+            try {
+              // Manual sync must propagate fetch failures so the
+              // catch arm shows the error toast — the polling-side
+              // callers below stay silent (default throwOnError:false).
+              const jobs = [updateEnvPill({ throwOnError: true })];
+              if (TOKEN) {
+                jobs.push(
+                  updateAlertsBadge({ throwOnError: true }),
+                  updateSidebarCounts({ throwOnError: true }),
+                );
+              }
+              await Promise.all(jobs);
+              showToast("同期しました", "success");
+            } catch (err) {
+              showToast("同期に失敗しました", "error");
+            } finally {
+              syncBtn.classList.remove("is-syncing");
+            }
+          });
+        }
+
+        const currentPath = window.location.pathname;
+        document.querySelectorAll(".nav-item").forEach((item) => {
+          const page = item.dataset.page;
+          if (
+            page &&
+            ((currentPath === "/" && page === "dashboard") ||
+              currentPath.startsWith("/" + page) ||
+              (currentPath.includes("/pcs") && page === "pcs"))
+          ) {
+            item.classList.add("active");
+          }
+        });
+
+        // Sidebar accordion: section toggle + state persistence
+        const NAV_STATE_KEY = "navSectionsCollapsed";
+        let savedNavState = {};
+        try {
+          savedNavState = JSON.parse(
+            localStorage.getItem(NAV_STATE_KEY) || "{}",
+          );
+        } catch (e) {
+          savedNavState = {};
+        }
+        const activeSection = document
+          .querySelector(".nav-section .nav-item.active")
+          ?.closest(".nav-section");
+        document.querySelectorAll(".nav-section").forEach((section) => {
+          const sectionId = section.dataset.section;
+          if (!sectionId) return;
+          const btn = section.querySelector(".nav-section-toggle");
+          const shouldCollapse =
+            savedNavState[sectionId] === true && section !== activeSection;
+          if (shouldCollapse) {
+            section.classList.add("collapsed");
+            if (btn) btn.setAttribute("aria-expanded", "false");
+          } else {
+            section.classList.remove("collapsed");
+            if (btn) btn.setAttribute("aria-expanded", "true");
+          }
+          if (btn) {
+            btn.addEventListener("click", (e) => {
+              e.preventDefault();
+              const collapsed = section.classList.toggle("collapsed");
+              btn.setAttribute("aria-expanded", String(!collapsed));
+              try {
+                const state = JSON.parse(
+                  localStorage.getItem(NAV_STATE_KEY) || "{}",
+                );
+                state[sectionId] = collapsed;
+                localStorage.setItem(NAV_STATE_KEY, JSON.stringify(state));
+              } catch (err) {}
+            });
+          }
+        });
+      });
     </script>
     <script src="{{ url_for('static', filename='js/stub-actions.js') }}"></script>
     {% block scripts %}{% endblock %}
-</body>
+  </body>
 </html>
