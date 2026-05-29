@@ -124,10 +124,15 @@ def test_list_agents_recently_seen_status_aware():
 
 
 def test_integrity_check_db_exception():
-    """When db.session.execute raises, integrity-check returns 500 with error message (L59-60)."""
-    with patch("routes.backups.db") as mock_db:
-        mock_db.session.execute.side_effect = Exception("SQLITE_CORRUPT: fake error")
-        mock_db.text = lambda s: s
+    """When the integrity check raises, the route returns 500 with an error message.
+
+    Phase H-3 moved the integrity logic into backup_service.verify_integrity();
+    the route wraps it in try/except → 500. Patch where the work now happens.
+    """
+    with patch(
+        "backup_service.verify_integrity",
+        side_effect=Exception("SQLITE_CORRUPT: fake error"),
+    ):
         r = _auth("POST", "/api/backups/integrity-check")
     assert r.status_code == 500
     body = json.loads(r.data)

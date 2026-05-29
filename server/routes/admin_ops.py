@@ -1,25 +1,28 @@
-"""Admin operations: DB backup and log tail endpoints (Phase C-4, Issue #236).
+"""Admin operations: DB backup/restore and log tail endpoints.
+
+Phase C-4 (Issue #236) added backup/list/log endpoints. Phase H-3 (Issue #285)
+extracted the backup logic into ``backup_service`` (single source of truth) and
+added restore + download for disaster-recovery.
 
 Endpoints:
-  POST /api/admin/backup/db    — copy SQLite DB to instance/backups/ (admin)
-  GET  /api/admin/backup/list  — list available backups (admin)
-  GET  /api/admin/logs/app     — tail gunicorn access log (admin)
-  GET  /api/admin/logs/error   — tail gunicorn error log (admin)
+  POST /api/admin/backup/db       — create a DB backup (admin)
+  GET  /api/admin/backup/list     — list available backups (admin)
+  POST /api/admin/backup/restore  — restore the DB from a backup (admin)
+  GET  /api/admin/backup/download — download a backup file (admin)
+  GET  /api/admin/logs/app        — tail gunicorn access log (admin)
+  GET  /api/admin/logs/error      — tail gunicorn error log (admin)
 """
 
 import os
-import sqlite3
 from collections import deque
-from datetime import datetime, timezone
-from pathlib import Path
 
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 
+import backup_service
 from auth import admin_required, log_operation
 
 admin_ops_bp = Blueprint("admin_ops", __name__, url_prefix="/api/admin")
 
-_MAX_BACKUP_COUNT = 10
 _DEFAULT_LOG_LINES = 100
 _MAX_LOG_LINES = 1000
 
@@ -27,63 +30,28 @@ _ACCESS_LOG = os.environ.get("GUNICORN_ACCESS_LOG", "/tmp/pc-ops-access.log")
 _ERROR_LOG = os.environ.get("GUNICORN_ERROR_LOG", "/tmp/pc-ops-error.log")
 
 
-def _backup_dir() -> Path:
-    instance_path = Path(current_app.instance_path)
-    bdir = instance_path / "backups"
-    bdir.mkdir(parents=True, exist_ok=True)
-    return bdir
-
-
-def _db_path() -> Path:
-    db_url: str = current_app.config.get("SQLALCHEMY_DATABASE_URI", "")
-    if db_url.startswith("sqlite:///"):
-        rel = db_url[len("sqlite:///") :]
-        if rel == ":memory:" or not rel:
-            return Path(current_app.instance_path) / "pc_ops.db"
-        p = Path(rel)
-        if not p.is_absolute():
-            p = Path(current_app.instance_path) / p
-        return p
-    return Path(current_app.instance_path) / "pc_ops.db"
-
-
 @admin_ops_bp.route("/backup/db", methods=["POST"])
 @admin_required
 def create_db_backup():
-    """Copy the SQLite database to instance/backups/ with a timestamp filename."""
-    src = _db_path()
-    if not src.exists():
-        return jsonify({"error": "データベースファイルが見つかりません"}), 404
-
-    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    dest = _backup_dir() / f"pc_ops_{ts}.db"
-
-    # sqlite3.backup is safe under concurrent reads/writes (WAL-aware)
-    src_conn = sqlite3.connect(str(src))
+    """Create a DB backup in instance/backups/ with a timestamp filename."""
     try:
-        dst_conn = sqlite3.connect(str(dest))
-        try:
-            src_conn.backup(dst_conn)
-        finally:
-            dst_conn.close()
-    finally:
-        src_conn.close()
+        result = backup_service.perform_backup()
+    except FileNotFoundError:
+        return jsonify({"error": "データベースファイルが見つかりません"}), 404
+    except NotImplementedError as exc:
+        return jsonify({"error": str(exc)}), 501
 
-    size_bytes = dest.stat().st_size
-
-    # Rotate: keep only the _MAX_BACKUP_COUNT newest files
-    backups = sorted(_backup_dir().glob("pc_ops_*.db"), key=lambda f: f.stat().st_mtime)
-    while len(backups) > _MAX_BACKUP_COUNT:
-        backups.pop(0).unlink(missing_ok=True)
-
-    log_operation("db_backup_created", details=f"file={dest.name} size={size_bytes}")
+    log_operation(
+        "db_backup_created",
+        details=f"file={result['filename']} size={result['size_bytes']}",
+    )
 
     return jsonify(
         {
             "message": "バックアップを作成しました",
-            "filename": dest.name,
-            "size_bytes": size_bytes,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "filename": result["filename"],
+            "size_bytes": result["size_bytes"],
+            "created_at": result["created_at"],
         }
     ), 201
 
@@ -92,21 +60,73 @@ def create_db_backup():
 @admin_required
 def list_db_backups():
     """Return a list of available DB backup files."""
-    bdir = _backup_dir()
-    files = sorted(
-        bdir.glob("pc_ops_*.db"), key=lambda f: f.stat().st_mtime, reverse=True
-    )
-    items = [
-        {
-            "filename": f.name,
-            "size_bytes": f.stat().st_size,
-            "created_at": datetime.fromtimestamp(
-                f.stat().st_mtime, tz=timezone.utc
-            ).isoformat(),
-        }
-        for f in files
-    ]
+    items = backup_service.list_backup_files()
     return jsonify({"backups": items, "total": len(items)})
+
+
+@admin_ops_bp.route("/backup/restore", methods=["POST"])
+@admin_required
+def restore_db_backup():
+    """Restore the database from a previously created backup (DR)."""
+    filename = (request.get_json(silent=True) or {}).get(
+        "filename"
+    ) or request.args.get("filename")
+    if not filename:
+        return jsonify({"error": "filename が必要です"}), 400
+
+    try:
+        result = backup_service.restore_backup(filename)
+    except ValueError:
+        return jsonify({"error": "不正なファイル名です"}), 400
+    except FileNotFoundError:
+        return jsonify({"error": "バックアップが見つかりません"}), 404
+    except NotImplementedError as exc:
+        return jsonify({"error": str(exc)}), 501
+    except RuntimeError as exc:
+        log_operation(
+            "db_backup_restore_failed",
+            target=filename,
+            details=str(exc),
+        )
+        return jsonify({"error": "リストア後の整合性検証に失敗しました"}), 500
+
+    log_operation(
+        "db_backup_restored",
+        target=result["restored_from"],
+        details=(
+            f"pre_restore={result['pre_restore_backup']} "
+            f"integrity_ok={result['integrity_ok']}"
+        ),
+    )
+    return jsonify(
+        {
+            "message": "リストアが完了しました",
+            "restored_from": result["restored_from"],
+            "pre_restore_backup": result["pre_restore_backup"],
+            "integrity_ok": result["integrity_ok"],
+        }
+    ), 200
+
+
+@admin_ops_bp.route("/backup/download", methods=["GET"])
+@admin_required
+def download_db_backup():
+    """Download a backup file (admin). Path-traversal hardened."""
+    filename = request.args.get("filename")
+    if not filename:
+        return jsonify({"error": "filename が必要です"}), 400
+
+    try:
+        safe_name = backup_service._validate_backup_filename(filename)
+    except ValueError:
+        return jsonify({"error": "不正なファイル名です"}), 400
+
+    path = backup_service.backup_dir() / safe_name
+    if not path.exists():
+        return jsonify({"error": "バックアップが見つかりません"}), 404
+
+    log_operation("db_backup_downloaded", target=safe_name)
+    return send_file(str(path), as_attachment=True, download_name=safe_name)
 
 
 def _tail_file(path: str, n: int) -> list[str]:
