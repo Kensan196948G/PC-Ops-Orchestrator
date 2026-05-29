@@ -92,7 +92,7 @@ def test_migration_importable_and_down_revision():
     mod = importlib.import_module(
         "migrations.versions.c7a9e2b4d6f8_phase_i1_cmdb_ledger"
     )
-    assert mod.down_revision == "b3c4d5e6f7a8"
+    assert mod.down_revision == "d5e6f7a8b9c0"
     assert mod.revision == "c7a9e2b4d6f8"
     assert hasattr(mod, "upgrade")
     assert hasattr(mod, "downgrade")

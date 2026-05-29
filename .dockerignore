@@ -1,0 +1,58 @@
+# Docker build context exclusions.
+# Dockerfile does `COPY server/ .`; keep secrets, local DBs, caches and dev
+# tooling out of the image. Do NOT exclude anything the build needs
+# (e.g. server/requirements.txt, server/*.py).
+
+# --- Python bytecode / caches ---
+**/__pycache__/
+**/*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+
+# --- Secrets / environment ---
+.env
+server/.env
+**/.env.local
+*.pem
+*.key
+
+# --- Local databases (SQLite实体) ---
+*.db
+*.sqlite
+*.sqlite3
+server/instance/
+
+# --- Coverage / test artifacts ---
+.coverage
+coverage.json
+server/coverage.json
+htmlcov/
+test-results/
+reports/
+
+# --- VCS / project meta ---
+.git/
+.gitignore
+.dockerignore
+
+# --- Virtualenvs ---
+.venv/
+venv/
+env/
+
+# --- Node / frontend tooling (not needed in the Python image) ---
+node_modules/
+
+# --- Claude / agent / CMDB internal files ---
+.claude/
+.codex/
+.agents/
+.mcp.json
+CMDB/
+
+# --- Logs & screenshots ---
+*.log
+*.png
+.playwright-mcp/
