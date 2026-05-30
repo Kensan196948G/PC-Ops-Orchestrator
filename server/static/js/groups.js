@@ -22,6 +22,11 @@ async function loadGroups(page = 1) {
     for (const g of data.groups) {
         const row = tbody.insertRow();
         row.dataset.id = g.id;
+        row.classList.add('row-clickable');
+        row.addEventListener('click', (e) => {
+            if (e.target.closest('[data-action]')) return;
+            openGroupDrawer(g);
+        });
 
         const tdName = row.insertCell();
         const strong = document.createElement('strong');
@@ -308,5 +313,54 @@ document.addEventListener('DOMContentLoaded', () => {
     const addPcBtn = document.getElementById('btn-add-pc-to-group');
     if (addPcBtn) addPcBtn.addEventListener('click', addPcToGroup);
 
+    document.getElementById('btn-close-group-drawer')?.addEventListener('click', closeGroupDrawer);
+    document.getElementById('btn-close-group-drawer-footer')?.addEventListener('click', closeGroupDrawer);
+    document.getElementById('group-drawer-overlay')?.addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeGroupDrawer();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGroupDrawer(); });
+
     loadGroups(1);
 });
+
+// ── Drawer ──────────────────────────────────────────────────────────────────
+
+function openGroupDrawer(g) {
+    const overlay = document.getElementById('group-drawer-overlay');
+    const titleEl = document.getElementById('group-drawer-title');
+    const bodyEl = document.getElementById('group-drawer-body');
+    if (!overlay || !bodyEl) return;
+
+    if (titleEl) titleEl.textContent = g.name;
+    bodyEl.textContent = '';
+
+    const kvSection = document.createElement('div');
+    const kvHead = document.createElement('div');
+    kvHead.className = 'drawer-section-title';
+    kvHead.textContent = 'グループ情報';
+    kvSection.appendChild(kvHead);
+
+    const dl = document.createElement('dl');
+    dl.className = 'kv-grid';
+    const pairs = [
+        ['説明', g.description || '-'],
+        ['PC台数', (g.pc_count ?? '-') + ' 台'],
+        ['作成者', g.created_by || '-'],
+        ['作成日時', g.created_at ? formatDatetime(g.created_at) : '-'],
+    ];
+    for (const [k, v] of pairs) {
+        const dt = document.createElement('dt'); dt.textContent = k; dl.appendChild(dt);
+        const dd = document.createElement('dd'); dd.textContent = v; dl.appendChild(dd);
+    }
+    kvSection.appendChild(dl);
+    bodyEl.appendChild(kvSection);
+
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeGroupDrawer() {
+    const overlay = document.getElementById('group-drawer-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    document.body.style.overflow = '';
+}

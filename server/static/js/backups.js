@@ -49,6 +49,8 @@ async function loadBackups() {
 
         jobs.forEach(j => {
             const tr = document.createElement('tr');
+            tr.classList.add('row-clickable');
+            tr.addEventListener('click', () => openBackupDrawer(j));
             const td = t => { const el = document.createElement('td'); el.textContent = t ?? '—'; return el; };
             tr.appendChild(td(j.started_at ? new Date(j.started_at).toLocaleString('ja-JP') : '—'));
             tr.appendChild(td(j.backup_type));
@@ -104,4 +106,73 @@ document.addEventListener('DOMContentLoaded', () => {
         if (resultEl) resultEl.textContent = `リストアリクエストを受け付けました: ${target} ← ${dt}`;
         showSuccess('リストアリクエストを受け付けました');
     });
+
+    document.getElementById('btn-close-backup-drawer')?.addEventListener('click', closeBackupDrawer);
+    document.getElementById('btn-close-backup-drawer-footer')?.addEventListener('click', closeBackupDrawer);
+    document.getElementById('backup-drawer-overlay')?.addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeBackupDrawer();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBackupDrawer(); });
 });
+
+// ── Drawer ──────────────────────────────────────────────────────────────────
+
+function openBackupDrawer(j) {
+    const overlay = document.getElementById('backup-drawer-overlay');
+    const titleEl = document.getElementById('backup-drawer-title');
+    const bodyEl = document.getElementById('backup-drawer-body');
+    if (!overlay || !bodyEl) return;
+
+    const label = j.status === 'success' ? '成功' : j.status === 'running' ? '実行中' : '失敗';
+    if (titleEl) titleEl.textContent = (j.backup_type || '-') + ' — ' + label;
+
+    bodyEl.textContent = '';
+
+    const kvSection = document.createElement('div');
+    const kvHead = document.createElement('div');
+    kvHead.className = 'drawer-section-title';
+    kvHead.textContent = 'バックアップ情報';
+    kvSection.appendChild(kvHead);
+
+    const dl = document.createElement('dl');
+    dl.className = 'kv-grid';
+    const pairs = [
+        ['実行日時', j.started_at ? new Date(j.started_at).toLocaleString('ja-JP') : '-'],
+        ['種別', j.backup_type || '-'],
+        ['対象', j.target || '-'],
+        ['サイズ', _fmtSize(j.size_bytes)],
+        ['所要時間', _fmtDuration(j.duration_seconds)],
+        ['保存先', j.storage_path || '-'],
+        ['状態', label],
+    ];
+    for (const [k, v] of pairs) {
+        const dt = document.createElement('dt'); dt.textContent = k; dl.appendChild(dt);
+        const dd = document.createElement('dd'); dd.textContent = v; dl.appendChild(dd);
+    }
+    kvSection.appendChild(dl);
+    bodyEl.appendChild(kvSection);
+
+    if (j.error_message) {
+        const errSection = document.createElement('div');
+        const errHead = document.createElement('div');
+        errHead.className = 'drawer-section-title';
+        errHead.textContent = 'エラー詳細';
+        errSection.appendChild(errHead);
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'font-size:0.78rem;white-space:pre-wrap;word-break:break-word;' +
+            'background:var(--danger-soft);border:1px solid var(--danger);' +
+            'border-radius:var(--radius);padding:0.75rem;color:var(--danger);';
+        pre.textContent = j.error_message;
+        errSection.appendChild(pre);
+        bodyEl.appendChild(errSection);
+    }
+
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeBackupDrawer() {
+    const overlay = document.getElementById('backup-drawer-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    document.body.style.overflow = '';
+}

@@ -89,5 +89,21 @@
     </div>
     <p id="restore-result" class="text-secondary text-sm mt-sm"></p>
 </div>
+<!-- Detail Drawer -->
+<div id="backup-drawer-overlay" class="drawer-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="backup-drawer-title">
+    <div class="drawer">
+        <div class="drawer-header">
+            <div>
+                <div class="drawer-eyebrow">バックアップ詳細</div>
+                <div class="drawer-title" id="backup-drawer-title">-</div>
+            </div>
+            <button class="drawer-close-btn" id="btn-close-backup-drawer" aria-label="閉じる">&#215;</button>
+        </div>
+        <div class="drawer-body" id="backup-drawer-body"></div>
+        <div class="drawer-footer">
+            <button class="btn btn-secondary" id="btn-close-backup-drawer-footer">閉じる</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block scripts %}<script src="/static/js/backups.js"></script>{% endblock %}

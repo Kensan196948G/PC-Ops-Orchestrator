@@ -28,6 +28,11 @@ async function loadLicenses() {
         } else {
             licenses.forEach(lic => {
                 const tr = document.createElement('tr');
+                tr.classList.add('row-clickable');
+                tr.addEventListener('click', (e) => {
+                    if (e.target.closest('button')) return;
+                    openLicenseDrawer(lic);
+                });
                 const td = t => { const el = document.createElement('td'); el.textContent = t ?? '—'; return el; };
                 tr.appendChild(td(lic.product_name));
                 tr.appendChild(td(lic.vendor));
@@ -172,4 +177,70 @@ document.addEventListener('DOMContentLoaded', () => {
             showError('CSVダウンロードに失敗しました');
         }
     });
+
+    document.getElementById('btn-close-license-drawer')?.addEventListener('click', closeLicenseDrawer);
+    document.getElementById('btn-close-license-drawer-footer')?.addEventListener('click', closeLicenseDrawer);
+    document.getElementById('license-drawer-overlay')?.addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeLicenseDrawer();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLicenseDrawer(); });
 });
+
+// ── Drawer ──────────────────────────────────────────────────────────────────
+
+function openLicenseDrawer(lic) {
+    const overlay = document.getElementById('license-drawer-overlay');
+    const titleEl = document.getElementById('license-drawer-title');
+    const bodyEl = document.getElementById('license-drawer-body');
+    if (!overlay || !bodyEl) return;
+
+    if (titleEl) titleEl.textContent = lic.product_name || '-';
+    bodyEl.textContent = '';
+
+    const kvSection = document.createElement('div');
+    const kvHead = document.createElement('div');
+    kvHead.className = 'drawer-section-title';
+    kvHead.textContent = 'ライセンス情報';
+    kvSection.appendChild(kvHead);
+
+    const dl = document.createElement('dl');
+    dl.className = 'kv-grid';
+    const pairs = [
+        ['ベンダー', lic.vendor || '-'],
+        ['種別', _licenseTypeLabels[lic.license_type] || lic.license_type || '-'],
+        ['契約席数', lic.seat_count != null ? lic.seat_count + ' 席' : '-'],
+        ['単価', _formatYen(lic.unit_price)],
+        ['合計コスト', _formatYen(lic.total_cost)],
+        ['有効期限', lic.expires_at || '永続'],
+    ];
+    for (const [k, v] of pairs) {
+        const dt = document.createElement('dt'); dt.textContent = k; dl.appendChild(dt);
+        const dd = document.createElement('dd'); dd.textContent = v; dl.appendChild(dd);
+    }
+    kvSection.appendChild(dl);
+    bodyEl.appendChild(kvSection);
+
+    if (lic.notes) {
+        const noteSection = document.createElement('div');
+        const noteHead = document.createElement('div');
+        noteHead.className = 'drawer-section-title';
+        noteHead.textContent = '備考';
+        noteSection.appendChild(noteHead);
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'font-size:0.78rem;white-space:pre-wrap;word-break:break-word;' +
+            'background:var(--bg-tertiary);border:1px solid var(--border);' +
+            'border-radius:var(--radius);padding:0.75rem;color:var(--text-secondary);';
+        pre.textContent = lic.notes;
+        noteSection.appendChild(pre);
+        bodyEl.appendChild(noteSection);
+    }
+
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLicenseDrawer() {
+    const overlay = document.getElementById('license-drawer-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    document.body.style.overflow = '';
+}

@@ -110,5 +110,21 @@
     </div>
   </div>
 </div>
+<!-- Detail Drawer -->
+<div id="channel-drawer-overlay" class="drawer-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="channel-drawer-title">
+    <div class="drawer">
+        <div class="drawer-header">
+            <div>
+                <div class="drawer-eyebrow">通知チャネル 詳細</div>
+                <div class="drawer-title" id="channel-drawer-title">-</div>
+            </div>
+            <button class="drawer-close-btn" id="btn-close-channel-drawer" aria-label="閉じる">&#215;</button>
+        </div>
+        <div class="drawer-body" id="channel-drawer-body"></div>
+        <div class="drawer-footer">
+            <button class="btn btn-secondary" id="btn-close-channel-drawer-footer">閉じる</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block scripts %}<script src="/static/js/notification_channels.js"></script>{% endblock %}
