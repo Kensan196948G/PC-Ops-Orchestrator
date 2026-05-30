@@ -36,8 +36,9 @@
     "phase_f1": "PR #276 MERGED 2026-05-25 — PC稼働率トラッキング UptimeLog (Issue #274) 本番投入完了",
     "phase_f2": "PR #277 MERGED 2026-05-25 — アラートルール評価ループ evaluate_rules_once + /evaluate API (Issue #275) 本番投入完了",
     "phase_i1": "PR #290 MERGED 2026-05-29 — CMDB 台帳基盤 Excel→CSV→DB 取り込み (Issue #287) 本番投入完了",
-    "phase_i2": "PR #305 CREATED 2026-05-30 — サーバ起点 WinRM 収集 API (Issue #304) 12/12 tests",
-    "phase_i3_design": "PR #307 CREATED 2026-05-30 — デザインファイル全実装完了 (Issue #306): CSS ドロワーシステム + 12ページ全ページ対応 1347/1347 tests"
+    "phase_i2": "PR #305 MERGED 2026-05-30 — サーバ起点 WinRM 収集 API (Issue #304) 12/12 tests",
+    "phase_i3_design": "PR #307 MERGED 2026-05-30 — デザインファイル全実装完了 (Issue #306): CSS ドロワーシステム + 12ページ全ページ対応 1370/1370 tests",
+    "phase_j1_cmdb": "PR #310 CREATED 2026-05-30 — CMDB資産台帳ページ /cmdb 実装 (Issue #309) 1379/1379 tests"
   },
   "kpi": {
     "ci_success_rate": 1,
