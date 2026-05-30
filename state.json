@@ -48,11 +48,11 @@
     "max_loops": 5,
     "ci_retry_limit": 5,
     "same_error_limit": 2,
-    "current_session_start_at": "2026-05-25T11:32:44.120Z",
+    "current_session_start_at": "2026-05-30T12:41:44.711Z",
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
-    "last_trigger": "cron",
-    "last_cron_session_id": "20260525-190001-PC-Ops-Orchestrator",
-    "last_stop_at": "2026-05-18T21:10:18.138Z"
+    "last_trigger": "manual",
+    "last_cron_session_id": "20260530-184856-PC-Ops-Orchestrator",
+    "last_stop_at": "2026-05-29T12:47:49.042Z"
   },
   "status": {
     "current_phase": "improve",
@@ -263,12 +263,17 @@
           "last_used": "2026-05-15T10:11:08.920Z",
           "last_description": "Silent failure hunt PR #181"
         },
-        "_total_agent_calls": 2,
-        "_last_agent_call_at": "2026-05-15T10:11:17.793Z",
+        "_total_agent_calls": 3,
+        "_last_agent_call_at": "2026-05-29T12:06:03.534Z",
         "pr-review-toolkit_code-reviewer": {
           "call_count": 1,
           "last_used": "2026-05-15T10:11:17.793Z",
           "last_description": "PR #181 code review"
+        },
+        "general-purpose": {
+          "call_count": 1,
+          "last_used": "2026-05-29T12:06:03.534Z",
+          "last_description": "サイドバー再編クリーン実装"
         }
       }
     }
@@ -892,6 +897,108 @@
         "server/static/js/users.js",
         "server/test_inquiries.py",
         "server/test_stability.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-29T12:08:38.950Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 18 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/backup_service.py",
+        "server/cmdb/__init__.py",
+        "server/cmdb/export_cmdb_csv.py",
+        "server/cmdb/header_map.py",
+        "server/cmdb/import_cmdb.py",
+        "server/migrations/versions/c7a9e2b4d6f8_phase_i1_cmdb_ledger.py",
+        "server/models.py",
+        "server/routes/admin_ops.py",
+        "server/routes/backups.py",
+        "server/routes/cmdb.py",
+        "server/seed_demo.py",
+        "server/test_admin_ops.py",
+        "server/test_api.py",
+        "server/test_backup_restore.py",
+        "server/test_cmdb_export.py",
+        "server/test_cmdb_import.py",
+        "server/test_phase_i1_models.py",
+        "server/test_routes_coverage_163.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-29T12:22:15.231Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 12 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/cmdb/__init__.py",
+        "server/cmdb/export_cmdb_csv.py",
+        "server/cmdb/header_map.py",
+        "server/cmdb/import_cmdb.py",
+        "server/migrations/versions/c7a9e2b4d6f8_phase_i1_cmdb_ledger.py",
+        "server/models.py",
+        "server/routes/cmdb.py",
+        "server/seed_demo.py",
+        "server/test_cmdb_export.py",
+        "server/test_cmdb_import.py",
+        "server/test_phase_i1_models.py",
+        "server/test_sidebar_nav.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-29T12:28:45.442Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 4 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/e2e/test_pages_e2e.py",
+        "server/e2e/test_ui_rendering.py",
+        "server/seed_demo.py",
+        "server/test_sidebar_nav.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-29T12:39:38.599Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 7 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/e2e/test_pages_e2e.py",
+        "server/e2e/test_ui_rendering.py",
+        "server/seed_demo.py",
+        "server/test_config.py",
+        "server/test_config_db_password.py",
+        "server/test_phase_i1_models.py",
+        "server/test_sidebar_nav.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-29T12:42:22.511Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 7 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/e2e/test_pages_e2e.py",
+        "server/e2e/test_ui_rendering.py",
+        "server/seed_demo.py",
+        "server/test_config.py",
+        "server/test_config_db_password.py",
+        "server/test_phase_i1_models.py",
+        "server/test_sidebar_nav.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-29T12:47:49.051Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 6 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/e2e/test_pages_e2e.py",
+        "server/e2e/test_ui_rendering.py",
+        "server/test_config.py",
+        "server/test_config_db_password.py",
+        "server/test_phase_i1_models.py",
+        "server/test_sidebar_nav.py"
       ],
       "truncated": false
     }

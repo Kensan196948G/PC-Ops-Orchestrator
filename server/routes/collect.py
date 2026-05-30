@@ -19,7 +19,8 @@ from models import (
     UptimeLog,
     get_event_category,
 )
-from auth import agent_auth_required
+from auth import agent_auth_required, login_required
+import winrm_collect
 
 collect_bp = Blueprint("collect", __name__, url_prefix="/api")
 logger = logging.getLogger(__name__)
@@ -557,3 +558,155 @@ def _get_pending_tasks(pc_id):
     )
 
     return [t.to_dict() for t in tasks]
+
+
+@collect_bp.route("/collect/remote", methods=["POST"])
+@limiter.limit("30 per minute")
+@login_required
+def collect_remote():
+    """Server-initiated WinRM pull collection (Phase I-2, Issue #304).
+
+    Request JSON
+    ------------
+    {
+        "target": "hostname_or_ip",   // required
+        "pc_name": "optional_override" // optional; defaults to hostname returned by WinRM
+    }
+
+    Returns
+    -------
+    200  Collection succeeded; returns summary of collected rows.
+    400  Missing 'target' field.
+    503  WinRM is not configured (WINRM_USER/WINRM_PASSWORD not set).
+    502  WinRM connection or PowerShell execution failed.
+    """
+    if not winrm_collect.is_winrm_configured():
+        return jsonify(
+            {
+                "error": "WinRM が設定されていません。"
+                " WINRM_USER および WINRM_PASSWORD 環境変数を設定してください。"
+            }
+        ), 503
+
+    body = request.get_json() or {}
+    target = (body.get("target") or "").strip()
+    if not target:
+        return jsonify(
+            {"error": "'target' (hostname または IP アドレス) は必須です"}
+        ), 400
+
+    try:
+        payload = winrm_collect.collect_remote(target)
+    except (EnvironmentError, RuntimeError) as exc:
+        logger.error("WinRM collection failed for %s: %s", target, exc)
+        return jsonify({"error": f"WinRM 収集に失敗しました: {exc}"}), 502
+
+    # Use caller-supplied pc_name override, or fall back to the hostname WinRM returned.
+    pc_name = (body.get("pc_name") or payload.get("pc_name") or target).strip()
+
+    pc = PC.query.filter_by(pc_name=pc_name).first()
+    if not pc:
+        pc = PC(pc_name=pc_name)
+        db.session.add(pc)
+        db.session.flush()
+
+    pc.domain = payload.get("domain", pc.domain)
+    pc.os_version = payload.get("os_version", pc.os_version)
+    pc.os_build = payload.get("os_build", pc.os_build)
+    pc.os_architecture = payload.get("os_architecture", pc.os_architecture)
+    pc.cpu_name = payload.get("cpu_name", pc.cpu_name)
+    pc.cpu_cores = payload.get("cpu_cores", pc.cpu_cores)
+    pc.cpu_logical_processors = payload.get(
+        "cpu_logical_processors", pc.cpu_logical_processors
+    )
+    pc.memory_total_gb = payload.get("memory_total_gb", pc.memory_total_gb)
+    pc.memory_available_gb = payload.get("memory_available_gb", pc.memory_available_gb)
+    pc.disk_total_gb = payload.get("disk_total_gb", pc.disk_total_gb)
+    pc.disk_free_gb = payload.get("disk_free_gb", pc.disk_free_gb)
+    pc.ip_address = payload.get("ip_address", pc.ip_address)
+    pc.last_seen = datetime.now(timezone.utc)
+    pc.connection_type = "WinRM"
+    pc.health_score = _calculate_health_score(pc)
+    _determine_pc_status(pc)
+
+    snapshot = SystemSnapshot(
+        pc_id=pc.id,
+        memory_available_gb=pc.memory_available_gb,
+        disk_free_gb=pc.disk_free_gb,
+        uptime_days=payload.get("uptime_days"),
+        pending_reboot=payload.get("pending_reboot", False),
+    )
+    if payload.get("last_boot_time"):
+        try:
+            snapshot.last_boot_time = datetime.fromisoformat(
+                payload["last_boot_time"].replace("Z", "+00:00")
+            )
+        except (ValueError, TypeError):
+            pass
+    db.session.add(snapshot)
+    db.session.add(UptimeLog(pc_id=pc.id, status="online"))
+    db.session.flush()
+    _trim_snapshots(pc.id, keep=720)
+
+    # Upsert software
+    sw_count = 0
+    if payload.get("software"):
+        Software.query.filter_by(pc_id=pc.id).delete()
+        for sw in payload["software"]:
+            if not isinstance(sw, dict) or not sw.get("name"):
+                continue
+            install_date = None
+            if sw.get("install_date"):
+                try:
+                    install_date = datetime.fromisoformat(sw["install_date"])
+                except (ValueError, TypeError):
+                    pass
+            db.session.add(
+                Software(
+                    pc_id=pc.id,
+                    name=sw["name"],
+                    version=sw.get("version"),
+                    publisher=sw.get("publisher"),
+                    install_date=install_date,
+                )
+            )
+            sw_count += 1
+
+    # Upsert Windows updates
+    upd_count = 0
+    for upd in payload.get("windows_updates", []):
+        if not isinstance(upd, dict) or not upd.get("kb_id"):
+            continue
+        installed_at = None
+        if upd.get("installed_at"):
+            try:
+                installed_at = datetime.fromisoformat(
+                    upd["installed_at"].replace("Z", "+00:00")
+                )
+            except (ValueError, TypeError):
+                pass
+        db.session.add(
+            WindowsUpdate(
+                pc_id=pc.id,
+                kb_id=upd["kb_id"],
+                title=upd.get("title"),
+                installed=upd.get("installed", True),
+                installed_at=installed_at,
+            )
+        )
+        upd_count += 1
+
+    db.session.commit()
+
+    return jsonify(
+        {
+            "message": "WinRM 収集完了",
+            "pc_id": pc.id,
+            "pc_name": pc_name,
+            "health_score": pc.health_score,
+            "status": pc.status,
+            "software_count": sw_count,
+            "update_count": upd_count,
+            "collection_source": "winrm",
+        }
+    )
