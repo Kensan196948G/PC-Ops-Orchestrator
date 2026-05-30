@@ -3,7 +3,6 @@
 import sys
 import os
 
-import pytest
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -23,7 +22,11 @@ def setup_module():
     with app.app_context():
         db.create_all()
         if not User.query.first():
-            db.session.add(User(username="admin", password_hash=hash_password("admin"), role="admin"))
+            db.session.add(
+                User(
+                    username="admin", password_hash=hash_password("admin"), role="admin"
+                )
+            )
             db.session.commit()
         # Create test PC with CMDB fields
         if not PC.query.filter_by(pc_name="CMDB-TEST-01").first():
