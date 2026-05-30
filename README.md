@@ -257,7 +257,9 @@ powershell -ExecutionPolicy Bypass -File agent/PCOpsAgent.ps1
 > 🔄 **Phase I（PC情報取得 / CMDB台帳=絶対「正」）対応のサイドバー再編（2026-05-29）**
 > サイドメニューから **スケジュール / Agent管理 / ジョブテンプレート / 証明書管理** を除去しました（各ページは直接 URL では引き続き利用可・後方互換）。
 > 次期追加予定: **CMDB資産台帳ページ `/cmdb`** — 管理番号・貸与者(CN)・社員番号(SAM)・導入年・OS・IP(LAN/WiFi)・MAC(有線/無線)・死活・asset_source(台帳のみ/収集済)・CSVインポート の統合ビュー。
-> サーバ起点収集（`ping 管理番号 → IP取得 → 台帳整合 → PsExec → WinRM 収集`）は Phase I-2 で実装予定。
+> ✅ **Phase I-2 実装済み (2026-05-30)**: サーバ起点 WinRM 収集 `POST /api/collect/remote` — エージェントレスで Windows PC の OS/CPU/メモリ/ディスク/ソフトウェア/Windows Update を収集。WINRM_USER / WINRM_PASSWORD 環境変数で認証設定。
+>
+> ✅ **Phase I-3 実装済み (2026-05-30)**: WebUI 全ページドロワーパターン導入 — Stability 4画面・Automation 3画面・Admin 5画面すべてで行クリック → 右側詳細スライドインドロワー。ライト/ダーク両テーマ対応・CSP Phase 3 準拠。
 
 | 画面                           | 機能                                                                                                                     |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
@@ -477,7 +479,8 @@ flowchart LR
     WINRM["🖥️ Phase I-2 WinRM収集"] -->|"同一 pc_name を enrich"| DB
 ```
 
-> 🔒 `CMDB/` は個人情報（社員名・社員番号）を含むため `.gitignore` 済み。`asset_source` で「台帳のみ（未収集）」と「収集済み」を区別。サーバ起点 ping/PsExec/WinRM 収集は **Phase I-2** で実装予定。
+> 🔒 `CMDB/` は個人情報（社員名・社員番号）を含むため `.gitignore` 済み。`asset_source` で「台帳のみ（未収集）」と「収集済み」を区別。
+> ✅ **Phase I-2 実装済み**: サーバ起点 WinRM 収集 `POST /api/collect/remote` — admin 権限ユーザーが Web UI / API から対象 PC の hostname/IP を指定して収集をトリガー。
 
 ## 🔐 認証方式
 
