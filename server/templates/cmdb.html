@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}CMDB資産台帳{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">CMDB 資産台帳</h2>
+    <div class="page-actions">
+        <input type="text" id="cmdb-search" class="form-input filter-search" placeholder="管理番号・PC名・貸与者・社員番号で検索...">
+        <select id="cmdb-source-filter" class="form-input">
+            <option value="">すべての収集元</option>
+            <option value="ledger">台帳のみ（未収集）</option>
+            <option value="agent">エージェント収集</option>
+            <option value="winrm">WinRM 収集</option>
+        </select>
+        <button class="btn btn-secondary" id="btn-reload-cmdb">&#8635; 更新</button>
+        <label class="btn btn-primary role-admin-only" for="cmdb-csv-upload" title="CMDB CSV インポート">
+            &#8659; CSV インポート
+            <input type="file" id="cmdb-csv-upload" accept=".csv" class="hidden">
+        </label>
+    </div>
+</div>
+
+<div class="stats-grid" id="cmdb-stats">
+    <div class="stat-card">
+        <div class="stat-value" id="cmdb-stat-total">-</div>
+        <div class="stat-label">総資産数</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value text-warning" id="cmdb-stat-ledger">-</div>
+        <div class="stat-label">台帳のみ（未収集）</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value text-success" id="cmdb-stat-agent">-</div>
+        <div class="stat-label">エージェント収集済み</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value text-info" id="cmdb-stat-winrm">-</div>
+        <div class="stat-label">WinRM 収集済み</div>
+    </div>
+</div>
+
+<div class="card">
+    <table class="table" id="cmdb-table">
+        <thead>
+            <tr>
+                <th>管理番号</th>
+                <th>PC名</th>
+                <th>貸与者</th>
+                <th>社員番号</th>
+                <th>導入年</th>
+                <th>OS</th>
+                <th>IP (LAN)</th>
+                <th>収集元</th>
+                <th>最終確認</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="cmdb-body">
+            <tr><td colspan="10" class="text-center">読み込み中...</td></tr>
+        </tbody>
+    </table>
+    <div class="pagination" id="cmdb-pagination"></div>
+</div>
+
+<!-- Detail Drawer -->
+<div id="cmdb-drawer-overlay" class="drawer-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="cmdb-drawer-title">
+    <div class="drawer">
+        <div class="drawer-header">
+            <div>
+                <div class="drawer-eyebrow">CMDB 資産詳細</div>
+                <div class="drawer-title" id="cmdb-drawer-title">-</div>
+            </div>
+            <button class="drawer-close-btn" id="btn-close-cmdb-drawer" aria-label="閉じる">&#215;</button>
+        </div>
+        <div class="drawer-body" id="cmdb-drawer-body"></div>
+        <div class="drawer-footer">
+            <a id="cmdb-drawer-pc-link" href="#" class="btn btn-primary hidden">PC詳細を開く</a>
+            <button class="btn btn-secondary" id="btn-close-cmdb-drawer-footer">閉じる</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/cmdb.js"></script>
+{% endblock %}

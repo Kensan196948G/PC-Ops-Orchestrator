@@ -280,6 +280,10 @@ def create_app(config_name=None):
     def windows_release_health_page():
         return render_template("windows_release_health.html")
 
+    @app.route("/cmdb")
+    def cmdb_page():
+        return render_template("cmdb.html")
+
     @app.route("/health")
     def health():
         try:
