@@ -1,66 +1,101 @@
-{% extends "base.html" %}
-{% block title %}ディスク健全性{% endblock %}
-{% block content %}
+{% extends "base.html" %} {% block title %}ディスク健全性{% endblock %} {% block
+content %}
 <div class="page-header">
-    <h2 class="page-title">ディスク健全性</h2>
-    <div class="page-actions">
-        <input type="text" id="pc-search" class="form-input filter-search" placeholder="PC名で検索...">
-        <select id="severity-filter" class="form-input">
-            <option value="">すべての重大度</option>
-            <option value="critical">危険</option>
-            <option value="warning">警告</option>
-            <option value="info">情報</option>
-        </select>
-        <button class="btn btn-secondary" id="btn-export-csv">&#8595; CSV</button>
-    </div>
+  <h2 class="page-title">ディスク健全性</h2>
+  <div class="page-actions">
+    <input
+      type="text"
+      id="pc-search"
+      class="form-input filter-search"
+      placeholder="PC名で検索..."
+    />
+    <select id="severity-filter" class="form-input">
+      <option value="">すべての重大度</option>
+      <option value="critical">危険</option>
+      <option value="warning">警告</option>
+      <option value="info">情報</option>
+    </select>
+    <button class="btn btn-secondary" id="btn-export-csv">&#8595; CSV</button>
+  </div>
 </div>
 
 <!-- サマリー -->
 <div class="stats-grid" id="disk-stats">
-    <div class="stat-card">
-        <div class="stat-value" id="stat-total-events">-</div>
-        <div class="stat-label">総ディスクイベント数</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value text-danger" id="stat-critical-events">-</div>
-        <div class="stat-label">危険イベント</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value text-warning" id="stat-warning-events">-</div>
-        <div class="stat-label">警告イベント</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" id="stat-affected-pcs">-</div>
-        <div class="stat-label">影響PC数</div>
-    </div>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-total-events">-</div>
+    <div class="stat-label">総ディスクイベント数</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value text-danger" id="stat-critical-events">-</div>
+    <div class="stat-label">危険イベント</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value text-warning" id="stat-warning-events">-</div>
+    <div class="stat-label">警告イベント</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-affected-pcs">-</div>
+    <div class="stat-label">影響PC数</div>
+  </div>
 </div>
 
 <!-- ディスクイベントテーブル -->
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">ディスク健全性イベント一覧</h3>
-    </div>
-    <table class="table" id="disk-table">
-        <thead>
-            <tr>
-                <th>PC名</th>
-                <th>イベントID</th>
-                <th>ソース</th>
-                <th>ディスク</th>
-                <th>重大度</th>
-                <th>メッセージ</th>
-                <th>発生日時</th>
-                <th>収集日時</th>
-            </tr>
-        </thead>
-        <tbody id="disk-body">
-            <tr><td colspan="8" class="text-center">読み込み中...</td></tr>
-        </tbody>
-    </table>
-    <div class="pagination" id="disk-pagination"></div>
+  <div class="card-header">
+    <h3 class="card-title">ディスク健全性イベント一覧</h3>
+  </div>
+  <table class="table" id="disk-table">
+    <thead>
+      <tr>
+        <th>PC名</th>
+        <th>イベントID</th>
+        <th>ソース</th>
+        <th>ディスク</th>
+        <th>重大度</th>
+        <th>メッセージ</th>
+        <th>発生日時</th>
+        <th>収集日時</th>
+      </tr>
+    </thead>
+    <tbody id="disk-body">
+      <tr>
+        <td colspan="8" class="text-center">読み込み中...</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="pagination" id="disk-pagination"></div>
 </div>
-{% endblock %}
 
-{% block scripts %}
+<!-- Detail Drawer -->
+<div
+  id="disk-drawer-overlay"
+  class="drawer-overlay hidden"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="disk-drawer-title"
+>
+  <div class="drawer">
+    <div class="drawer-header">
+      <div>
+        <div class="drawer-eyebrow">ディスクイベント 詳細</div>
+        <div class="drawer-title" id="disk-drawer-title">-</div>
+      </div>
+      <button
+        class="drawer-close-btn"
+        id="btn-close-disk-drawer"
+        aria-label="閉じる"
+      >
+        &#215;
+      </button>
+    </div>
+    <div class="drawer-body" id="disk-drawer-body"></div>
+    <div class="drawer-footer">
+      <a id="disk-drawer-pc-link" href="#" class="btn btn-primary"
+        >PC詳細を開く</a
+      >
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
 <script src="/static/js/stability_disk_health.js"></script>
 {% endblock %}

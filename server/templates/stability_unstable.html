@@ -1,44 +1,80 @@
-{% extends "base.html" %}
-{% block title %}不安定PC一覧{% endblock %}
-{% block content %}
+{% extends "base.html" %} {% block title %}不安定PC一覧{% endblock %} {% block
+content %}
 <div class="page-header">
-    <h2 class="page-title">不安定PC一覧</h2>
-    <div class="page-actions">
-        <select id="threshold-filter" class="form-input">
-            <option value="60">スコア &lt; 60（危険 + 不安定）</option>
-            <option value="80">スコア &lt; 80（要注意まで含む）</option>
-            <option value="40">スコア &lt; 40（危険のみ）</option>
-        </select>
-        <select id="days-filter" class="form-input">
-            <option value="7">過去 7 日</option>
-            <option value="30" selected>過去 30 日</option>
-            <option value="90">過去 90 日</option>
-        </select>
-        <button class="btn btn-secondary" id="btn-export-csv">&#8595; CSV</button>
-    </div>
+  <h2 class="page-title">不安定PC一覧</h2>
+  <div class="page-actions">
+    <input
+      type="text"
+      id="pc-search"
+      class="form-input filter-search"
+      placeholder="PC名で検索..."
+    />
+    <select id="threshold-filter" class="form-input">
+      <option value="60">スコア &lt; 60（危険 + 不安定）</option>
+      <option value="80">スコア &lt; 80（要注意まで含む）</option>
+      <option value="40">スコア &lt; 40（危険のみ）</option>
+    </select>
+    <select id="days-filter" class="form-input">
+      <option value="7">過去 7 日</option>
+      <option value="30" selected>過去 30 日</option>
+      <option value="90">過去 90 日</option>
+    </select>
+    <button class="btn btn-secondary" id="btn-export-csv">&#8595; CSV</button>
+  </div>
 </div>
 
 <div class="card">
-    <table class="table" id="unstable-table">
-        <thead>
-            <tr>
-                <th>PC名</th>
-                <th>IPアドレス</th>
-                <th>スコア</th>
-                <th>状態</th>
-                <th>主な減点要因</th>
-                <th>計算日時</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody id="unstable-body">
-            <tr><td colspan="7" class="text-center">読み込み中...</td></tr>
-        </tbody>
-    </table>
-    <div class="pagination" id="unstable-pagination"></div>
+  <table class="table" id="unstable-table">
+    <thead>
+      <tr>
+        <th>PC名</th>
+        <th>IPアドレス</th>
+        <th>スコア</th>
+        <th>状態</th>
+        <th>主な減点要因</th>
+        <th>計算日時</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="unstable-body">
+      <tr>
+        <td colspan="7" class="text-center">読み込み中...</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="pagination" id="unstable-pagination"></div>
 </div>
-{% endblock %}
 
-{% block scripts %}
+<!-- Detail Drawer -->
+<div
+  id="unstable-drawer-overlay"
+  class="drawer-overlay hidden"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="unstable-drawer-title"
+>
+  <div class="drawer">
+    <div class="drawer-header">
+      <div>
+        <div class="drawer-eyebrow">不安定PC 詳細</div>
+        <div class="drawer-title" id="unstable-drawer-title">-</div>
+      </div>
+      <button
+        class="drawer-close-btn"
+        id="btn-close-unstable-drawer"
+        aria-label="閉じる"
+      >
+        &#215;
+      </button>
+    </div>
+    <div class="drawer-body" id="unstable-drawer-body"></div>
+    <div class="drawer-footer">
+      <a id="unstable-drawer-detail-link" href="#" class="btn btn-primary"
+        >PC詳細を開く</a
+      >
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
 <script src="/static/js/stability_unstable.js"></script>
 {% endblock %}
