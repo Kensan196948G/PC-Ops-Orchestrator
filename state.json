@@ -34,7 +34,10 @@
     "phase_e5": "PR #272 MERGED 2026-05-25 — Root Cause Analysis endpoint (Issue #251) 本番投入完了",
     "phase_e6": "PR #273 MERGED 2026-05-25 — Microsoft Graph Windows Updates sync (Issue #250) 本番投入完了",
     "phase_f1": "PR #276 MERGED 2026-05-25 — PC稼働率トラッキング UptimeLog (Issue #274) 本番投入完了",
-    "phase_f2": "PR #277 MERGED 2026-05-25 — アラートルール評価ループ evaluate_rules_once + /evaluate API (Issue #275) 本番投入完了"
+    "phase_f2": "PR #277 MERGED 2026-05-25 — アラートルール評価ループ evaluate_rules_once + /evaluate API (Issue #275) 本番投入完了",
+    "phase_i1": "PR #290 MERGED 2026-05-29 — CMDB 台帳基盤 Excel→CSV→DB 取り込み (Issue #287) 本番投入完了",
+    "phase_i2": "PR #305 CREATED 2026-05-30 — サーバ起点 WinRM 収集 API (Issue #304) 12/12 tests",
+    "phase_i3_design": "PR #307 CREATED 2026-05-30 — Stability ドロワーパターン実装 (Issue #306) 1347/1347 tests"
   },
   "kpi": {
     "ci_success_rate": 1,
