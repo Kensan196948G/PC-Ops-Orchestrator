@@ -54,6 +54,8 @@ function renderTable(logs) {
     const fragment = document.createDocumentFragment();
     logs.forEach(log => {
         const tr = document.createElement('tr');
+        tr.classList.add('row-clickable');
+        tr.addEventListener('click', () => openAuditDrawer(log));
         [
             String(log.id),
             log.action || '-',
@@ -70,6 +72,65 @@ function renderTable(logs) {
         fragment.appendChild(tr);
     });
     tbody.replaceChildren(fragment);
+}
+
+// ── Drawer ──────────────────────────────────────────────────────────────────
+
+function openAuditDrawer(log) {
+    const overlay = document.getElementById('audit-drawer-overlay');
+    const titleEl = document.getElementById('audit-drawer-title');
+    const bodyEl = document.getElementById('audit-drawer-body');
+    if (!overlay || !bodyEl) return;
+
+    if (titleEl) titleEl.textContent = (log.action || '-') + (log.target ? ' — ' + log.target : '');
+    bodyEl.textContent = '';
+
+    const kvSection = document.createElement('div');
+    const kvHead = document.createElement('div');
+    kvHead.className = 'drawer-section-title';
+    kvHead.textContent = '操作情報';
+    kvSection.appendChild(kvHead);
+
+    const dl = document.createElement('dl');
+    dl.className = 'kv-grid';
+    const pairs = [
+        ['ID', '#' + log.id],
+        ['操作内容', log.action || '-'],
+        ['対象', log.target || '-'],
+        ['実行者', log.created_by || '-'],
+        ['IPアドレス', log.ip_address || '-'],
+        ['日時', log.created_at ? new Date(log.created_at).toLocaleString('ja-JP') : '-'],
+    ];
+    for (const [k, v] of pairs) {
+        const dt = document.createElement('dt'); dt.textContent = k; dl.appendChild(dt);
+        const dd = document.createElement('dd'); dd.textContent = v; dl.appendChild(dd);
+    }
+    kvSection.appendChild(dl);
+    bodyEl.appendChild(kvSection);
+
+    if (log.details) {
+        const detailSection = document.createElement('div');
+        const detailHead = document.createElement('div');
+        detailHead.className = 'drawer-section-title';
+        detailHead.textContent = '詳細';
+        detailSection.appendChild(detailHead);
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'font-size:0.78rem;white-space:pre-wrap;word-break:break-word;' +
+            'background:var(--bg-tertiary);border:1px solid var(--border);' +
+            'border-radius:var(--radius);padding:0.75rem;color:var(--text-secondary);';
+        pre.textContent = log.details;
+        detailSection.appendChild(pre);
+        bodyEl.appendChild(detailSection);
+    }
+
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAuditDrawer() {
+    const overlay = document.getElementById('audit-drawer-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    document.body.style.overflow = '';
 }
 
 function renderPagination(current, total) {
@@ -128,4 +189,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadLogs(1);
     setInterval(() => loadLogs(_currentPage), 30000);
+
+    document.getElementById('btn-close-audit-drawer')?.addEventListener('click', closeAuditDrawer);
+    document.getElementById('btn-close-audit-drawer-footer')?.addEventListener('click', closeAuditDrawer);
+    document.getElementById('audit-drawer-overlay')?.addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeAuditDrawer();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuditDrawer(); });
 });
