@@ -57,7 +57,7 @@
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "manual",
     "last_cron_session_id": "20260530-184856-PC-Ops-Orchestrator",
-    "last_stop_at": "2026-05-30T14:11:44.103Z"
+    "last_stop_at": "2026-05-30T14:30:59.049Z"
   },
   "status": {
     "current_phase": "improve",
@@ -1048,6 +1048,56 @@
         "server/static/js/stability_kb_impact.js",
         "server/static/js/stability_unstable.js",
         "server/static/js/users.js",
+        "server/test_collect_remote.py",
+        "server/winrm_collect.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-30T14:29:01.279Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 17 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/routes/cmdb.py",
+        "server/static/js/alert_rules.js",
+        "server/static/js/audit.js",
+        "server/static/js/backups.js",
+        "server/static/js/cmdb.js",
+        "server/static/js/groups.js",
+        "server/static/js/licenses.js",
+        "server/static/js/notification_channels.js",
+        "server/static/js/notification_logs.js",
+        "server/static/js/stability.js",
+        "server/static/js/stability_disk_health.js",
+        "server/static/js/stability_kb_impact.js",
+        "server/static/js/stability_unstable.js",
+        "server/static/js/users.js",
+        "server/test_cmdb_list.py",
+        "server/test_collect_remote.py",
+        "server/winrm_collect.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-30T14:30:59.059Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 17 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/routes/cmdb.py",
+        "server/static/js/alert_rules.js",
+        "server/static/js/audit.js",
+        "server/static/js/backups.js",
+        "server/static/js/cmdb.js",
+        "server/static/js/groups.js",
+        "server/static/js/licenses.js",
+        "server/static/js/notification_channels.js",
+        "server/static/js/notification_logs.js",
+        "server/static/js/stability.js",
+        "server/static/js/stability_disk_health.js",
+        "server/static/js/stability_kb_impact.js",
+        "server/static/js/stability_unstable.js",
+        "server/static/js/users.js",
+        "server/test_cmdb_list.py",
         "server/test_collect_remote.py",
         "server/winrm_collect.py"
       ],
