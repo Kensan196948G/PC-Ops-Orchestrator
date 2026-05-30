@@ -34,6 +34,11 @@ async function loadChannels() {
 
         channels.forEach(ch => {
             const tr = document.createElement('tr');
+            tr.classList.add('row-clickable');
+            tr.addEventListener('click', (e) => {
+                if (e.target.closest('button')) return;
+                openChannelDrawer(ch);
+            });
             const td = t => { const el = document.createElement('td'); el.textContent = t ?? '—'; return el; };
 
             tr.appendChild(td(ch.name));
@@ -157,4 +162,60 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     const form = document.getElementById('channel-form');
     if (form) form.addEventListener('submit', submitChannel);
+
+    document.getElementById('btn-close-channel-drawer')?.addEventListener('click', closeChannelDrawer);
+    document.getElementById('btn-close-channel-drawer-footer')?.addEventListener('click', closeChannelDrawer);
+    document.getElementById('channel-drawer-overlay')?.addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeChannelDrawer();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeChannelDrawer(); });
 });
+
+// ── Drawer ──────────────────────────────────────────────────────────────────
+
+function openChannelDrawer(ch) {
+    const overlay = document.getElementById('channel-drawer-overlay');
+    const titleEl = document.getElementById('channel-drawer-title');
+    const bodyEl = document.getElementById('channel-drawer-body');
+    if (!overlay || !bodyEl) return;
+
+    if (titleEl) {
+        const badge = document.createElement('span');
+        badge.className = 'status-badge ' + (ch.is_active ? 'severity-low' : 'severity-medium');
+        badge.textContent = ch.is_active ? '有効' : '無効';
+        titleEl.textContent = '';
+        titleEl.appendChild(badge);
+        titleEl.appendChild(document.createTextNode(' ' + ch.name));
+    }
+
+    bodyEl.textContent = '';
+
+    const kvSection = document.createElement('div');
+    const kvHead = document.createElement('div');
+    kvHead.className = 'drawer-section-title';
+    kvHead.textContent = 'チャネル設定';
+    kvSection.appendChild(kvHead);
+
+    const dl = document.createElement('dl');
+    dl.className = 'kv-grid';
+    const pairs = [
+        ['種別', _channelTypeLabels[ch.channel_type] || ch.channel_type],
+        ['送信先', ch.target || '-'],
+        ['状態', ch.is_active ? '有効' : '無効'],
+    ];
+    for (const [k, v] of pairs) {
+        const dt = document.createElement('dt'); dt.textContent = k; dl.appendChild(dt);
+        const dd = document.createElement('dd'); dd.textContent = v; dl.appendChild(dd);
+    }
+    kvSection.appendChild(dl);
+    bodyEl.appendChild(kvSection);
+
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeChannelDrawer() {
+    const overlay = document.getElementById('channel-drawer-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    document.body.style.overflow = '';
+}
