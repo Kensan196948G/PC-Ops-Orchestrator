@@ -17,6 +17,9 @@ Usage
 
 Safety
 ------
+* Production guard: refuses to run if the target SQLite DB looks like the real
+  ``instance/pc_ops.db`` (or a non-throwaway DB). Set ``DATABASE_URL`` to a
+  ``/tmp`` SQLite path, or pass ``--allow-prod`` to override intentionally.
 * Idempotent: if >= ``_SEED_THRESHOLD`` PCs already exist, it skips unless
   ``--force`` is given.
 * The ``admin`` user (and any existing users) are never touched; demo
@@ -81,6 +84,56 @@ random.seed(42)
 
 _SEED_THRESHOLD = 5  # if >= this many PCs exist, treat DB as already seeded
 NOW = datetime.now(timezone.utc)
+
+# Production DB filename. The app's default SQLite URI is the *relative*
+# ``sqlite:///pc_ops.db``, which Flask-SQLAlchemy resolves under ``instance/``.
+# Running this seeder without DATABASE_URL would therefore hit the real prod DB,
+# so we refuse unless the target is clearly a throwaway (e.g. /tmp) or the
+# operator passes --allow-prod explicitly.
+_PROD_DB_BASENAME = "pc_ops.db"
+
+
+def _resolve_db_path(app):
+    """Return the on-disk path of the SQLite DB the app is bound to, or None."""
+    uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
+    if not uri.startswith("sqlite:"):
+        return None  # non-SQLite (e.g. postgres) — guard handled separately
+    # Strip the sqlite:/// (or sqlite:////) scheme to get the filesystem path.
+    path = uri.split("sqlite:///")[-1]
+    if path == ":memory:" or path == "":
+        return None
+    if not os.path.isabs(path):
+        # Flask resolves relative SQLite paths under the instance folder.
+        path = os.path.join(app.instance_path, path)
+    return os.path.abspath(path)
+
+
+def _guard_not_production(app, allow_prod):
+    """Abort if we're about to write to the real production DB."""
+    if allow_prod:
+        return
+    db_path = _resolve_db_path(app)
+
+    # Non-SQLite without explicit DATABASE_URL would be the prod postgres default.
+    if db_path is None and "DATABASE_URL" not in os.environ:
+        raise SystemExit(
+            "REFUSING to seed: no DATABASE_URL set and target is not an explicit "
+            "throwaway SQLite DB. Pass --allow-prod to override (NOT recommended)."
+        )
+
+    if db_path is None:
+        return  # explicit non-SQLite DATABASE_URL — operator's responsibility
+
+    # The classic foot-gun: relative default landing in instance/pc_ops.db.
+    is_prod_basename = os.path.basename(db_path) == _PROD_DB_BASENAME
+    in_tmp = db_path.startswith("/tmp/") or "/tmp/" in db_path
+    if is_prod_basename and not in_tmp:
+        raise SystemExit(
+            f"REFUSING to seed: target DB looks like production ({db_path}).\n"
+            f"Set DATABASE_URL to a throwaway DB, e.g.\n"
+            f'  DATABASE_URL="sqlite:////tmp/seed_demo.db" python seed_demo.py\n'
+            f"or pass --allow-prod to override (NOT recommended)."
+        )
 
 
 def _ago(days=0, hours=0, minutes=0):
@@ -1449,8 +1502,9 @@ def seed_system_settings():
 # --------------------------------------------------------------------------- #
 # Orchestration
 # --------------------------------------------------------------------------- #
-def run(force=False):
+def run(force=False, allow_prod=False):
     app = create_app()
+    _guard_not_production(app, allow_prod)
     summary = {}
     with app.app_context():
         db.create_all()
@@ -1521,8 +1575,16 @@ def main():
         action="store_true",
         help="Delete existing demo data (users/settings kept) and re-seed.",
     )
+    parser.add_argument(
+        "--allow-prod",
+        action="store_true",
+        help=(
+            "Override the production-DB safety guard. Only use when you really "
+            "intend to seed the configured (non-throwaway) database."
+        ),
+    )
     args = parser.parse_args()
-    run(force=args.force)
+    run(force=args.force, allow_prod=args.allow_prod)
 
 
 if __name__ == "__main__":
