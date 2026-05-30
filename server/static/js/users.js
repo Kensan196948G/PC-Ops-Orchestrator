@@ -71,6 +71,11 @@ async function loadUsers() {
         if (data.users && data.users.length > 0) {
             data.users.forEach(u => {
                 const tr = document.createElement('tr');
+                tr.classList.add('row-clickable');
+                tr.addEventListener('click', (e) => {
+                    if (e.target.closest('button')) return;
+                    openUserDrawer(u);
+                });
                 const td = (text) => {
                     const el = document.createElement('td');
                     el.textContent = text ?? '-';
@@ -302,5 +307,71 @@ document.addEventListener('DOMContentLoaded', () => {
     const editPasswordInput = document.getElementById('edit-password');
     if (editPasswordInput) editPasswordInput.addEventListener('input', () => updateStrength('edit-password', 'edit-strength'));
 
+    document.getElementById('btn-close-user-drawer')?.addEventListener('click', closeUserDrawer);
+    document.getElementById('btn-close-user-drawer-footer')?.addEventListener('click', closeUserDrawer);
+    document.getElementById('user-drawer-overlay')?.addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeUserDrawer();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeUserDrawer(); });
+
     loadUsers();
 });
+
+// ── Drawer ──────────────────────────────────────────────────────────────────
+
+function openUserDrawer(u) {
+    const overlay = document.getElementById('user-drawer-overlay');
+    const titleEl = document.getElementById('user-drawer-title');
+    const bodyEl = document.getElementById('user-drawer-body');
+    if (!overlay || !bodyEl) return;
+
+    if (titleEl) {
+        titleEl.textContent = '';
+        titleEl.appendChild(roleBadge(u.role));
+        titleEl.appendChild(document.createTextNode(' ' + u.username));
+    }
+
+    bodyEl.textContent = '';
+
+    const kvSection = document.createElement('div');
+    const kvHead = document.createElement('div');
+    kvHead.className = 'drawer-section-title';
+    kvHead.textContent = 'アカウント情報';
+    kvSection.appendChild(kvHead);
+
+    const dl = document.createElement('dl');
+    dl.className = 'kv-grid';
+
+    const dtId = document.createElement('dt'); dtId.textContent = 'ID'; dl.appendChild(dtId);
+    const ddId = document.createElement('dd'); ddId.textContent = '#' + u.id; dl.appendChild(ddId);
+
+    const dtRole = document.createElement('dt'); dtRole.textContent = 'ロール'; dl.appendChild(dtRole);
+    const ddRole = document.createElement('dd'); ddRole.appendChild(roleBadge(u.role)); dl.appendChild(ddRole);
+
+    const dtActive = document.createElement('dt'); dtActive.textContent = '状態'; dl.appendChild(dtActive);
+    const ddActive = document.createElement('dd'); ddActive.appendChild(activeBadge(u.is_active)); dl.appendChild(ddActive);
+
+    const dtLock = document.createElement('dt'); dtLock.textContent = 'ロック'; dl.appendChild(dtLock);
+    const ddLock = document.createElement('dd'); ddLock.appendChild(lockBadge(u.is_locked)); dl.appendChild(ddLock);
+
+    const pairs = [
+        ['最終ログイン', formatTime(u.last_login)],
+        ['ログイン失敗', String(u.failed_login_count ?? 0) + ' 回'],
+        ['作成日時', formatTime(u.created_at)],
+    ];
+    for (const [k, v] of pairs) {
+        const dt = document.createElement('dt'); dt.textContent = k; dl.appendChild(dt);
+        const dd = document.createElement('dd'); dd.textContent = v; dl.appendChild(dd);
+    }
+    kvSection.appendChild(dl);
+    bodyEl.appendChild(kvSection);
+
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeUserDrawer() {
+    const overlay = document.getElementById('user-drawer-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    document.body.style.overflow = '';
+}
