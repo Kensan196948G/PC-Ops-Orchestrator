@@ -6,11 +6,19 @@ agentless management of Windows PCs.
 
 Environment variables
 ---------------------
-WINRM_USER       Login user (e.g. .\\mirai-user or DOMAIN\\user)
-WINRM_PASSWORD   Login password
-WINRM_PORT       WinRM port (default 5985)
-WINRM_TRANSPORT  Authentication transport (default ntlm; basic/kerberos/certificate)
-WINRM_SSL        Use HTTPS (true/false, default false)
+WINRM_USER          Login user (e.g. .\\mirai-user or DOMAIN\\user)
+WINRM_PASSWORD      Login password
+WINRM_PORT          WinRM port (default 5985)
+WINRM_TRANSPORT     Authentication transport (default ntlm; basic/kerberos/certificate)
+WINRM_SSL           Use HTTPS (true/false, default false)
+WINRM_SSL_INSECURE  Skip TLS certificate verification when SSL is enabled.
+                    DANGER: exposes connections to MITM attacks.
+                    Only set to "true" for local dev/lab environments where
+                    you own all network paths between server and target PC.
+                    Production deployments should use WINRM_CA_BUNDLE instead.
+WINRM_CA_BUNDLE     Path to a CA certificate file (PEM) for verifying the
+                    remote endpoint's TLS certificate. Use this for internal
+                    CAs or self-signed certs instead of disabling verification.
 """
 
 import json
@@ -101,13 +109,32 @@ def _winrm_config():
     port = int(os.environ.get("WINRM_PORT", "5985"))
     transport = os.environ.get("WINRM_TRANSPORT", "ntlm")
     use_ssl = os.environ.get("WINRM_SSL", "false").lower() in ("1", "true", "yes")
-    return user, password, port, transport, use_ssl
+    # Require an explicit opt-in to skip TLS verification; default is always validate.
+    allow_insecure = os.environ.get("WINRM_SSL_INSECURE", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    ca_bundle = os.environ.get("WINRM_CA_BUNDLE") or None
+    return user, password, port, transport, use_ssl, allow_insecure, ca_bundle
 
 
 def is_winrm_configured() -> bool:
     """Return True if WINRM_USER and WINRM_PASSWORD are set."""
     user, password, *_ = _winrm_config()
     return bool(user and password)
+
+
+def _cert_validation(use_ssl: bool, allow_insecure: bool) -> str:
+    """Return the pywinrm server_cert_validation value.
+
+    SSL disabled → "validate" is unused but pywinrm still requires a value;
+    we pass "validate" to keep the safest default.
+    SSL enabled  → always validate unless WINRM_SSL_INSECURE=true.
+    """
+    if not use_ssl:
+        return "validate"
+    return "ignore" if allow_insecure else "validate"
 
 
 def collect_remote(target: str) -> dict:
@@ -137,24 +164,42 @@ def collect_remote(target: str) -> dict:
             "pywinrm is not installed. Add 'pywinrm>=0.4.3' to requirements.txt."
         ) from exc
 
-    user, password, port, transport, use_ssl = _winrm_config()
+    user, password, port, transport, use_ssl, allow_insecure, ca_bundle = (
+        _winrm_config()
+    )
     if not user or not password:
         raise EnvironmentError(
             "WINRM_USER and WINRM_PASSWORD must be set to use remote collection."
         )
 
+    cert_validation = _cert_validation(use_ssl, allow_insecure)
     scheme = "https" if use_ssl else "http"
+    if use_ssl and allow_insecure:
+        logger.warning(
+            "WinRM TLS certificate verification is DISABLED for %s "
+            "(WINRM_SSL_INSECURE=true). This is unsafe outside dev/lab environments.",
+            target,
+        )
     logger.info(
-        "WinRM connecting to %s://%s:%d (transport=%s)", scheme, target, port, transport
+        "WinRM connecting to %s://%s:%d (transport=%s, cert_validation=%s)",
+        scheme,
+        target,
+        port,
+        transport,
+        cert_validation,
     )
 
-    session = winrm.Session(
-        target=target,
-        auth=(user, password),
-        transport=transport,
-        server_cert_validation="ignore" if use_ssl else "validate",
-        port=port,
-    )
+    session_kwargs: dict = {
+        "target": target,
+        "auth": (user, password),
+        "transport": transport,
+        "server_cert_validation": cert_validation,
+        "port": port,
+    }
+    if ca_bundle:
+        session_kwargs["ca_trust_path"] = ca_bundle
+
+    session = winrm.Session(**session_kwargs)
 
     def _run_ps(script: str) -> str:
         result = session.run_ps(script)

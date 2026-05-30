@@ -141,6 +141,43 @@ class TestWinrmCollectService:
         monkeypatch.setenv("WINRM_PASSWORD", "mirai")
         assert winrm_collect.is_winrm_configured() is True
 
+    # TLS validation security tests
+    def test_cert_validation_ssl_disabled(self):
+        import winrm_collect
+
+        assert (
+            winrm_collect._cert_validation(use_ssl=False, allow_insecure=False)
+            == "validate"
+        )
+
+    def test_cert_validation_ssl_enabled_defaults_to_validate(self):
+        import winrm_collect
+
+        assert (
+            winrm_collect._cert_validation(use_ssl=True, allow_insecure=False)
+            == "validate"
+        )
+
+    def test_cert_validation_ssl_insecure_requires_explicit_opt_in(self):
+        import winrm_collect
+
+        assert (
+            winrm_collect._cert_validation(use_ssl=True, allow_insecure=True)
+            == "ignore"
+        )
+
+    def test_insecure_off_by_default(self, monkeypatch):
+        import winrm_collect
+
+        monkeypatch.setenv("WINRM_USER", "u")
+        monkeypatch.setenv("WINRM_PASSWORD", "p")
+        monkeypatch.setenv("WINRM_SSL", "true")
+        monkeypatch.delenv("WINRM_SSL_INSECURE", raising=False)
+        _, _, _, _, use_ssl, allow_insecure, _ = winrm_collect._winrm_config()
+        assert use_ssl is True
+        assert allow_insecure is False
+        assert winrm_collect._cert_validation(use_ssl, allow_insecure) == "validate"
+
     def test_collect_remote_raises_without_credentials(self, monkeypatch):
         import winrm_collect
 
