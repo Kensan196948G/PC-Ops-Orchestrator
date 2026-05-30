@@ -18,6 +18,8 @@ function makeStatusBadge(status) {
 
 function buildLogRow(log) {
     const tr = document.createElement('tr');
+    tr.classList.add('row-clickable');
+    tr.addEventListener('click', () => openNotifLogDrawer(log));
 
     const tdId = document.createElement('td');
     tdId.textContent = '#' + log.id;
@@ -33,7 +35,7 @@ function buildLogRow(log) {
         const a = document.createElement('a');
         a.href = '/alert-rules';
         a.textContent = 'Rule #' + log.rule_id;
-        a.style.cssText = 'color:var(--primary);text-decoration:none;';
+        a.addEventListener('click', e => e.stopPropagation());
         tdRule.appendChild(a);
     } else {
         tdRule.textContent = '-';
@@ -48,6 +50,88 @@ function buildLogRow(log) {
 
     [tdId, tdChannel, tdStatus, tdRule, tdMsg, tdTime].forEach(td => tr.appendChild(td));
     return tr;
+}
+
+// ── Drawer ──────────────────────────────────────────────────────────────────
+
+function openNotifLogDrawer(log) {
+    const overlay = document.getElementById('notiflog-drawer-overlay');
+    const titleEl = document.getElementById('notiflog-drawer-title');
+    const bodyEl = document.getElementById('notiflog-drawer-body');
+    if (!overlay || !bodyEl) return;
+
+    if (titleEl) {
+        const badge = makeStatusBadge(log.status);
+        titleEl.textContent = '';
+        titleEl.appendChild(badge);
+        titleEl.appendChild(document.createTextNode(' ' + (CHANNEL_TEXT[log.channel] || log.channel || '-') + ' #' + log.id));
+    }
+
+    bodyEl.textContent = '';
+
+    // Key/value section
+    const kvSection = document.createElement('div');
+    const kvHead = document.createElement('div');
+    kvHead.className = 'drawer-section-title';
+    kvHead.textContent = '配信情報';
+    kvSection.appendChild(kvHead);
+
+    const dl = document.createElement('dl');
+    dl.className = 'kv-grid';
+    const pairs = [
+        ['チャネル', CHANNEL_TEXT[log.channel] || log.channel || '-'],
+        ['状態', STATUS_TEXT[log.status] || log.status || '-'],
+        ['ルール', log.rule_id ? 'Rule #' + log.rule_id : '-'],
+        ['送信日時', log.sent_at ? new Date(log.sent_at).toLocaleString('ja-JP') : '-'],
+        ['リトライ回数', log.retry_count != null ? String(log.retry_count) : '-'],
+    ];
+    for (const [k, v] of pairs) {
+        const dt = document.createElement('dt'); dt.textContent = k; dl.appendChild(dt);
+        const dd = document.createElement('dd'); dd.textContent = v; dl.appendChild(dd);
+    }
+    kvSection.appendChild(dl);
+    bodyEl.appendChild(kvSection);
+
+    // Full message
+    if (log.message) {
+        const msgSection = document.createElement('div');
+        const msgHead = document.createElement('div');
+        msgHead.className = 'drawer-section-title';
+        msgHead.textContent = 'メッセージ全文';
+        msgSection.appendChild(msgHead);
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'font-size:0.78rem;white-space:pre-wrap;word-break:break-word;' +
+            'background:var(--bg-tertiary);border:1px solid var(--border);' +
+            'border-radius:var(--radius);padding:0.75rem;color:var(--text-secondary);';
+        pre.textContent = log.message;
+        msgSection.appendChild(pre);
+        bodyEl.appendChild(msgSection);
+    }
+
+    // Error detail
+    if (log.error_message) {
+        const errSection = document.createElement('div');
+        const errHead = document.createElement('div');
+        errHead.className = 'drawer-section-title';
+        errHead.textContent = 'エラー詳細';
+        errSection.appendChild(errHead);
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'font-size:0.78rem;white-space:pre-wrap;word-break:break-word;' +
+            'background:var(--danger-soft);border:1px solid var(--danger);' +
+            'border-radius:var(--radius);padding:0.75rem;color:var(--danger);';
+        pre.textContent = log.error_message;
+        errSection.appendChild(pre);
+        bodyEl.appendChild(errSection);
+    }
+
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeNotifLogDrawer() {
+    const overlay = document.getElementById('notiflog-drawer-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    document.body.style.overflow = '';
 }
 
 async function loadLogs(page) {
@@ -115,6 +199,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const refreshBtn = document.getElementById('btn-refresh-logs');
     if (refreshBtn) refreshBtn.addEventListener('click', () => loadLogs(currentLogsPage));
+
+    document.getElementById('btn-close-notiflog-drawer')?.addEventListener('click', closeNotifLogDrawer);
+    document.getElementById('btn-close-notiflog-drawer-footer')?.addEventListener('click', closeNotifLogDrawer);
+    document.getElementById('notiflog-drawer-overlay')?.addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeNotifLogDrawer();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeNotifLogDrawer(); });
 
     loadLogs(1);
     setInterval(() => loadLogs(currentLogsPage), 60000);
