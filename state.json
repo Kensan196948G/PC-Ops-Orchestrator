@@ -38,7 +38,8 @@
     "phase_i1": "PR #290 MERGED 2026-05-29 — CMDB 台帳基盤 Excel→CSV→DB 取り込み (Issue #287) 本番投入完了",
     "phase_i2": "PR #305 MERGED 2026-05-30 — サーバ起点 WinRM 収集 API (Issue #304) 12/12 tests",
     "phase_i3_design": "PR #307 MERGED 2026-05-30 — デザインファイル全実装完了 (Issue #306): CSS ドロワーシステム + 12ページ全ページ対応 1370/1370 tests",
-    "phase_j1_cmdb": "PR #310 CREATED 2026-05-30 — CMDB資産台帳ページ /cmdb 実装 (Issue #309) 1379/1379 tests"
+    "phase_j1_cmdb": "PR #310 MERGED 2026-05-30 — CMDB資産台帳ページ /cmdb 実装 (Issue #309) 1383/1383 tests",
+    "fix_winrm_tls": "PR #313 MERGED 2026-05-30 — WinRM TLS証明書検証 MEDIUM セキュリティ修正 (WINRM_SSL_INSECURE opt-in化)"
   },
   "kpi": {
     "ci_success_rate": 1,
@@ -56,7 +57,7 @@
     "last_session_end_at": "2026-05-02T23:55:00+09:00",
     "last_trigger": "manual",
     "last_cron_session_id": "20260530-184856-PC-Ops-Orchestrator",
-    "last_stop_at": "2026-05-29T12:47:49.042Z"
+    "last_stop_at": "2026-05-30T14:11:44.103Z"
   },
   "status": {
     "current_phase": "improve",
@@ -1003,6 +1004,52 @@
         "server/test_config_db_password.py",
         "server/test_phase_i1_models.py",
         "server/test_sidebar_nav.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-30T13:59:46.188Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 15 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/routes/collect.py",
+        "server/static/js/alert_rules.js",
+        "server/static/js/audit.js",
+        "server/static/js/backups.js",
+        "server/static/js/groups.js",
+        "server/static/js/licenses.js",
+        "server/static/js/notification_channels.js",
+        "server/static/js/notification_logs.js",
+        "server/static/js/stability.js",
+        "server/static/js/stability_disk_health.js",
+        "server/static/js/stability_kb_impact.js",
+        "server/static/js/stability_unstable.js",
+        "server/static/js/users.js",
+        "server/test_collect_remote.py",
+        "server/winrm_collect.py"
+      ],
+      "truncated": false
+    },
+    {
+      "at": "2026-05-30T14:11:44.113Z",
+      "kind": "tdd_required",
+      "message": "テスト未整備の変更が 15 件あります。/tdd または tdd-guide agent で対応してください。",
+      "files": [
+        "server/routes/collect.py",
+        "server/static/js/alert_rules.js",
+        "server/static/js/audit.js",
+        "server/static/js/backups.js",
+        "server/static/js/groups.js",
+        "server/static/js/licenses.js",
+        "server/static/js/notification_channels.js",
+        "server/static/js/notification_logs.js",
+        "server/static/js/stability.js",
+        "server/static/js/stability_disk_health.js",
+        "server/static/js/stability_kb_impact.js",
+        "server/static/js/stability_unstable.js",
+        "server/static/js/users.js",
+        "server/test_collect_remote.py",
+        "server/winrm_collect.py"
       ],
       "truncated": false
     }
