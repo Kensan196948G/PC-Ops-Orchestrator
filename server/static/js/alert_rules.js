@@ -24,6 +24,11 @@ async function loadRules(page = 1) {
     for (const r of data.alert_rules) {
         const row = tbody.insertRow();
         row.dataset.id = r.id;
+        row.classList.add('row-clickable');
+        row.addEventListener('click', (e) => {
+            if (e.target.closest('[data-action]')) return;
+            openRuleDrawer(r);
+        });
 
         const tdName = row.insertCell();
         const strong = document.createElement('strong');
@@ -258,4 +263,99 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ruleForm) ruleForm.addEventListener('submit', submitRuleForm);
 
     loadRules(1);
+
+    document.getElementById('btn-close-rule-drawer')?.addEventListener('click', closeRuleDrawer);
+    document.getElementById('btn-close-rule-drawer-footer')?.addEventListener('click', closeRuleDrawer);
+    document.getElementById('rule-drawer-overlay')?.addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeRuleDrawer();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRuleDrawer(); });
 });
+
+// ── Drawer ──────────────────────────────────────────────────────────────────
+
+function openRuleDrawer(r) {
+    const overlay = document.getElementById('rule-drawer-overlay');
+    const titleEl = document.getElementById('rule-drawer-title');
+    const bodyEl = document.getElementById('rule-drawer-body');
+    const editBtn = document.getElementById('rule-drawer-edit-btn');
+    if (!overlay || !bodyEl) return;
+
+    if (titleEl) titleEl.textContent = r.name;
+    if (editBtn) editBtn.onclick = () => { closeRuleDrawer(); editRule(r.id); };
+
+    bodyEl.textContent = '';
+
+    // Condition section
+    const condSection = document.createElement('div');
+    const condHead = document.createElement('div');
+    condHead.className = 'drawer-section-title';
+    condHead.textContent = 'トリガー条件';
+    condSection.appendChild(condHead);
+
+    const dl = document.createElement('dl');
+    dl.className = 'kv-grid';
+    const cond = r.metric === 'offline'
+        ? 'PC オフライン検出時'
+        : `${METRIC_LABELS[r.metric] || r.metric} ${OP_LABELS[r.operator] || r.operator} ${r.threshold}%`;
+    const sevCls = r.severity === 'critical' ? 'severity-critical' : 'severity-high';
+    const sevBadge = document.createElement('span');
+    sevBadge.className = 'status-badge ' + sevCls;
+    sevBadge.textContent = r.severity;
+
+    const pairs = [
+        ['メトリクス', METRIC_LABELS[r.metric] || r.metric],
+        ['条件', cond],
+    ];
+    for (const [k, v] of pairs) {
+        const dt = document.createElement('dt'); dt.textContent = k; dl.appendChild(dt);
+        const dd = document.createElement('dd'); dd.textContent = v; dl.appendChild(dd);
+    }
+    const dtSev = document.createElement('dt'); dtSev.textContent = '重大度'; dl.appendChild(dtSev);
+    const ddSev = document.createElement('dd'); ddSev.appendChild(sevBadge); dl.appendChild(ddSev);
+
+    const enabledBadge = document.createElement('span');
+    enabledBadge.className = 'status-badge ' + (r.is_enabled ? 'severity-low' : 'severity-medium');
+    enabledBadge.textContent = r.is_enabled ? '有効' : '無効';
+    const dtEn = document.createElement('dt'); dtEn.textContent = '状態'; dl.appendChild(dtEn);
+    const ddEn = document.createElement('dd'); ddEn.appendChild(enabledBadge); dl.appendChild(ddEn);
+
+    condSection.appendChild(dl);
+    bodyEl.appendChild(condSection);
+
+    // Notification section
+    const parts = [];
+    if (r.notify_slack_webhook) parts.push('Slack');
+    if (r.notify_teams_webhook) parts.push('Teams');
+    if (r.notify_webhook_url) parts.push('Webhook');
+    if (r.notify_email) parts.push('Email');
+
+    if (parts.length) {
+        const notifSection = document.createElement('div');
+        const notifHead = document.createElement('div');
+        notifHead.className = 'drawer-section-title';
+        notifHead.textContent = '通知先';
+        notifSection.appendChild(notifHead);
+        const ul = document.createElement('ul');
+        ul.style.cssText = 'list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:0.4rem;';
+        for (const p of parts) {
+            const li = document.createElement('li');
+            const chip = document.createElement('span');
+            chip.className = 'status-badge severity-low';
+            chip.textContent = p;
+            li.appendChild(chip);
+            ul.appendChild(li);
+        }
+        notifSection.appendChild(ul);
+        bodyEl.appendChild(notifSection);
+    }
+
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeRuleDrawer() {
+    const overlay = document.getElementById('rule-drawer-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    document.body.style.overflow = '';
+}

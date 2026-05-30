@@ -110,6 +110,23 @@
         </div>
     </div>
 </div>
+<!-- Detail Drawer -->
+<div id="rule-drawer-overlay" class="drawer-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="rule-drawer-title">
+    <div class="drawer">
+        <div class="drawer-header">
+            <div>
+                <div class="drawer-eyebrow">アラートルール 詳細</div>
+                <div class="drawer-title" id="rule-drawer-title">-</div>
+            </div>
+            <button class="drawer-close-btn" id="btn-close-rule-drawer" aria-label="閉じる">&#215;</button>
+        </div>
+        <div class="drawer-body" id="rule-drawer-body"></div>
+        <div class="drawer-footer">
+            <button class="btn btn-secondary" id="btn-close-rule-drawer-footer">閉じる</button>
+            <button class="btn btn-primary role-admin-only" id="rule-drawer-edit-btn">編集</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
