@@ -88,6 +88,74 @@ def import_ledger():
     return jsonify(result), 200
 
 
+@cmdb_bp.route("/list", methods=["GET"])
+@login_required
+def list_assets():
+    """Return paginated CMDB asset list with optional search."""
+    page = max(1, int(request.args.get("page", 1)))
+    per_page = min(100, max(10, int(request.args.get("per_page", 50))))
+    q = request.args.get("q", "").strip()
+    source_filter = request.args.get("asset_source", "").strip()
+
+    query = PC.query
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                PC.asset_number.ilike(like),
+                PC.pc_name.ilike(like),
+                PC.owner_name.ilike(like),
+                PC.employee_id.ilike(like),
+                PC.ad_cn.ilike(like),
+                PC.ad_sam.ilike(like),
+            )
+        )
+    if source_filter:
+        query = query.filter(PC.asset_source == source_filter)
+
+    total = query.count()
+    items = (
+        query.order_by(PC.asset_number.asc().nulls_last(), PC.pc_name.asc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
+
+    def _fmt(pc):
+        return {
+            "id": pc.id,
+            "asset_number": pc.asset_number,
+            "pc_name": pc.pc_name,
+            "owner_name": pc.owner_name,
+            "employee_id": pc.employee_id,
+            "deploy_year": pc.deploy_year,
+            "os_version": pc.os_version,
+            "ip_address": pc.ip_address,
+            "ip_lan": pc.ip_lan,
+            "ip_wifi": pc.ip_wifi,
+            "mac_wired": pc.mac_wired,
+            "mac_wireless": pc.mac_wireless,
+            "ad_cn": pc.ad_cn,
+            "ad_sam": pc.ad_sam,
+            "asset_source": pc.asset_source or "agent",
+            "last_seen": pc.last_seen.isoformat() if pc.last_seen else None,
+            "ledger_synced_at": pc.ledger_synced_at.isoformat()
+            if pc.ledger_synced_at
+            else None,
+            "status": pc.status,
+        }
+
+    return jsonify(
+        {
+            "items": [_fmt(p) for p in items],
+            "total": total,
+            "page": page,
+            "pages": max(1, -(-total // per_page)),
+            "per_page": per_page,
+        }
+    )
+
+
 @cmdb_bp.route("/status", methods=["GET"])
 @login_required
 def status():
